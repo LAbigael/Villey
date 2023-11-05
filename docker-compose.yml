@@ -9,13 +9,10 @@ services:
     ports:
       - 8055:8055
     volumes:
-      - ./uploads:/directus/uploads
+      - ./directus/uploads:/directus/uploads
       # If you want to load extensions from the host
-      - ./extensions:/directus/extensions
+      - ./directus/extensions:/directus/extensions
     # entrypoint: docker-entrypoint.sh  
-    depends_on:
-      database:
-          condition: service_healthy
     networks:
       - directus
     env_file:
