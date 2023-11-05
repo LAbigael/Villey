@@ -1,0 +1,22 @@
+version: '3'
+
+networks:
+  directus:
+
+services:
+  directus:
+    image: directus/directus:10.7.1
+    ports:
+      - 8055:8055
+    volumes:
+      - ./uploads:/directus/uploads
+      # If you want to load extensions from the host
+      - ./extensions:/directus/extensions
+    # entrypoint: docker-entrypoint.sh  
+    depends_on:
+      database:
+          condition: service_healthy
+    networks:
+      - directus
+    env_file:
+      - .env.dev
