@@ -1,0 +1,18 @@
+{
+  "name": "juspoliticum-ui",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/vue": "^3.0.3",
+    "@directus/sdk": "^13.0.1",
+    "astro": "^3.4.3",
+    "vue": "^3.3.7"
+  }
+}
