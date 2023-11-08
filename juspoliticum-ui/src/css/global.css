@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  --accent: 43, 67, 89;
+  --accent-light: 165, 181, 197;
+  --secondary: 213, 185, 133;
+  --accent-dark: 83, 97, 110;
+  --background: 209, 217, 225;
+  --text-color: #101010;
+  --text-color-light: #e1e1e1;
+  --accent-gradient: linear-gradient(
+    45deg,
+    rgb(var(--accent)),
+    rgb(var(--accent-light)) 30%,
+    white 60%
+  );
+
+  font-family: system-ui, sans-serif;
+  background: linear-gradient(
+    rgba(var(--background)),
+    rgba(var(--accent-light))
+  );
+  color: var(--text-color);
+}
+
+.accent1 {
+  font-size: 1.1rem;
+  font-weight: 500;
+  line-height: 1.3rem;
+  text-decoration: underline;
+}
+.accent1 a:hover {
+  text-decoration-color:rgba(var(--secondary)) ;
+}
+
+h3 {
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+h5 {
+  font-weight: 500;
+  font-size: 1.0625rem;
+}
+
+ul {
+  list-style: square;
+}

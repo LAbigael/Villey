@@ -1,0 +1,27 @@
+---
+import { Image } from 'astro:assets';
+import cover from '../images/cover.jpg'
+
+
+interface Props {
+  titre: string;
+  numero: string;
+}
+
+const { titre, numero, date, coordinators, cover_image } = Astro.props;
+---
+
+<div class="w-72">
+  <Image src={cover} alt="La courverture du dernier numéro de droit et philosophie"  height="250"/>
+  <div class="mt-5"> 
+  <h5 >Dernier Numéro</h5>
+  <div>Numéro : {numero}</div>
+  <div class="accent1"> <a href="/"> {titre} </a></div>
+  <div>{date}</div>
+  <div>Coordoné par :   <span> {coordinators.map((el,index) => <span>  {index != 0 && ', '} {el}  </span> )} </span></div>
+</div>
+</div>
+
+<style>
+   
+    </style>

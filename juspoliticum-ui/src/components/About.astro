@@ -1,0 +1,33 @@
+---
+import { Image } from "astro:assets";
+
+import villey from "../images/villey.jpg";
+---
+
+<div class="aboutbox flex flex-col justify-end pb-10 ">
+  <div class="abouttext py-2 px-6">
+    <h3>La Revue</h3>
+    <p>
+      <em> Droit & Philosophie</em> est la revue française consacrée à l'étude
+      critique des liens entre droit, philosophie, théorie et culture
+      juridiques. Elle se situe à leur intersection et se veut également un lieu
+      de rencontre des doctrines françaises et étrangères dans ces matières.
+      Cette ligne éditoriale ainsi que la qualité de ses publications sont
+      garanties par un comité de lecture et une procédure d'évaluation
+      systématique en double aveugle.
+    </p>
+
+    <a href="/ajlh/pages/About">Find out more</a>
+  </div>
+</div>
+
+<style>
+  .abouttext {
+    background-color: rgba(var(--accent));
+    color: var(--text-color-light);
+    font-weight: 200;
+  }
+  .aboutbox {
+    background-color: rgba(var(--accent-light));
+  }
+</style>

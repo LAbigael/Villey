@@ -1,0 +1,38 @@
+---
+import GithubIcon from './icons/Github.astro'
+import TwitterIcon from './icons/Twitter.astro'
+
+const currentYear = new Date().getFullYear()
+---
+
+<div class="footer">
+  <div class="">
+      Footer
+  </div>
+  <div class="">
+    <span class="">
+      Made with ❤️ by RubidiumWeb ({ currentYear })
+    </span>
+
+    <ul class="flex">
+      <li>
+        <a href="https://github.com/directus" class="logo" target="_blank" rel="noreferrer noopener">
+          <GithubIcon />
+        </a>
+      </li>
+      <li>
+        <a href="https://twitter.com/directus" class="logo" target="_blank" rel="noreferrer noopener">
+          <TwitterIcon />
+        </a>
+      </li>
+    </ul>
+
+  </div>
+</div>
+
+<style>
+  .footer{
+    background-color: rgba(var(--accent));
+    min-height: 60px;
+    }
+</style>

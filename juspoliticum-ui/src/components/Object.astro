@@ -1,0 +1,39 @@
+<!-- USAGE :
+  This compoment is used to read the content 
+  of an object : recommended in dev mode only -->
+
+---
+const { articles } = Astro.props;
+---
+
+<div>
+  {
+    articles.length &&
+      articles.map((article) => (
+        <>
+          <div>
+            {Object.keys(article).map((property) => (
+              <div>
+                {property}: {article[property]}
+              </div>
+            ))}
+          </div>
+          <br />
+        </>
+      ))
+  }
+</div>
+
+<div>
+  {
+    !articles.length && (
+      <div>
+        {Object.keys(articles).map((property) => (
+          <div>
+            {property}: {articles[property]}
+          </div>
+        ))}
+      </div>
+    )
+  }
+</div>

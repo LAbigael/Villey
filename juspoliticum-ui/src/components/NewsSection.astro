@@ -1,0 +1,38 @@
+---
+import Actu from "./Actu.astro";
+
+import { getDirectusClient } from "../utils/get-directus-client";
+import { readItems } from "@directus/sdk";
+
+const directus = await getDirectusClient();
+
+const articles = await directus.request(
+  readItems("articles", {
+    fields: ["*", { author: ["*"] }],
+  }),
+);
+---
+
+<div class="py-6 sm:py-8 lg:py-12">
+  <div class="mx-20 p-10">
+    <!-- text - start -->
+    <div class="mb-10 md:mb-16">
+      <h2 class="mb-4 text-center text-2xl font-bold md:mb-6 lg:text-3xl">
+        Actualités
+      </h2>
+
+      <p class="mx-auto max-w-screen-md text-center text-gray-500 md:text-lg">
+        xxx
+      </p>
+    </div>
+    <!-- text - end -->
+
+    <div
+      class="grid gap-2 sm:grid-cols-2 md:gap-4 lg:grid-cols-2 xl:grid-cols-3"
+    >
+      {articles.map((article) => <Actu article={article} />)}
+    </div>
+
+    <style></style>
+  </div>
+</div>
