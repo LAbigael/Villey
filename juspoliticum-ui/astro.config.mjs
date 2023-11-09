@@ -6,6 +6,7 @@ import tailwind from "@astrojs/tailwind";
 // https://astro.build/config
 export default defineConfig({
   integrations: [vue(), tailwind()],
+  server: { port: 4321, host: true },
   vite: {
     ssr: {
       noExternal: ["modern-normalize"]
