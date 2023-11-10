@@ -29,16 +29,23 @@ const dp_new = require("knex")({
 function getFootnotesContentFromHtml(html) {
   const $ = cheerio.load(html);
   const footnotes = [];
+  // TODO : handle two footnotes with id footnote-1250-1
   $("div").each(function (i, elem) {
-    const footnote = {
-      position: $(elem).attr("id").replace("ftn", ""),
-      content: $(elem)
-        .text()
-        .replace(/\[\d+\]/g, "")
-        .trim(),
-      uid: uid(),
-    };
-    footnotes.push(footnote);
+    try {
+      if ($(elem).attr("id")) {
+        const footnote = {
+          position: $(elem).attr("id").replace("ftn", ""),
+          content: $(elem)
+            .text()
+            .replace(/\[\d+\]/g, "")
+            .trim(),
+          uid: uid(),
+        };
+        footnotes.push(footnote);
+      }
+    } catch (e) {
+      console.log(e);
+    }
   });
   return footnotes;
 }
@@ -91,57 +98,64 @@ const migrateArticles = async (fetchArticles, type) => {
   const articles = await fetchArticles();
   await Promise.all(
     articles.map(async (article) => {
-      let articleContent = htmlToProsemirror(article.contenu);
+      try {
+        let articleContent = htmlToProsemirror(article.contenu);
 
-      const footnotes = getFootnotesContentFromHtml(article.footnotes);
+        const footnotes = getFootnotesContentFromHtml(article.footnotes);
 
-      articleContent = replaceLinkInProseMirrorJsonWithFootnoteAndUid(
-        articleContent,
-        footnotes
-      );
+        articleContent = replaceLinkInProseMirrorJsonWithFootnoteAndUid(
+          articleContent,
+          footnotes
+        );
 
-      const articleEntity = {
-        id: article.id,
-        slug: article.slug,
-        title: article.titre,
-        summary: htmlToProsemirror(article.resume),
-        type: type || "article",
-      };
+        const articleEntity = {
+          id: article.id,
+          slug: article.slug,
+          title: cheerio.load(article.titre).text(),
+          summary: htmlToProsemirror(article.resume),
+          type: type || "article",
+          active: article.active,
+          author_id: article.auteur_id,
+          position: article.position,
+        };
 
-      if (article.chapitre_id) {
-        articleEntity.section_id = article.chapitre_id;
+        if (article.chapitre_id) {
+          articleEntity.section_id = article.chapitre_id;
+        }
+
+        const newArticle = await dp_new("Articles").insert(articleEntity);
+
+        await dp_new("ArticleContents").insert({
+          article_id: newArticle[0],
+          content: articleContent,
+          version: 1,
+        });
+
+        await Promise.all(
+          footnotes.map(async (footnote) => {
+            await dp_new("Footnotes").insert({
+              ...footnote,
+              article_id: newArticle[0],
+            });
+          })
+        );
+      } catch (e) {
+        console.log(e);
       }
-
-      const newArticle = await dp_new("Articles").insert(articleEntity);
-
-      await dp_new("ArticleContents").insert({
-        article_id: newArticle[0],
-        content: articleContent,
-        version: 1,
-      });
-
-      await Promise.all(
-        footnotes.map(async (footnote) => {
-          await dp_new("Footnotes").insert({
-            ...footnote,
-            article_id: newArticle[0],
-          });
-        })
-      );
     })
   );
 };
 
 // migrate authors -> user role author
 const migrateAuthors = async () => {
-  const authors = await dp_old("auteurs").select("id", "fullname", "bio");
+  const authors = await dp_old("auteurs").select("id", "nom", "biographie");
 
   await Promise.all(
     authors.map(async (author) => {
       await dp_new("Authors").insert({
         id: author.id,
-        fullname: author.fullname,
-        bio: author.bio,
+        fullname: author.nom,
+        bio: htmlToProsemirror(author.biographie),
       });
     })
   );
@@ -168,88 +182,85 @@ const migrateVolumes = async () => {
     })
   );
 };
+const migrateVolumeReleases = async () => {
+  const releases = await dp_old("releases").select(
+    "id",
+    "published",
+    "title",
+    "summary_fr",
+    "number"
+  );
+
+  await Promise.all(
+    releases.map(async (release) => {
+      await dp_new("VolumeReleases").insert({
+        id: release.id,
+        title: release.title,
+        summary: htmlToProsemirror(release.summary_fr),
+        published_at: release.published,
+        number: release.number,
+      });
+    })
+  );
+};
 // migrate chapters
 const migrateChapters = async () => {
   const chapters = await dp_old("chapitres").select("id", "volume_id", "titre");
 
   await Promise.all(
     chapters.map(async (chapter) => {
-      await dp_new("VolumeSections").insert({
-        id: chapter.id,
-        title: chapter.titre,
-        volume_id: chapter.active,
-      });
-    })
-  );
-};
-
-// migrate recensions
-
-const migrateRecensions = async () => {
-  const recensions = await dp_old("book_reviews").select(
-    "id",
-    "titre",
-    "published",
-    "summary",
-    "activated"
-  );
-
-  await Promise.all(
-    recensions.map(async (recension) => {
-      await dp_new("Recensions").insert({
-        id: recension.id,
-        title: recension.titre,
-        published_at: recension.published,
-        summary: htmlToProsemirror(recension.summary),
-        active: recension.activated,
-      });
-    })
-  );
-};
-
-const migratePaperVolumes = async () => {
-  const paperVolumes = await dp_old("paper_volumes").select(
-    "id",
-    "titre",
-    "number",
-    "published",
-    "summary",
-    "activated"
-  );
-
-  await Promise.all(
-    paperVolumes.map(async (paperVolume) => {
-      await dp_new("PaperVolumes").insert({
-        id: paperVolume.id,
-        title: paperVolume.titre,
-        number: paperVolume.number,
-        published_at: paperVolume.published,
-        summary: htmlToProsemirror(paperVolume.summary),
-        active: paperVolume.activated,
-      });
+      try {
+        await dp_new("VolumeSections").insert({
+          id: chapter.id,
+          title: chapter.titre,
+          volume_id: chapter.volume_id,
+        });
+      } catch (e) {
+        console.log(e);
+      }
     })
   );
 };
 
 const fetchArticles = async () => {
-  const articles = await dp_old("articles")
-    .select("id", "contenu", "footnotes", "slug")
-    .where("id", 333);
+  const articles = await dp_old("articles").select(
+    "id",
+    "contenu",
+    "footnotes",
+    "slug",
+    "active",
+    "titre",
+    "resume",
+    "chapitre_id",
+    "auteur_id",
+    "position"
+  );
   return articles;
 };
 const fetchRecensions = async () => {
-  const recensions = await dp_old("book_reviews")
-    .select("id", "titre", "published", "summary", "activated")
-    .where("id", 1);
+  const recensions = await dp_old("book_reviews").select(
+    "id",
+    "contenu",
+    "footnotes",
+    "slug",
+    "active",
+    "titre",
+    "resume",
+    "auteur_id",
+    "position"
+  );
   return recensions;
 };
 
 const migrate = async () => {
   await migrateAuthors();
   await migrateVolumes();
+  await migrateVolumeReleases();
   await migrateChapters();
-  await migrateRecensions();
-  await migratePaperVolumes();
   await migrateArticles(fetchArticles, "article");
-  await migrateArticles(fetchRecensions, "article");
+  await migrateArticles(fetchRecensions, "recension");
 };
+migrate().then(() => {
+  console.log("done");
+  process.exit(0);
+});
