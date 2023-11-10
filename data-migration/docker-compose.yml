@@ -1,0 +1,36 @@
+version: '3'
+ 
+services:
+  juspoliticum_old:
+    image: mariadb:10.3
+    container_name: juspoliticum_old
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: 'juspoliticum_old'
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      # - ./juspoliticum_old.sql:/docker-entrypoint-initdb.d/juspoliticum_old.sql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: pma
+    links:
+      - juspoliticum_old
+    environment:
+      PMA_HOST: juspoliticum_old
+      MYSQL_ROOT_PASSWORD: password
+      UPLOAD_LIMIT: 256M
+      PMA_ARBITRARY: 1
+    restart: always
+    depends_on:
+      - juspoliticum_old
+    ports:
+      - 8081:80
+
+
+
+volumes:
+  db_data:
+
