@@ -20,8 +20,9 @@
     );
 
     /* font-family:  serif; */
-    /* font-family: "Proxima Nova", system-ui, sans-serif; */
+
     font-family: "Cormorant Variable", serif;
+    /* font-family: "Montserrat Variable",  sans-serif; */
 
     /* font-family: Lato,  sans-serif; */
     color: var(--text-color);

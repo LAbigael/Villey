@@ -2,10 +2,9 @@
 export default {
 	content: ['./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}'],
 	theme: {
-		// fontFamily: {
-		// 	'sans': [ "InterVariable", "Inter", 'ui-sans-serif', 'system-ui'],
-		// 	'serif': ["'Playfair Display Variable'", "Lora",  'Georgia'],
-		//   },
+		fontFamily: {
+			'sans': [ 'Open Sans Variable' , 'ui-sans-serif'],
+		  },
 		extend: {},
 	},
 	plugins: [require('daisyui')],

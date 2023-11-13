@@ -3,24 +3,26 @@ import Logo from "./icons/Logo.astro";
 
 ---
 
-<div class="head1">
-  <h1><span class=" font-light uppercase">Droit Philosophie</span></h1>
-  <Logo></Logo>
+<div class="head1 ">
+  <h1><span class="font-light uppercase relative">Droit Philosophie  <Logo /> </span></h1>
 </div>
 
 <style>
   .head1{
-    background-color: rgba(var(--accent-light));
-    min-height: 120px;
+    background-color: rgba(var(--accent));
 
     }
+
     h1 {
-    font-size: 4rem;
+      position: relative;
+    font-size: 3.5rem;
     /* font-weight: 700; */
     line-height: 1;
     text-align: center;
-    margin-bottom: 1em;
-    color: rgba(var(--accent));
+    color: rgba(var(--background));
+    z-index: 2;
+    padding-top: 0.8rem;
+    padding-bottom: 2.5rem;
 
     
   }

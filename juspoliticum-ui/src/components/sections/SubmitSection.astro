@@ -1,14 +1,14 @@
 ---
-import { Image } from 'astro:assets';
-import villey from '../../images/villey.jpg'
+import { Image } from "astro:assets";
+import villey from "../../images/villey.jpg";
 ---
 
 <div class="py-6 sm:py-8 lg:py-12">
-  <div class="mx-20 p-10">
+  <div class="sm:mx-20 sm:p-10 p-5">
     <div
       class="grid gap-2 sm:grid-cols-1 md:gap-4 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5"
     >
-      <div class=" pl-2 h-fit col-span-2">
+      <div class="pl-2 h-fit col-span-2">
         <div class="bg-slate-700 mr-10 py-10 flex">
           <h3 class="text-slate-100 text-4xl px-4 my-auto font-light">
             Inscrivez-vous à notre liste de diffusion
@@ -25,7 +25,7 @@ import villey from '../../images/villey.jpg'
           >
         </div>
       </div>
-      <div class="borderR px-8  col-span-2">
+      <div class="borderR px-8 col-span-2">
         <h3 class="text-xl font-semibold pb-2">Soumettez vos contributions</h3>
         <div class="text-md text-justify">
           La revue Droit & Philosophie publie chaque année un volume numérique
@@ -38,15 +38,20 @@ import villey from '../../images/villey.jpg'
           effet.
         </div>
       </div>
-      <div class="col-span-1">
-        <h3 class="text-xl font-semibold pb-2">Informations</h3>
-        <div class="text-md text-justify">
-          <div> Droit & Philosophie </div>
-          <div> Institut Michel Villey</div> 
-          <div>  1, rue d'Ulm. 75005 PARIS </div>
+      <div class="col-span-2 sm:col-span-1 flex justify-between  md:inline-block max-sm:pr-10 max-sm:pl-2">
+        <div class="max-sm:min-w-fit">
+          <h3 class="text-xl font-semibold pb-2">Informations</h3>
+          <div class="text-md text-justify">
+            <div>Droit & Philosophie</div>
+            <div>Institut Michel Villey</div>
+            <div>1, rue d'Ulm. 75005 PARIS</div>
+          </div>
         </div>
-        <div class="flex pt-3"> 
-          <div> <Image src={villey} alt="A bird." width="200" height="200"/></div>
+
+        <div class="md:flex max-md:w-32  pt-3">
+          <div>
+            <Image src={villey} alt="Institut Villey" width="200" height="200" />
+          </div>
           <!-- <div> B</div> -->
         </div>
       </div>

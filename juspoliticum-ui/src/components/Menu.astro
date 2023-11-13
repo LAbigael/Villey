@@ -1,14 +1,113 @@
 ---
-
+import LogoNavBar from "./icons/LogoNavBar.astro";
 ---
 
-<div class="menu">
-  Menu
+<div class="menu font-sans">
+  <div class="navbar">
+    <div class="navbar-start">
+      <div class="dropdown">
+        <label tabindex="0" class="btn btn-ghost lg:hidden">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-7 w-7"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h8m-8 6h16"></path></svg
+          >
+        </label>
+        <ul
+          tabindex="0"
+          class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 w-52"
+        >
+          <li><a>Présentation</a></li>
+          <li>
+            <a>Numéros</a>
+            <ul class="p-2">
+              <li><a>Dernier Numéro</a></li>
+              <li><a>Tous les numéros</a></li>
+            </ul>
+          </li>
+          <li><a>Recensions</a></li>
+          <li><a>Volumes papier</a></li>
+          <li><a>Hors-série</a></li>
+          <li><a>Mémoires</a></li>
+          <li>
+            <a>Auteurs</a>
+            <ul class="p-2">
+              <li><a>Appels à contribution</a></li>
+              <li><a>Liste des auteurs</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+      <div class="flex">
+        <a class="btn btn-ghost hover:bg-inherit hover:scale-105" href="/">
+          <div class="w-16 lg:inline-block hidden">
+            <LogoNavBar />
+          </div>
+        </a>
+      </div>
+    </div>
+    <div class="navbar-center hidden lg:flex">
+      <ul class="menu menu-horizontal px-1">
+        <li tabindex="0">
+          <details>
+            <summary>La revue</summary>
+            <ul class="p-1 rounded-none sub">
+              <li><a>Présentation</a></li>
+              <li><a>Editeurs</a></li>
+              <li><a>Contact</a></li>
+            </ul>
+          </details>
+        </li>
+        <li tabindex="0">
+          <details>
+            <summary>Numéros</summary>
+            <ul class="p-1 rounded-none sub">
+              <li><a>Dernier Numéro</a></li>
+              <li><a>Tous les numéros</a></li>
+            </ul>
+          </details>
+        </li>
+        <li><a>Recensions</a></li>
+        <li><a>Volumes papier</a></li>
+        <li><a>Hors-série</a></li>
+        <li><a>Mémoires</a></li>
+        <li tabindex="0">
+          <details>
+            <summary>Auteurs</summary>
+            <ul class="p-1 rounded-none sub">
+              <li><a>Appels à contribution</a></li>
+              <li><a>Liste des auteurs</a></li>
+            </ul>
+          </details>
+        </li>
+      </ul>
+    </div>
+    <div class="navbar-end">
+      <input
+        type="text"
+        placeholder="Recherche"
+        class="input font-light rounded-sm bg-slate-100 w-64"
+      />
+    </div>
+  </div>
 </div>
 
 <style>
-  .menu{
-    background-color: rgba(var(--accent));
-    min-height: 60px;
-    }
+  .menu {
+    background-color: rgba(var(--accent-light));
+    /* height: 40px; */
+  }
+  .sub{
+    background-color: rgba(var(--accent-light));
+  }
+
+  
+
 </style>

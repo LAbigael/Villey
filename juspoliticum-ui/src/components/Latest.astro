@@ -11,12 +11,12 @@ interface Props {
 const { titre, numero, date, coordinators, cover_image } = Astro.props;
 ---
 
-<div class="w-72">
+<div class="flex sm:inline-block w-fit sm:w-72">
   <a href="/"> <div class="w-fit relative hover:brightness-110"> <Image src={cover} alt="La courverture du dernier numéro de droit et philosophie"  height="250"/> 
-    <div class="text-4xl font-semibold absolute -right-8 -top-6 rounded-full border-2  border-slate-50 pt-0.5 pb-3 px-3 numero-overlay "> {numero}</div>
+    <div class="text-2xl sm:text-4xl font-semibold absolute -right-8 -top-6 rounded-full border-2  border-slate-50 pt-0.5 sm:pb-3 pb-2 px-3 numero-overlay "> {numero}</div>
   </a>
   </div>
-  <div class="mt-5"> 
+  <div class="mt-3 sm:ml-0 ml-4 max-sm:w-3/4 max-sm:text-end"> 
   <h5 >Dernier Numéro</h5>
   <div>Numéro : {numero}</div>
   <div class="accent1"> <a href="/"> {titre} </a></div>
