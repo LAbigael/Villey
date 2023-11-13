@@ -67,13 +67,21 @@ function htmlToProsemirror(html) {
   var json = JSON.stringify(parsedHTML);
   return json;
 }
-const replaceLinkInProseMirrorJsonWithFootnoteAndUid = (json, footnotes) => {
+const modifyJsonToMatchTiptapSchema = (json, footnotes) => {
   const jsonWithFootnotes = JSON.parse(json);
 
   const replaceLinkWithFootnote = (node) => {
     if (node.marks) {
       node.marks.forEach((mark) => {
         if (mark.type === "link" && mark.attrs.href) {
+          replaceLinkithFootnote();
+        } else if (mark.type === "em") {
+          mark.type = "italic";
+        } else if (mark.type === "strong") {
+          mark.type = "bold";
+        }
+
+        function replaceLinkithFootnote() {
           const footnoteNumber = mark.attrs.href.replace("#_ftn", "");
           const footnote = footnotes.find((f) => f.position === footnoteNumber);
           if (footnote) {
@@ -103,7 +111,7 @@ const migrateArticles = async (fetchArticles, type) => {
 
         const footnotes = getFootnotesContentFromHtml(article.footnotes);
 
-        articleContent = replaceLinkInProseMirrorJsonWithFootnoteAndUid(
+        articleContent = modifyJsonToMatchTiptapSchema(
           articleContent,
           footnotes
         );
