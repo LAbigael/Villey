@@ -1,7 +1,8 @@
 ---
-import Actu from "./Actu.astro";
+import Actu from "../Actu.astro";
 
-import { getDirectusClient } from "../utils/get-directus-client";
+
+import { getDirectusClient } from "../../utils/get-directus-client";
 import { readItems } from "@directus/sdk";
 
 const directus = await getDirectusClient();
@@ -18,7 +19,7 @@ const articles = await directus.request(
     <!-- text - start -->
     <div class="mb-10 md:mb-16">
       <h2 class="mb-4 text-center text-2xl font-bold md:mb-6 lg:text-3xl">
-        Actualités
+        À la une
       </h2>
 
       <p class="mx-auto max-w-screen-md text-center text-gray-500 md:text-lg">
@@ -33,6 +34,6 @@ const articles = await directus.request(
       {articles.map((article) => <Actu article={article} />)}
     </div>
 
-    <style></style>
+
   </div>
 </div>

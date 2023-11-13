@@ -1,12 +1,12 @@
 ---
 import { Image } from "astro:assets";
 
-import villey from "../images/villey.jpg";
+import villey from "../../images/villey.jpg";
 ---
 
 <div class="aboutbox flex flex-col justify-end pb-10 ">
   <div class="abouttext py-2 px-6">
-    <h3>La Revue</h3>
+    <h3 class="  font-light uppercase">La Revue</h3>
     <p>
       <em> Droit & Philosophie</em> est la revue française consacrée à l'étude
       critique des liens entre droit, philosophie, théorie et culture
@@ -16,16 +16,22 @@ import villey from "../images/villey.jpg";
       garanties par un comité de lecture et une procédure d'évaluation
       systématique en double aveugle.
     </p>
-
-    <a href="/ajlh/pages/About">Find out more</a>
+    <div  class="pt-5"> 
+      <a href="/">En savoir plus [...]</a>
+    </div>
+   
   </div>
 </div>
 
 <style>
   .abouttext {
     background-color: rgba(var(--accent));
+    /* background-image: var(--accent-gradient); */
     color: var(--text-color-light);
     font-weight: 200;
+  }
+  .abouttext h3{
+    /* color: rgba(var(--secondary)); */
   }
   .aboutbox {
     background-color: rgba(var(--accent-light));

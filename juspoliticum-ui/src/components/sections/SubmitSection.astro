@@ -1,0 +1,65 @@
+---
+import { Image } from 'astro:assets';
+import villey from '../../images/villey.jpg'
+---
+
+<div class="py-6 sm:py-8 lg:py-12">
+  <div class="mx-20 p-10">
+    <div
+      class="grid gap-2 sm:grid-cols-1 md:gap-4 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5"
+    >
+      <div class=" pl-2 h-fit col-span-2">
+        <div class="bg-slate-700 mr-10 py-10 flex">
+          <h3 class="text-slate-100 text-4xl px-4 my-auto font-light">
+            Inscrivez-vous à notre liste de diffusion
+          </h3>
+        </div>
+        <div class="mr-10 pt-2">
+          Inscription gratuite pour suivre l'actualité des derniers numéros.
+        </div>
+        <div>
+          <button
+            type="button"
+            class="font-light text-slate-700 hover:text-white border border-slate-700 hover:bg-slate-800 focus:ring-4 focus:outline-none focus:ring-slate-300 rounded text-md px-7 py-1.5 text-center me-2 mt-2 dark:border-slate-500 dark:text-slate-500 dark:hover:text-white dark:hover:bg-slate-500 dark:focus:ring-slate-800"
+            >S'inscrire</button
+          >
+        </div>
+      </div>
+      <div class="borderR px-8  col-span-2">
+        <h3 class="text-xl font-semibold pb-2">Soumettez vos contributions</h3>
+        <div class="text-md text-justify">
+          La revue Droit & Philosophie publie chaque année un volume numérique
+          puis imprimé aux éditions Dalloz, ainsi que des contenus inédits tout
+          au long de l'année (articles, traductions, recensions, mémoires,
+          etc.). <br />
+           Pour plus d'informations sur notre revue, veuillez consulter la page
+          "À propos". Pour toute proposition de publication ou demande
+          d'information, vous pouvez utiliser la rubrique "Contact" prévue à cet
+          effet.
+        </div>
+      </div>
+      <div class="col-span-1">
+        <h3 class="text-xl font-semibold pb-2">Informations</h3>
+        <div class="text-md text-justify">
+          <div> Droit & Philosophie </div>
+          <div> Institut Michel Villey</div> 
+          <div>  1, rue d'Ulm. 75005 PARIS </div>
+        </div>
+        <div class="flex pt-3"> 
+          <div> <Image src={villey} alt="A bird." width="200" height="200"/></div>
+          <!-- <div> B</div> -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .borderR {
+    border-right: 1px solid #cfd5e4;
+    margin-right: 15px;
+
+    border-left: 1px solid #cfd5e4;
+    margin-left: -25px;
+  }
+</style>

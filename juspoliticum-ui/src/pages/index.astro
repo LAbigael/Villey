@@ -1,15 +1,13 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import AboutSection from "../components/AboutSection.astro";
-import NewsSection from "../components/NewsSection.astro";
-import Logo from "../components/icons/Logo.astro";
+import AboutSection from "../components/sections/AboutSection.astro";
+import NewsSection from "../components/sections/NewsSection.astro";
+import SubmitSection from "../components/sections/SubmitSection.astro";
 
-// import Card from "../components/Card.astro";
-// import Article from "../components/Article.astro";
-// import Object from "../components/Object.astro"
 
 import { getDirectusClient } from "../utils/get-directus-client";
 import { readItems } from "@directus/sdk";
+
 
 const directus = await getDirectusClient();
 
@@ -21,11 +19,14 @@ const articles = await directus.request(
 ---
 
 <Layout title="Droit & Philosophie.">
-  <main>
+  <main class="font-light">
     <div class="aboutsection">
       <AboutSection />
       <div class="newssection">
         <NewsSection />
+      </div>
+      <div class="submitsection">
+        <SubmitSection />
       </div>
     </div>
 
@@ -33,14 +34,15 @@ const articles = await directus.request(
       main {
         margin: auto;
       }
-      .aboutsection{
-        background-color: rgb(241 245 249);
+      .aboutsection {
+        background-color: var(--background-light);
       }
-      .newssection{
+      .newssection {
         background-color: rgb(226 232 240);
       }
+      .submitsection{
+        background-color: var(--background-light);
+      }
     </style>
-
-
   </main>
 </Layout>

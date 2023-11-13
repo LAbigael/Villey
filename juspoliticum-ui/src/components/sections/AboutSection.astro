@@ -1,7 +1,7 @@
 ---
-import Editors from "./Editors.astro";
-import Latest from "./Latest.astro";
-import About from "./About.astro";
+import Editors from "../Editors.astro";
+import Latest from "../Latest.astro";
+import About from "../About.astro";
 
 const titre =
   "Conflit des facultés. La philosophie des juristes et le droit des philosophes";
@@ -13,7 +13,7 @@ const editors = ["Denis Baranger", "Olivier Beaud"];
 ---
 
 <div class="flex space-x-10 mx-20 p-10">
-  <div >
+  <div>
     <Latest
       titre={titre}
       numero={numero}
@@ -23,7 +23,10 @@ const editors = ["Denis Baranger", "Olivier Beaud"];
   </div>
   <div class="flex flex-col justify-between">
     <Editors editors={editors} />
-    <div class="flex grow mt-10"> <About  /></div> 
+    
+    <div class="flex grow mt-10">
+      <About />
+    </div>
+
   </div>
 </div>
-

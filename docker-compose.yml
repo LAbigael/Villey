@@ -10,7 +10,7 @@ services:
   directus:
     image: directus/directus:10.7.2
     ports:
-      - 8055:8055
+      - 8065:8055
     volumes:
       - ./directus/uploads:/directus/uploads
       # If you want to load extensions from the host

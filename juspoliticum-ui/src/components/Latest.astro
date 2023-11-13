@@ -12,7 +12,10 @@ const { titre, numero, date, coordinators, cover_image } = Astro.props;
 ---
 
 <div class="w-72">
-  <Image src={cover} alt="La courverture du dernier numéro de droit et philosophie"  height="250"/>
+  <a href="/"> <div class="w-fit relative hover:brightness-110"> <Image src={cover} alt="La courverture du dernier numéro de droit et philosophie"  height="250"/> 
+    <div class="text-4xl font-semibold absolute -right-8 -top-6 rounded-full border-2  border-slate-50 pt-0.5 pb-3 px-3 numero-overlay "> {numero}</div>
+  </a>
+  </div>
   <div class="mt-5"> 
   <h5 >Dernier Numéro</h5>
   <div>Numéro : {numero}</div>
@@ -23,5 +26,10 @@ const { titre, numero, date, coordinators, cover_image } = Astro.props;
 </div>
 
 <style>
-   
+   .numero-overlay{
+    color: rgba(var(--accent));
+    background-color: rgba(var(--secondary));;
+   }
+
+
     </style>

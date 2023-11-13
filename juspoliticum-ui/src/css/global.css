@@ -2,27 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
-html {
-  --accent: 43, 67, 89;
-  --accent-light: 165, 181, 197;
-  --secondary: 213, 185, 133;
-  --accent-dark: 83, 97, 110;
-  --background: 209, 217, 225;
-  --text-color: #101010;
-  --text-color-light: #e1e1e1;
-  --accent-gradient: linear-gradient(
-    45deg,
-    rgb(var(--accent)),
-    rgb(var(--accent-light)) 30%,
-    white 60%
-  );
+@layer base {
+  html {
+    --accent: 43, 67, 89; /* darkblue */
+    --accent-light: 165, 181, 197; /* light blue grey */
+    --accent-dark: 83, 97, 110; /* dark blue grey */
+    --secondary: 213, 185, 133; /* orange */
+    --background: 209, 217, 225; /* light light grey */
+    --background-light: rgb(241 245 249);
+    --text-color: #101010;
+    --text-color-light: #e1e1e1;
+    --accent-gradient: linear-gradient(
+      45deg,
+      rgb(var(--accent)),
+      rgb(var(--accent-light)) 30%,
+      white 60%
+    );
 
-  font-family: system-ui, sans-serif;
-  background: linear-gradient(
-    rgba(var(--background)),
-    rgba(var(--accent-light))
-  );
-  color: var(--text-color);
+    /* font-family:  serif; */
+    /* font-family: "Proxima Nova", system-ui, sans-serif; */
+    font-family: "Cormorant Variable", serif;
+
+    /* font-family: Lato,  sans-serif; */
+    color: var(--text-color);
+  }
 }
 
 .accent1 {
@@ -32,7 +35,8 @@ html {
   text-decoration: underline;
 }
 .accent1 a:hover {
-  text-decoration-color:rgba(var(--secondary)) ;
+  text-decoration-color: rgba(var(--accent-light));
+  color: rgba(var(--accent-dark));
 }
 
 h3 {
@@ -46,4 +50,12 @@ h5 {
 
 ul {
   list-style: square;
+}
+
+.text-gradient {
+  background-image: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 400%;
+  background-position: 0%;
 }
