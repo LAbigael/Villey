@@ -24,7 +24,6 @@
     "daisyui": "^3.9.4",
     "modern-normalize": "1.1.0",
     "vue": "^3.3.7",
-
     "prettier": "^3.0.3",
     "prettier-config-standard": "^7.0.0",
     "prettier-plugin-astro": "^0.12.1"
