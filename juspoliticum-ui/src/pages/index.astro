@@ -5,17 +5,17 @@ import NewsSection from "../components/sections/NewsSection.astro";
 import SubmitSection from "../components/sections/SubmitSection.astro";
 
 
-import { getDirectusClient } from "../utils/get-directus-client";
-import { readItems } from "@directus/sdk";
+// import { getDirectusClient } from "../utils/get-directus-client";
+// import { readItems } from "@directus/sdk";
 
 
-const directus = await getDirectusClient();
+// const directus = await getDirectusClient();
 
-const articles = await directus.request(
-  readItems("articles", {
-    fields: ["*", { author: ["*"] }],
-  }),
-);
+// const articles = await directus.request(
+//   readItems("articles", {
+//     fields: ["*", { author: ["*"] }],
+//   }),
+// );
 ---
 
 <Layout title="Droit & Philosophie.">
