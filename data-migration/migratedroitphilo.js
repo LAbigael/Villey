@@ -37,8 +37,16 @@ function getFootnotesContentFromHtml(html) {
           position: $(elem).attr("id").replace("ftn", ""),
           content: $(elem)
             .text()
-            .replace(/\[\d+\]/g, "")
+            .replace(/\[\d+\]\./g, "")
             .trim(),
+          uid: uid(),
+        };
+        footnotes.push(footnote);
+      }
+      if ($(elem).attr("class") === "footnote") {
+        const footnote = {
+          position: $(elem).find("a.footnote-anchor").text(),
+          content: $(elem).children("p").text().replace(/\d+\./g, "").trim(),
           uid: uid(),
         };
         footnotes.push(footnote);
@@ -64,13 +72,15 @@ function htmlToProsemirror(html, footnotes = []) {
   const parsedHTML = DOMParser.fromSchema(pmSchema.schema)
     .parse(document, { preserveWhitespace: true })
     .toJSON();
-  var json = JSON.stringify(parsedHTML);
-  modifyJsonToMatchTiptapSchema(json, footnotes);
-  return json;
+  const prosemirrorJson = modifyJsonToMatchTiptapSchema(
+    JSON.stringify(parsedHTML),
+    footnotes
+  );
+  return prosemirrorJson;
 }
 
 const modifyJsonToMatchTiptapSchema = (json, footnotes = []) => {
-  const jsonWithFootnotes = JSON.parse(json);
+  const jsonParsed = JSON.parse(json);
 
   const replaceWithTiptapMarks = (node) => {
     if (node.marks) {
@@ -87,12 +97,18 @@ const modifyJsonToMatchTiptapSchema = (json, footnotes = []) => {
         }
 
         function replaceLinkithFootnote() {
-          const footnoteNumber = mark.attrs.href.replace("#_ftn", "");
+          // extract footnote number from href (ex: #_ftn1 or #footnote-1250-1)
+          const footnoteNumber = mark.attrs.href.match(/(\d+)$/)?.[1];
+          if (!footnoteNumber) {
+            // normal link
+            return
+          }
+
           const footnote = footnotes.find((f) => f.position === footnoteNumber);
           if (footnote) {
             mark.type = "footnote";
             mark.attrs = { id: footnote.uid };
-          }
+          } 
         }
       });
     }
@@ -102,9 +118,9 @@ const modifyJsonToMatchTiptapSchema = (json, footnotes = []) => {
     }
   };
 
-  jsonWithFootnotes.content.forEach((node) => replaceWithTiptapMarks(node));
+  jsonParsed.content.forEach((node) => replaceWithTiptapMarks(node));
 
-  return JSON.stringify(jsonWithFootnotes);
+  return JSON.stringify(jsonParsed);
 };
 
 const migrateArticles = async (fetchArticles, type) => {
@@ -113,12 +129,7 @@ const migrateArticles = async (fetchArticles, type) => {
     articles.map(async (article) => {
       try {
         const footnotes = getFootnotesContentFromHtml(article.footnotes);
-        let articleContent = htmlToProsemirror(article.contenu, footnotes);
-
-        articleContent = modifyJsonToMatchTiptapSchema(
-          articleContent,
-          footnotes
-        );
+        const articleContent = htmlToProsemirror(article.contenu, footnotes);
 
         const articleEntity = {
           id: article.id,
@@ -187,7 +198,7 @@ const migrateVolumes = async () => {
       await dp_new("Volumes").insert({
         id: volume.id,
         title: volume.titre,
-        published_at: volume.published_at,
+        published_at: volume.published,
         number: volume.number,
         active: volume.active,
       });
