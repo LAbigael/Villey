@@ -4,6 +4,7 @@ CREATE TABLE `Volumes` (
   `title` varchar(255),
   `published_at` timestamp,
   `active` boolean,
+  `slug` varchar(255),
   `created_at` timestamp,
   `updated_at` timestamp
 );
@@ -20,6 +21,11 @@ CREATE TABLE `VolumeSections` (
   `id` integer PRIMARY KEY AUTO_INCREMENT,
   `volume_id` integer,
   `title` varchar(255),
+  `active` boolean,
+  `slug` varchar(255),
+  `varchar` text,
+  `position` integer,
+  `summary` text,
   `created_at` timestamp,
   `updated_at` timestamp
 );
@@ -49,24 +55,42 @@ CREATE TABLE `Users` (
 CREATE TABLE `Authors` (
   `id` integer PRIMARY KEY AUTO_INCREMENT,
   `fullname` varchar(255),
-  `bio` text,
+  `slug` text,
   `updated_at` timestamp,
   `created_at` timestamp
+);
+
+CREATE TABLE `ArticleAuthors` (
+  `id` integer PRIMARY KEY AUTO_INCREMENT,
+  `article_id` integer,
+  `author_id` integer,
+  `created_at` timestamp,
+  `updated_at` timestamp
 );
 
 CREATE TABLE `Articles` (
   `id` integer PRIMARY KEY AUTO_INCREMENT,
   `section_id` integer,
-  `title` varchar(255),
-  `summary` text,
+  `title` varchar(500),
+  `subtitle` varchar(1000),
+  `summary_fr` text,
+  `summary_de` text,
+  `summary_en` text,
   `slug` varchar(255),
   `citation` text COMMENT 'text to quote the article',
   `type` ENUM ('recension', 'article'),
   `active` boolean,
   `position` integer,
   `state_id` integer,
-  `file_id` integer,
   `author_id` integer,
+  `updated_at` timestamp,
+  `created_at` timestamp
+);
+
+CREATE TABLE `ArticleFiles` (
+  `id` integer PRIMARY KEY AUTO_INCREMENT,
+  `file_id` integer,
+  `article_id` integer,
   `updated_at` timestamp,
   `created_at` timestamp
 );
@@ -92,6 +116,7 @@ CREATE TABLE `Abstracts` (
 CREATE TABLE `Themes` (
   `id` integer PRIMARY KEY AUTO_INCREMENT,
   `name` varchar(255),
+  `slug` varchar(255),
   `updated_at` timestamp,
   `created_at` timestamp
 );
@@ -152,7 +177,10 @@ CREATE TABLE `Reports` (
 
 CREATE TABLE `Files` (
   `id` integer PRIMARY KEY AUTO_INCREMENT,
-  `url` varchar(255),
+  `filename` varchar(255),
+  `name` varchar(255),
+  `type` ENUM ('AUDIO', 'VIDEO', 'IMAGE', 'DOCUMENT', 'AUTRE'),
+  `active` boolean,
   `updated_at` timestamp,
   `created_at` timestamp
 );
@@ -170,13 +198,19 @@ ALTER TABLE `UserRoles` ADD FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`);
 
 ALTER TABLE `UserRoles` ADD FOREIGN KEY (`role_id`) REFERENCES `Roles` (`id`);
 
+ALTER TABLE `ArticleAuthors` ADD FOREIGN KEY (`article_id`) REFERENCES `Articles` (`id`);
+
+ALTER TABLE `ArticleAuthors` ADD FOREIGN KEY (`author_id`) REFERENCES `Authors` (`id`);
+
 ALTER TABLE `Articles` ADD FOREIGN KEY (`section_id`) REFERENCES `VolumeSections` (`id`);
 
 ALTER TABLE `Articles` ADD FOREIGN KEY (`state_id`) REFERENCES `States` (`id`);
 
-ALTER TABLE `Articles` ADD FOREIGN KEY (`file_id`) REFERENCES `Files` (`id`);
-
 ALTER TABLE `Articles` ADD FOREIGN KEY (`author_id`) REFERENCES `Authors` (`id`);
+
+ALTER TABLE `ArticleFiles` ADD FOREIGN KEY (`file_id`) REFERENCES `Files` (`id`);
+
+ALTER TABLE `ArticleFiles` ADD FOREIGN KEY (`article_id`) REFERENCES `Articles` (`id`);
 
 ALTER TABLE `ArticleContents` ADD FOREIGN KEY (`article_id`) REFERENCES `Articles` (`id`);
 
