@@ -79,7 +79,8 @@ const modifyJsonToMatchTiptapSchema = (json, footnotes = []) => {
           if (mark.type === "link" && mark.attrs.href) {
             replaceLinkithFootnote();
           }
-        } else if (mark.type === "em") {
+        }
+        if (mark.type === "em") {
           mark.type = "italic";
         } else if (mark.type === "strong") {
           mark.type = "bold";
