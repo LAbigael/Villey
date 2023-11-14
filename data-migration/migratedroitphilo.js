@@ -54,7 +54,7 @@ function getFootnotesContentFromHtml(html) {
 // <p class="JPNdBP"><a style="mso-footnote-id: ftn1;" title="" href="#_ftnref1" name="_ftn1"><span class="MsoFootnoteReference">*</span></a> Je tiens sinc&egrave;rement &agrave; remercier Madame &Eacute;lodie Djordjevic, Monsieur le professeur Denis Baranger et Monsieur Federico Colli pour leur confiance, pour leurs aimables relectures et leurs conseils avis&eacute;s sur ce texte.</p>
 // </div>
 
-function htmlToProsemirror(html) {
+function htmlToProsemirror(html, footnotes = []) {
   const $ = cheerio.load(html);
   $(".JP_citation").replaceWith(function () {
     return `<blockquote>${$(this).html()}</blockquote>`;
@@ -65,16 +65,20 @@ function htmlToProsemirror(html) {
     .parse(document, { preserveWhitespace: true })
     .toJSON();
   var json = JSON.stringify(parsedHTML);
+  modifyJsonToMatchTiptapSchema(json, footnotes);
   return json;
 }
-const modifyJsonToMatchTiptapSchema = (json, footnotes) => {
+
+const modifyJsonToMatchTiptapSchema = (json, footnotes = []) => {
   const jsonWithFootnotes = JSON.parse(json);
 
-  const replaceLinkWithFootnote = (node) => {
+  const replaceWithTiptapMarks = (node) => {
     if (node.marks) {
       node.marks.forEach((mark) => {
-        if (mark.type === "link" && mark.attrs.href) {
-          replaceLinkithFootnote();
+        if (footnotes.length > 0) {
+          if (mark.type === "link" && mark.attrs.href) {
+            replaceLinkithFootnote();
+          }
         } else if (mark.type === "em") {
           mark.type = "italic";
         } else if (mark.type === "strong") {
@@ -93,11 +97,11 @@ const modifyJsonToMatchTiptapSchema = (json, footnotes) => {
     }
 
     if (node.content) {
-      node.content.forEach((child) => replaceLinkWithFootnote(child));
+      node.content.forEach((child) => replaceWithTiptapMarks(child));
     }
   };
 
-  jsonWithFootnotes.content.forEach((node) => replaceLinkWithFootnote(node));
+  jsonWithFootnotes.content.forEach((node) => replaceWithTiptapMarks(node));
 
   return JSON.stringify(jsonWithFootnotes);
 };
@@ -107,9 +111,8 @@ const migrateArticles = async (fetchArticles, type) => {
   await Promise.all(
     articles.map(async (article) => {
       try {
-        let articleContent = htmlToProsemirror(article.contenu);
-
         const footnotes = getFootnotesContentFromHtml(article.footnotes);
+        let articleContent = htmlToProsemirror(article.contenu, footnotes);
 
         articleContent = modifyJsonToMatchTiptapSchema(
           articleContent,
