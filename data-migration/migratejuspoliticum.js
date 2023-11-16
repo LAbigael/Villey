@@ -147,6 +147,7 @@ const migrateArticles = async () => {
       updated_at: article.modified,
       active: article.active,
       position: article.position,
+      site_id : 2,
     };
 
     if (article.chapter_id) {
@@ -187,6 +188,7 @@ const migrateAuthors = async () => {
         id: author.id,
         fullname: `${author.firstname} ${author.lastname}`,
         slug: author.slug,
+        site_id: 2,
       });
     })
   );
@@ -211,6 +213,7 @@ const migrateVolumes = async () => {
         published_at: release.created,
         number: release.number,
         active: release.active,
+        site_id: 2,
       });
     })
   );
@@ -317,6 +320,7 @@ function ensureDirectoryExistence(filePath) {
   ensureDirectoryExistence(dirname);
   fs.mkdirSync(dirname);
 }
+
 const downloadFile = async (filename) => {
   // Step 1: Use fetch to download the file
   const url = `https://juspoliticum.com/uploads/${filename}`;
@@ -372,14 +376,22 @@ const migrateDocuments = async () => {
   );
 };
 
+const createSite = async () => {
+  await jp_new("Sites").insert({
+    id: 2,
+    name: "Jus Politicum",
+  });
+};
+
 const migrate = async () => {
-  // await migrateVolumes();
-  // await migrateChapters();
-  // await migrateArticles();
-  // await migrateAuthors();
-  // await migrateThemes();
+  await createSite();
+  await migrateVolumes();
+  await migrateChapters();
+  await migrateArticles();
+  await migrateAuthors();
+  await migrateThemes();
   // await migrateDocuments();
-  // await migrateArticleThemes();
+  await migrateArticleThemes();
   // await migrateArticleDocuments();
   await migrateArticleAuthors();
 };

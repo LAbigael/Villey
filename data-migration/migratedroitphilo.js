@@ -1,4 +1,5 @@
 const cheerio = require("cheerio");
+const slugify = require("slugify");
 const { uid } = require("uid");
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
@@ -22,9 +23,17 @@ const dp_new = require("knex")({
     port: 3306,
     user: "root",
     password: "password",
-    database: "droitphilosophie_new",
+    database: "juspoliticum_new",
   },
 });
+
+const idMapping = {
+  author: {},
+  volume: {},
+  chapter: {},
+  article: {},
+  recension: {},
+};
 
 function getFootnotesContentFromHtml(html) {
   const $ = cheerio.load(html);
@@ -101,14 +110,14 @@ const modifyJsonToMatchTiptapSchema = (json, footnotes = []) => {
           const footnoteNumber = mark.attrs.href.match(/(\d+)$/)?.[1];
           if (!footnoteNumber) {
             // normal link
-            return
+            return;
           }
 
           const footnote = footnotes.find((f) => f.position === footnoteNumber);
           if (footnote) {
             mark.type = "footnote";
             mark.attrs = { id: footnote.uid };
-          } 
+          }
         }
       });
     }
@@ -132,33 +141,37 @@ const migrateArticles = async (fetchArticles, type) => {
         const articleContent = htmlToProsemirror(article.contenu, footnotes);
 
         const articleEntity = {
-          id: article.id,
           slug: article.slug,
           title: cheerio.load(article.titre).text(),
-          summary: htmlToProsemirror(article.resume),
+          summary_fr: htmlToProsemirror(article.resume),
           type: type || "article",
           active: article.active,
-          author_id: article.auteur_id,
           position: article.position,
+          site_id: 1,
         };
 
         if (article.chapitre_id) {
-          articleEntity.section_id = article.chapitre_id;
+          articleEntity.section_id = idMapping.chapter[article.chapitre_id];
         }
 
-        const newArticle = await dp_new("Articles").insert(articleEntity);
+        const [newArticleId] = await dp_new("Articles").insert(articleEntity);
 
         await dp_new("ArticleContents").insert({
-          article_id: newArticle[0],
+          article_id: newArticleId,
           content: articleContent,
           version: 1,
+        });
+
+        await dp_new("ArticleAuthors").insert({
+          article_id: newArticleId,
+          author_id: idMapping.author[article.auteur_id],
         });
 
         await Promise.all(
           footnotes.map(async (footnote) => {
             await dp_new("Footnotes").insert({
               ...footnote,
-              article_id: newArticle[0],
+              article_id: newArticleId,
             });
           })
         );
@@ -175,11 +188,13 @@ const migrateAuthors = async () => {
 
   await Promise.all(
     authors.map(async (author) => {
-      await dp_new("Authors").insert({
-        id: author.id,
+      const [newId] = await dp_new("Authors").insert({
         fullname: author.nom,
+        slug: slugify(author.nom, { lower: true }),
         bio: htmlToProsemirror(author.biographie),
+        site_id: 1,
       });
+      idMapping.author[author.id] = newId;
     })
   );
 };
@@ -195,13 +210,15 @@ const migrateVolumes = async () => {
 
   await Promise.all(
     volumes.map(async (volume) => {
-      await dp_new("Volumes").insert({
-        id: volume.id,
+      const [newId] = await dp_new("Volumes").insert({
         title: volume.titre,
         published_at: volume.published,
         number: volume.number,
+        slug: slugify(volume.title, { lower: true }),
         active: volume.active,
+        site_id: 1,
       });
+      idMapping.volume[volume.id] = newId;
     })
   );
 };
@@ -222,6 +239,7 @@ const migrateVolumeReleases = async () => {
         summary: htmlToProsemirror(release.summary_fr),
         published_at: release.published,
         number: release.number,
+        site_id: 1,
       });
     })
   );
@@ -233,11 +251,11 @@ const migrateChapters = async () => {
   await Promise.all(
     chapters.map(async (chapter) => {
       try {
-        await dp_new("VolumeSections").insert({
-          id: chapter.id,
+        const [id] = await dp_new("VolumeSections").insert({
           title: chapter.titre,
-          volume_id: chapter.volume_id,
+          volume_id: idMapping.volume[chapter.volume_id],
         });
+        idMapping.chapter[chapter.id] = id;
       } catch (e) {
         console.log(e);
       }
@@ -274,8 +292,15 @@ const fetchRecensions = async () => {
   );
   return recensions;
 };
+const createSite = async () => {
+  await dp_new("Sites").insert({
+    id: 1,
+    name: "Droit philosophie",
+  });
+};
 
 const migrate = async () => {
+  await createSite();
   await migrateAuthors();
   await migrateVolumes();
   await migrateVolumeReleases();
