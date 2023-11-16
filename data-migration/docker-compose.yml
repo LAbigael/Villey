@@ -27,7 +27,7 @@ services:
     depends_on:
       - juspoliticum_old
     ports:
-      - 8081:80
+      - 8082:80
 
 
 
