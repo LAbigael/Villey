@@ -4,8 +4,8 @@
 MYSQL_CONTAINER_NAME="juspoliticum_old"
 MYSQL_USERNAME="root"
 MYSQL_PASSWORD="password"
-MYSQL_DATABASE="droitphilosophie_new"
-SQL_SCRIPT_PATH="new_db_schema_dp.sql"
+MYSQL_DATABASE="juspoliticum_new"
+SQL_SCRIPT_PATH="new_db_schema_jp.sql"
 
 
 # Disable foreign key checks

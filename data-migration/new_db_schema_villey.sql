@@ -1,3 +1,8 @@
+CREATE TABLE `Sites` (
+  `id` integer PRIMARY KEY AUTO_INCREMENT,
+  `name` varchar(255)
+);
+
 CREATE TABLE `Volumes` (
   `id` integer PRIMARY KEY AUTO_INCREMENT,
   `number` integer,
@@ -5,6 +10,7 @@ CREATE TABLE `Volumes` (
   `published_at` timestamp,
   `active` boolean,
   `slug` varchar(255),
+  `site_id` integer,
   `created_at` timestamp,
   `updated_at` timestamp
 );
@@ -14,7 +20,9 @@ CREATE TABLE `VolumeReleases` (
   `published_at` timestamp,
   `summary` longtext,
   `title` varchar(255),
-  `number` integer
+  `number` integer,
+  `site_id` integer,
+  `volume_id` integer
 );
 
 CREATE TABLE `VolumeSections` (
@@ -26,19 +34,6 @@ CREATE TABLE `VolumeSections` (
   `varchar` text,
   `position` integer,
   `summary` text,
-  `created_at` timestamp,
-  `updated_at` timestamp
-);
-
-CREATE TABLE `Roles` (
-  `id` integer PRIMARY KEY AUTO_INCREMENT,
-  `name` varchar(255)
-);
-
-CREATE TABLE `UserRoles` (
-  `id` integer PRIMARY KEY AUTO_INCREMENT,
-  `user_id` integer,
-  `role_id` integer,
   `created_at` timestamp,
   `updated_at` timestamp
 );
@@ -55,7 +50,9 @@ CREATE TABLE `Users` (
 CREATE TABLE `Authors` (
   `id` integer PRIMARY KEY AUTO_INCREMENT,
   `fullname` varchar(255),
-  `slug` text,
+  `slug` varchar(255),
+  `bio` text,
+  `site_id` integer,
   `updated_at` timestamp,
   `created_at` timestamp
 );
@@ -83,6 +80,7 @@ CREATE TABLE `Articles` (
   `position` integer,
   `state_id` integer,
   `author_id` integer,
+  `site_id` integer,
   `updated_at` timestamp,
   `created_at` timestamp
 );
@@ -117,6 +115,7 @@ CREATE TABLE `Themes` (
   `id` integer PRIMARY KEY AUTO_INCREMENT,
   `name` varchar(255),
   `slug` varchar(255),
+  `site_id` integer,
   `updated_at` timestamp,
   `created_at` timestamp
 );
@@ -192,11 +191,15 @@ CREATE TABLE `States` (
   `created_at` timestamp
 );
 
+ALTER TABLE `Volumes` ADD FOREIGN KEY (`site_id`) REFERENCES `Sites` (`id`);
+
+ALTER TABLE `VolumeReleases` ADD FOREIGN KEY (`site_id`) REFERENCES `Sites` (`id`);
+
+ALTER TABLE `VolumeReleases` ADD FOREIGN KEY (`volume_id`) REFERENCES `Volumes` (`id`);
+
 ALTER TABLE `VolumeSections` ADD FOREIGN KEY (`volume_id`) REFERENCES `Volumes` (`id`);
 
-ALTER TABLE `UserRoles` ADD FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`);
-
-ALTER TABLE `UserRoles` ADD FOREIGN KEY (`role_id`) REFERENCES `Roles` (`id`);
+ALTER TABLE `Authors` ADD FOREIGN KEY (`site_id`) REFERENCES `Sites` (`id`);
 
 ALTER TABLE `ArticleAuthors` ADD FOREIGN KEY (`article_id`) REFERENCES `Articles` (`id`);
 
@@ -208,6 +211,8 @@ ALTER TABLE `Articles` ADD FOREIGN KEY (`state_id`) REFERENCES `States` (`id`);
 
 ALTER TABLE `Articles` ADD FOREIGN KEY (`author_id`) REFERENCES `Authors` (`id`);
 
+ALTER TABLE `Articles` ADD FOREIGN KEY (`site_id`) REFERENCES `Sites` (`id`);
+
 ALTER TABLE `ArticleFiles` ADD FOREIGN KEY (`file_id`) REFERENCES `Files` (`id`);
 
 ALTER TABLE `ArticleFiles` ADD FOREIGN KEY (`article_id`) REFERENCES `Articles` (`id`);
@@ -215,6 +220,8 @@ ALTER TABLE `ArticleFiles` ADD FOREIGN KEY (`article_id`) REFERENCES `Articles` 
 ALTER TABLE `ArticleContents` ADD FOREIGN KEY (`article_id`) REFERENCES `Articles` (`id`);
 
 ALTER TABLE `Abstracts` ADD FOREIGN KEY (`article_id`) REFERENCES `Articles` (`id`);
+
+ALTER TABLE `Themes` ADD FOREIGN KEY (`site_id`) REFERENCES `Sites` (`id`);
 
 ALTER TABLE `ArticleThemes` ADD FOREIGN KEY (`article_id`) REFERENCES `Articles` (`id`);
 
