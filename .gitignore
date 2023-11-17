@@ -4,3 +4,5 @@ data-migration/droitphilosophie_new.sql
 data-migration/juspoliticum_new.sql
 data-migration/villey_db.sql
 *node_modules/*
+.env
+.DS_store
