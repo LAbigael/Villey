@@ -5,7 +5,8 @@ volumes:
 
 services:
   directus:
-    image: directus/directus:10.7.2
+    build: 
+      context: ./directus
     ports:
       - 8055:8055
     volumes:
@@ -14,25 +15,26 @@ services:
       - ./directus/extensions:/directus/extensions
     # entrypoint: docker-entrypoint.sh  
     env_file:
-      - .env.dev
-  droitphilosophie-ui:
-    build: droitphilosophie-ui
-    image: droitphilosophie-ui
-    restart: "no"
-    volumes:
-      - ./droitphilosophie-ui/:/app
-      - ./droitphilosophie-ui/node_modules:/app/node_modules
-    ports:
-      - "4321:4321"
-    depends_on:
-      - directus
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    environment:
-      MYSQL_ROOT_PASSWORD: password
-      UPLOAD_LIMIT: 256M
-      PMA_ARBITRARY: 1
-    restart: always
-    ports:
-      - 8081:80
+      - ./directus/.env.dev
+    working_dir: /directus
+  # droitphilosophie-ui:
+  #   build: droitphilosophie-ui
+  #   image: droitphilosophie-ui
+  #   restart: "no"
+  #   volumes:
+  #     - ./droitphilosophie-ui/:/app
+  #     - ./droitphilosophie-ui/node_modules:/app/node_modules
+  #   ports:
+  #     - "4321:4321"
+  #   depends_on:
+  #     - directus
+  # phpmyadmin:
+  #   image: phpmyadmin/phpmyadmin
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: password
+  #     UPLOAD_LIMIT: 256M
+  #     PMA_ARBITRARY: 1
+  #   restart: always
+  #   ports:
+  #     - 8081:80
 
