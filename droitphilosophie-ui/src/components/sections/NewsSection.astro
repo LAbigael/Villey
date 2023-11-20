@@ -8,8 +8,8 @@ import { readItems } from "@directus/sdk";
 const directus = await getDirectusClient();
 
 const articles = await directus.request(
-  readItems("articles", {
-    fields: ["*", { author: ["*"] }],
+  readItems("Articles", {
+    fields: ["*"],
   }),
 );
 ---
