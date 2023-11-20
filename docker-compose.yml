@@ -17,24 +17,24 @@ services:
     env_file:
       - ./directus/.env.dev
     working_dir: /directus
-  # droitphilosophie-ui:
-  #   build: droitphilosophie-ui
-  #   image: droitphilosophie-ui
-  #   restart: "no"
-  #   volumes:
-  #     - ./droitphilosophie-ui/:/app
-  #     - ./droitphilosophie-ui/node_modules:/app/node_modules
-  #   ports:
-  #     - "4321:4321"
-  #   depends_on:
-  #     - directus
-  # phpmyadmin:
-  #   image: phpmyadmin/phpmyadmin
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: password
-  #     UPLOAD_LIMIT: 256M
-  #     PMA_ARBITRARY: 1
-  #   restart: always
-  #   ports:
-  #     - 8081:80
+  droitphilosophie-ui:
+    build: droitphilosophie-ui
+    image: droitphilosophie-ui
+    restart: "no"
+    volumes:
+      - ./droitphilosophie-ui/:/app
+      - ./droitphilosophie-ui/node_modules:/app/node_modules
+    ports:
+      - "4321:4321"
+    depends_on:
+      - directus
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      UPLOAD_LIMIT: 256M
+      PMA_ARBITRARY: 1
+    restart: always
+    ports:
+      - 8081:80
 
