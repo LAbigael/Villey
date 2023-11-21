@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Linux Libertine";
+  src:  url('/fonts/Linux Libertine.woff') format('woff');
+}
+
 @layer base {
   html {
     --accent: 43, 67, 89; /* darkblue */
@@ -20,7 +25,7 @@
     );
 
     /* font-family:  serif; */
-
+    /* font-family: "Linux Libertine";  */
     font-family: "Cormorant Variable", serif;
     /* font-family: "Montserrat Variable",  sans-serif; */
 
@@ -43,6 +48,7 @@
 h3 {
   font-weight: 600;
   font-size: 1.5rem;
+
 }
 h5 {
   font-weight: 500;
