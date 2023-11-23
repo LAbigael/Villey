@@ -31,7 +31,12 @@
 		"add": "directus-extension add"
 	},
 	"devDependencies": {
-		"@directus/extensions-sdk": "10.2.0",
+		"@directus/extensions-sdk": "^10.1.0",
 		"vue": "^3.3.8"
+	},
+	"dependencies": {
+		"@tiptap/starter-kit": "^2.1.12",
+		"@tiptap/vue-3": "^2.1.12",
+		"tiptap-extension-footnote": "^1.0.1"
 	}
 }
