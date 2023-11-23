@@ -1,9 +1,6 @@
 <template>
-  <button
-    @click="editor.chain().focus().insertContent({ type: 'footnote' }).run()"
-  >
-    insert footnote
-  </button>
+  <Bold />
+  <span>titu</span>
   <editor-content class="content" :editor="editor" />
   <button @click="save">save</button>
 </template>
@@ -13,10 +10,14 @@ import { useEditor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 import Footnote from "tiptap-extension-footnote";
 import { watch } from "vue";
+import "./style.css";
+import Bold from "../icons/bold.vue";
+import ToolbarGroup from "./components/ToolbarGroup.vue";
 
 export default {
   components: {
     EditorContent,
+    ToolbarGroup,
   },
 
   props: {
@@ -27,11 +28,9 @@ export default {
   },
   emits: ["input"],
   setup(props, { emit }) {
-    console.log(JSON.stringify(props));
     const editor = useEditor({
       extensions: [StarterKit, Footnote],
       onUpdate: ({ editor }) => {
-        console.log("update");
         emit("input", editor.getJSON());
       },
     });
@@ -41,8 +40,6 @@ export default {
       (value) => {
         if (value) {
           editor.value?.commands.setContent(value);
-          console.log(unwatch);
-
           unwatch();
         }
       }
@@ -71,12 +68,15 @@ footnote::after {
   font-size: 75%;
   counter-increment: footnote;
 }
+
 .ProseMirror-hideselection .footnote-tooltip *::selection {
   background-color: transparent;
 }
+
 .ProseMirror-hideselection .footnote-tooltip *::-moz-selection {
   background-color: transparent;
 }
+
 .footnote-tooltip {
   color: #333;
   cursor: auto;
@@ -88,6 +88,7 @@ footnote::after {
   border-radius: 2px;
   width: 500px;
 }
+
 .footnote-tooltip::before {
   border: 5px solid silver;
   border-top-width: 0px;

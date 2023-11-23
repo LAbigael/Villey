@@ -2,7 +2,7 @@
 	"name": "directus-extension-tiptap",
 	"version": "1.0.0",
 	"type": "module",
-	"description": "Please enter a description for your extension",
+	"description": "This extension provide a rich text editor for Directus using tiptap v2",
 	"icon": "extension",
 	"directus:extension": {
 		"host": "^10.2.0",
@@ -32,9 +32,21 @@
 	},
 	"devDependencies": {
 		"@directus/extensions-sdk": "^10.1.0",
+		"autoprefixer": "^10.4.16",
+		"postcss": "^8.4.31",
+		"tailwindcss": "^3.3.5",
 		"vue": "^3.3.8"
 	},
 	"dependencies": {
+		"@tiptap/extension-blockquote": "^2.1.12",
+		"@tiptap/extension-character-count": "^2.1.12",
+		"@tiptap/extension-hard-break": "^2.1.12",
+		"@tiptap/extension-horizontal-rule": "^2.1.12",
+		"@tiptap/extension-image": "^2.1.12",
+		"@tiptap/extension-link": "^2.1.12",
+		"@tiptap/extension-strike": "^2.1.12",
+		"@tiptap/extension-text-align": "^2.1.12",
+		"@tiptap/extension-underline": "^2.1.12",
 		"@tiptap/starter-kit": "^2.1.12",
 		"@tiptap/vue-3": "^2.1.12",
 		"tiptap-extension-footnote": "^1.0.1"
