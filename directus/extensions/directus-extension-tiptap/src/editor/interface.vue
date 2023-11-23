@@ -1,6 +1,12 @@
 <template>
-  <Bold />
-  <span>titu</span>
+  <button
+    @click="editor.chain().focus().toggleBold().run()"
+    :active="editor?.isActive('bold')"
+    class="button active"
+    v-bind:class="{ active: editor?.isActive('bold') }"
+  >
+    <Bold />
+  </button>
   <editor-content class="content" :editor="editor" />
   <button @click="save">save</button>
 </template>
@@ -12,12 +18,11 @@ import Footnote from "tiptap-extension-footnote";
 import { watch } from "vue";
 import "./style.css";
 import Bold from "../icons/bold.vue";
-import ToolbarGroup from "./components/ToolbarGroup.vue";
 
 export default {
   components: {
     EditorContent,
-    ToolbarGroup,
+    Bold,
   },
 
   props: {
@@ -100,5 +105,25 @@ footnote::after {
   content: " ";
   height: 0;
   width: 0;
+}
+
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+button.active {
+  background-color: #aaa;
 }
 </style>
