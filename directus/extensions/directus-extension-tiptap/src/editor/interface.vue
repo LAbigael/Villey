@@ -1,14 +1,75 @@
 <template>
-  <button
-    @click="editor.chain().focus().toggleBold().run()"
-    :active="editor?.isActive('bold')"
-    class="button active"
-    v-bind:class="{ active: editor?.isActive('bold') }"
-  >
-    <Bold />
-  </button>
-  <editor-content class="content" :editor="editor" />
-  <button @click="save">save</button>
+  <div class="rounded-lg border border-white">
+    <Toolbar>
+      <ToolbarButton
+        @click="editor.chain().focus().toggleBold().run()"
+        :label="bold"
+        :isActive="isActive('bold')"
+      >
+        <BoldIcon />
+      </ToolbarButton>
+      <ToolbarButton
+        @click="editor.chain().focus().toggleItalic().run()"
+        :label="italic"
+        :isActive="isActive('italic')"
+      >
+        <ItalicIcon />
+      </ToolbarButton>
+      <ToolbarButton
+        @click="editor.chain().focus().toggleBlockquote().run()"
+        :label="blockquote"
+        :isActive="isActive('blockquote')"
+      >
+        <BlockquoteIcon />
+      </ToolbarButton>
+      <ToolbarButton
+        @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
+        :label="h1"
+        :isActive="isActive('heading', { level: 1 })"
+      >
+        <H1Icon />
+      </ToolbarButton>
+      <ToolbarButton
+        @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
+        :label="h2"
+        :isActive="isActive('heading', { level: 2 })"
+      >
+        <H2Icon />
+      </ToolbarButton>
+      <ToolbarButton
+        @click="editor.chain().focus().toggleHeading({ level: 3 }).run()"
+        :label="h3"
+        :isActive="isActive('heading', { level: 3 })"
+      >
+        <H3Icon />
+      </ToolbarButton>
+      <ToolbarButton
+        @click="
+          editor.chain().focus().insertContent({ type: 'footnote' }).run()
+        "
+        :label="footnote"
+        :isActive="isActive('footnote')"
+      >
+        <FootnoteIcon />
+      </ToolbarButton>
+      <ToolbarButton
+        @click="editor.chain().focus().unsetAllMarks().run()"
+        :label="clearFormatting"
+      >
+        <ClearFormattingIcon />
+      </ToolbarButton>
+      <ToolbarButton @click="setLink()" :label="link">
+        <LinkIcon />
+      </ToolbarButton>
+      <ToolbarButton @click="editor.chain().focus().undo().run()" :label="undo">
+        <UndoIcon />
+      </ToolbarButton>
+      <ToolbarButton @click="editor.chain().focus().redo().run()" :label="redo">
+        <RedoIcon />
+      </ToolbarButton>
+    </Toolbar>
+    <editor-content class="content" :editor="editor" />
+  </div>
 </template>
 
 <script>
@@ -17,12 +78,40 @@ import StarterKit from "@tiptap/starter-kit";
 import Footnote from "tiptap-extension-footnote";
 import { watch } from "vue";
 import "./style.css";
-import Bold from "../icons/bold.vue";
+import BoldIcon from "../icons/bold.vue";
+import ItalicIcon from "../icons/italic.vue";
+import BlockquoteIcon from "../icons/quote-text.vue";
+import FootnoteIcon from "../icons/footnote.vue";
+import ClearFormattingIcon from "../icons/format-clear.vue";
+import LinkIcon from "../icons/link.vue";
+import ParagraphIcon from "../icons/paragraph.vue";
+import UndoIcon from "../icons/arrow-go-back-line.vue";
+import RedoIcon from "../icons/arrow-go-forward-line.vue";
+import H1Icon from "../icons/h1.vue";
+import H2Icon from "../icons/h2.vue";
+import H3Icon from "../icons/h3.vue";
+import Toolbar from "./components/ToolbarGroup.vue";
+import ToolbarButton from "./components/ToolbarButton.vue";
+import Blockquote from "@tiptap/extension-blockquote";
+import Link from "@tiptap/extension-link";
 
 export default {
   components: {
     EditorContent,
-    Bold,
+    BoldIcon,
+    ItalicIcon,
+    BlockquoteIcon,
+    FootnoteIcon,
+    H1Icon,
+    H2Icon,
+    H3Icon,
+    ClearFormattingIcon,
+    LinkIcon,
+    ParagraphIcon,
+    UndoIcon,
+    RedoIcon,
+    Toolbar,
+    ToolbarButton,
   },
 
   props: {
@@ -34,7 +123,7 @@ export default {
   emits: ["input"],
   setup(props, { emit }) {
     const editor = useEditor({
-      extensions: [StarterKit, Footnote],
+      extensions: [StarterKit, Footnote, Blockquote, Link],
       onUpdate: ({ editor }) => {
         emit("input", editor.getJSON());
       },
@@ -49,8 +138,34 @@ export default {
         }
       }
     );
+    const isActive = (type, options) => {
+      return editor.value?.isActive(type, options);
+    };
+    function setLink() {
+      const previousUrl = this.editor.getAttributes("link").href;
+      const url = window.prompt("URL", previousUrl);
 
-    return { editor };
+      // cancelled
+      if (url === null) {
+        return;
+      }
+
+      // empty
+      if (url === "") {
+        this.editor.chain().focus().extendMarkRange("link").unsetLink().run();
+
+        return;
+      }
+
+      // update link
+      this.editor
+        .chain()
+        .focus()
+        .extendMarkRange("link")
+        .setLink({ href: url })
+        .run();
+    }
+    return { editor, isActive, setLink };
   },
 };
 </script>
@@ -59,6 +174,7 @@ export default {
 .ProseMirror {
   font-size: large;
   counter-reset: footnote;
+  padding: 10px;
 }
 
 footnote {
@@ -120,10 +236,39 @@ button {
   width: 24px;
   height: 24px;
   border-radius: 4px;
-  transition: background-color 0.3s;
+  transition: background-color 0.2s;
 }
 
 button.active {
   background-color: #aaa;
+}
+
+blockquote {
+  border-left: 2px solid #aaa;
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 10px;
+  color: #aaa;
+  font-style: italic;
+}
+
+h1 {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+h2 {
+  font-size: 1.25em;
+  font-weight: bold;
+}
+
+h3 {
+  font-size: 1.1em;
+  font-weight: bold;
+}
+
+a {
+  color: #007aff;
+  text-decoration: none;
 }
 </style>
