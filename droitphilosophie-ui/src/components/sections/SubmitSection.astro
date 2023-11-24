@@ -4,7 +4,7 @@ import villey from "../../images/villey.jpg";
 ---
 
 <div class="py-6 sm:py-8 lg:py-12">
-  <div class="sm:mx-12 sm:p-10 p-5">
+  <div class="sm:mx-12 p-5">
     <div
       class="grid gap-2 sm:grid-cols-1 md:gap-4 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5"
     >
@@ -27,7 +27,7 @@ import villey from "../../images/villey.jpg";
       </div>
       <div class="borderR px-8 col-span-2">
         <h3 class="text-xl font-semibold pb-2">Soumettez vos contributions</h3>
-        <div class="text-md text-justify">
+        <div class="text-md text-justify mb-2">
           La revue Droit & Philosophie publie chaque année un volume numérique
           puis imprimé aux éditions Dalloz, ainsi que des contenus inédits tout
           au long de l'année (articles, traductions, recensions, mémoires,
@@ -37,8 +37,24 @@ import villey from "../../images/villey.jpg";
           d'information, vous pouvez utiliser la rubrique "Contact" prévue à cet
           effet.
         </div>
+
+      
+          <button
+            type="button"
+            class="font-light text-slate-700 hover:text-white border border-slate-700 hover:bg-slate-800 focus:ring-4 focus:outline-none focus:ring-slate-300 rounded text-md px-7 py-1.5 text-center me-2 mt-2 dark:border-slate-500 dark:text-slate-500 dark:hover:text-white dark:hover:bg-slate-500 dark:focus:ring-slate-800"
+            >Contribuer à la revue</button
+          >
+       
+          <button
+            type="button"
+            class="font-light text-slate-700 hover:text-white border border-slate-700 hover:bg-slate-800 focus:ring-4 focus:outline-none focus:ring-slate-300 rounded text-md px-7 py-1.5 text-center me-2 mt-2 dark:border-slate-500 dark:text-slate-500 dark:hover:text-white dark:hover:bg-slate-500 dark:focus:ring-slate-800"
+            >Contact</button
+          >
+     
       </div>
-      <div class="col-span-2 sm:col-span-1 flex justify-between  md:inline-block max-sm:pr-10 max-sm:pl-2">
+      <div
+        class="col-span-2 sm:col-span-1 flex justify-between md:inline-block max-sm:pr-10 max-sm:pl-2"
+      >
         <div class="max-sm:min-w-fit">
           <h3 class="text-xl font-semibold pb-2">Informations</h3>
           <div class="text-md text-justify">
@@ -48,9 +64,14 @@ import villey from "../../images/villey.jpg";
           </div>
         </div>
 
-        <div class="md:flex max-md:w-32  pt-3">
+        <div class="md:flex max-md:w-32 pt-3">
           <div>
-            <Image src={villey} alt="Institut Villey" width="200" height="200" />
+            <Image
+              src={villey}
+              alt="Institut Villey"
+              width="200"
+              height="200"
+            />
           </div>
           <!-- <div> B</div> -->
         </div>

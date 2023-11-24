@@ -2,9 +2,12 @@
 import Card from "./Card.astro";
 
 const { article } = Astro.props;
-
 ---
-<div class=""> 
-<Card href="" title={article.title} body=""> </Card>
-</div>
 
+<div >
+  <Card
+    href=""
+    title={article.title}
+    body={article}
+  />
+</div>

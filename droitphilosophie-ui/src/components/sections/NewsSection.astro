@@ -8,7 +8,7 @@ const directus = await getDirectusClient();
 
 const articles = await directus.request(
   readItems("Articles", {
-    fields: ["*"],
+    fields: ["title", "authors.author_id.*"],
     sort: ['id'],
     limit: 6,
     filter: {
@@ -20,8 +20,8 @@ const articles = await directus.request(
 );
 ---
 
-<div class="py-6 sm:py-8 lg:py-12">
-  <div class="md:mx-12 sm:p-10 p-5">
+<div class="py-4  lg:py-6">
+  <div class="md:mx-12 sm:p-5 ">
     <!-- text - start -->
     <div class="mb-10 md:mb-16">
       <h2 class="mb-4 text-center text-2xl font-bold md:mb-6 lg:text-3xl">
@@ -29,7 +29,7 @@ const articles = await directus.request(
       </h2>
 
       <p class="mx-auto max-w-screen-md text-center text-gray-500 md:text-lg">
-        xxx
+        Les derniers articles publiés sur Droit & Philosophie
       </p>
     </div>
     <!-- text - end -->
