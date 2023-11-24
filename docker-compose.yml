@@ -5,8 +5,7 @@ volumes:
 
 services:
   directus:
-    build: 
-      context: ./directus
+    image: directus/directus:10.8.2
     ports:
       - 8055:8055
     volumes:
