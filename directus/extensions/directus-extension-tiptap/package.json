@@ -16,6 +16,11 @@
 				"type": "interface",
 				"name": "editor",
 				"source": "src/editor/index.js"
+			},
+			{
+				"type": "hook",
+				"name": "prosemirror-to-html",
+				"source": "src/prosemirror-to-html/index.js"
 			}
 		]
 	},
@@ -47,6 +52,7 @@
 		"@tiptap/extension-strike": "^2.1.12",
 		"@tiptap/extension-text-align": "^2.1.12",
 		"@tiptap/extension-underline": "^2.1.12",
+		"@tiptap/html": "^2.1.12",
 		"@tiptap/starter-kit": "^2.1.12",
 		"@tiptap/vue-3": "^2.1.12",
 		"tiptap-extension-footnote": "^1.0.1"
