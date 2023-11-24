@@ -6,3 +6,4 @@ data-migration/juspoliticum_new.sql
 data-migration/villey_db.sql
 *node_modules/*
 .DS_store
+dev-mariadb

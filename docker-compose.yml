@@ -2,20 +2,35 @@ version: '3'
 
 volumes:
   jp_node_modules:
+  data:
 
 services:
+  db:
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: mydatabase
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    volumes:
+      - ./dev-mariadb/directus_villey_2023-11-24_06-44-01.sql:/docker-entrypoint-initdb.d/directus_villey_2023-11-24_06-44-01.sql
+      - ./dev-mariadb:/var/lib/mysql
+    ports:
+      - 3306:3306
+
   directus:
     image: directus/directus:10.8.2
     ports:
       - 8055:8055
     volumes:
       - ./directus/uploads:/directus/uploads
-      # If you want to load extensions from the host
       - ./directus/extensions:/directus/extensions
-    # entrypoint: docker-entrypoint.sh  
     env_file:
       - ./directus/.env.dev
     working_dir: /directus
+    depends_on:
+      - db
+
   droitphilosophie-ui:
     build: droitphilosophie-ui
     image: droitphilosophie-ui
@@ -27,6 +42,7 @@ services:
       - "4321:4321"
     depends_on:
       - directus
+
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     environment:
@@ -36,4 +52,3 @@ services:
     restart: always
     ports:
       - 8081:80
-
