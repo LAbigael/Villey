@@ -1,4 +1,4 @@
-FROM directus/directus:10.8.1
+FROM directus/directus:10.8.2
 
 USER root
 RUN corepack enable
