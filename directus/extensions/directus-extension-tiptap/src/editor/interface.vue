@@ -76,6 +76,8 @@
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 import Footnote from "tiptap-extension-footnote";
+import Blockquote from "@tiptap/extension-blockquote";
+import Link from "@tiptap/extension-link";
 import { watch } from "vue";
 import "./style.css";
 import BoldIcon from "../icons/bold.vue";
@@ -92,8 +94,6 @@ import H2Icon from "../icons/h2.vue";
 import H3Icon from "../icons/h3.vue";
 import Toolbar from "./components/ToolbarGroup.vue";
 import ToolbarButton from "./components/ToolbarButton.vue";
-import Blockquote from "@tiptap/extension-blockquote";
-import Link from "@tiptap/extension-link";
 
 export default {
   components: {
@@ -177,13 +177,13 @@ export default {
   padding: 10px;
 }
 
-footnote {
+.ProseMirror footnote {
   display: inline-block;
   position: relative;
   cursor: pointer;
 }
 
-footnote::after {
+.ProseMirror footnote::after {
   content: counter(footnote);
   vertical-align: super;
   font-size: 75%;
@@ -223,7 +223,7 @@ footnote::after {
   width: 0;
 }
 
-button {
+.ProseMirror button {
   border: none;
   background: none;
   cursor: pointer;
@@ -239,11 +239,11 @@ button {
   transition: background-color 0.2s;
 }
 
-button.active {
+.ProseMirror button.active {
   background-color: #aaa;
 }
 
-blockquote {
+.ProseMirror blockquote {
   border-left: 2px solid #aaa;
   margin-left: 0;
   margin-right: 0;
@@ -252,22 +252,22 @@ blockquote {
   font-style: italic;
 }
 
-h1 {
+.ProseMirror h1 {
   font-size: 1.5em;
   font-weight: bold;
 }
 
-h2 {
+.ProseMirror h2 {
   font-size: 1.25em;
   font-weight: bold;
 }
 
-h3 {
+.ProseMirror h3 {
   font-size: 1.1em;
   font-weight: bold;
 }
 
-a {
+.ProseMirror a {
   color: #007aff;
   text-decoration: none;
 }

@@ -8,6 +8,7 @@ export default ({ filter, action }) => {
   filter("Abstracts.items.read", (items) => {
     return items.map((item) => {
       console.log("Reading !", item.test_tiptap);
+      if (!item.test_tiptap) return item;
       item.test_tiptap = generateHTML(item.test_tiptap, [
         StarterKit,
         Footnote,
