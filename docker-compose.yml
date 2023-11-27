@@ -17,6 +17,8 @@ services:
       - ./dev-mariadb:/var/lib/mysql
     ports:
       - 3306:3306
+    networks:
+      - directus-net
 
   directus:
     image: directus/directus:10.8.2
@@ -30,6 +32,8 @@ services:
     working_dir: /directus
     depends_on:
       - db
+    networks:
+      - directus-net
 
   droitphilosophie-ui:
     build: droitphilosophie-ui
@@ -42,6 +46,8 @@ services:
       - "4321:4321"
     depends_on:
       - directus
+    networks:
+      - directus-net
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
@@ -52,3 +58,9 @@ services:
     restart: always
     ports:
       - 8081:80
+    networks:
+      - directus-net
+
+networks:
+  directus-net:
+    driver: bridge
