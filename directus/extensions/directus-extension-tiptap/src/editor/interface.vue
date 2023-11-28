@@ -1,61 +1,34 @@
 <template>
   <div class="rounded-lg border border-white">
     <Toolbar>
-      <ToolbarButton
-        @click="editor.chain().focus().toggleBold().run()"
-        :label="bold"
-        :isActive="isActive('bold')"
-      >
+      <ToolbarButton @click="editor.chain().focus().toggleBold().run()" :label="bold" :isActive="isActive('bold')">
         <BoldIcon />
       </ToolbarButton>
-      <ToolbarButton
-        @click="editor.chain().focus().toggleItalic().run()"
-        :label="italic"
-        :isActive="isActive('italic')"
-      >
+      <ToolbarButton @click="editor.chain().focus().toggleItalic().run()" :label="italic" :isActive="isActive('italic')">
         <ItalicIcon />
       </ToolbarButton>
-      <ToolbarButton
-        @click="editor.chain().focus().toggleBlockquote().run()"
-        :label="blockquote"
-        :isActive="isActive('blockquote')"
-      >
+      <ToolbarButton @click="editor.chain().focus().toggleBlockquote().run()" :label="blockquote"
+        :isActive="isActive('blockquote')">
         <BlockquoteIcon />
       </ToolbarButton>
-      <ToolbarButton
-        @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
-        :label="h1"
-        :isActive="isActive('heading', { level: 1 })"
-      >
+      <ToolbarButton @click="editor.chain().focus().toggleHeading({ level: 1 }).run()" :label="h1"
+        :isActive="isActive('heading', { level: 1 })">
         <H1Icon />
       </ToolbarButton>
-      <ToolbarButton
-        @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
-        :label="h2"
-        :isActive="isActive('heading', { level: 2 })"
-      >
+      <ToolbarButton @click="editor.chain().focus().toggleHeading({ level: 2 }).run()" :label="h2"
+        :isActive="isActive('heading', { level: 2 })">
         <H2Icon />
       </ToolbarButton>
-      <ToolbarButton
-        @click="editor.chain().focus().toggleHeading({ level: 3 }).run()"
-        :label="h3"
-        :isActive="isActive('heading', { level: 3 })"
-      >
+      <ToolbarButton @click="editor.chain().focus().toggleHeading({ level: 3 }).run()" :label="h3"
+        :isActive="isActive('heading', { level: 3 })">
         <H3Icon />
       </ToolbarButton>
-      <ToolbarButton
-        @click="
-          editor.chain().focus().insertContent({ type: 'footnote' }).run()
-        "
-        :label="footnote"
-        :isActive="isActive('footnote')"
-      >
+      <ToolbarButton @click="
+        editor.chain().focus().insertContent({ type: 'footnote' }).run()
+        " :label="footnote" :isActive="isActive('footnote')">
         <FootnoteIcon />
       </ToolbarButton>
-      <ToolbarButton
-        @click="editor.chain().focus().unsetAllMarks().run()"
-        :label="clearFormatting"
-      >
+      <ToolbarButton @click="editor.chain().focus().unsetAllMarks().run()" :label="clearFormatting">
         <ClearFormattingIcon />
       </ToolbarButton>
       <ToolbarButton @click="setLink()" :label="link">
@@ -77,6 +50,7 @@ import { useEditor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 import Footnote from "tiptap-extension-footnote";
 import Blockquote from "@tiptap/extension-blockquote";
+import Hardbreak from "@tiptap/extension-hard-break";
 import Link from "@tiptap/extension-link";
 import { watch } from "vue";
 import "./style.css";
@@ -123,7 +97,7 @@ export default {
   emits: ["input"],
   setup(props, { emit }) {
     const editor = useEditor({
-      extensions: [StarterKit, Footnote, Blockquote, Link],
+      extensions: [StarterKit, Footnote, Blockquote, Link, Hardbreak],
       onUpdate: ({ editor }) => {
         emit("input", editor.getJSON());
       },

@@ -11,6 +11,10 @@ const modifyJsonToMatchTiptapSchema = (json, footnotes = []) => {
   const jsonParsed = JSON.parse(json);
 
   const replaceWithTiptapMarks = (node) => {
+    if (node.type === "hard_break") {
+      console.log("hard break found");
+      node.type = "hardBreak";
+    }
     if (node.marks) {
       node.marks.forEach((mark) => {
         if (footnotes.length > 0) {
