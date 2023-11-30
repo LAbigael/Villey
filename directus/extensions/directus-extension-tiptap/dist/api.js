@@ -24836,16 +24836,18 @@ const Link = Mark.create({
 });
 
 var e0 = ({ filter, action }) => {
-  filter("Abstracts.items.read", (items) => {
+  filter("Articles.items.read", (items) => {
     return items.map((item) => {
-      console.log("Reading !", item.test_tiptap);
-      if (!item.test_tiptap) return item;
-      item.test_tiptap = generateHTML(item.test_tiptap, [
-        StarterKit,
-        footnoteNode,
-        Blockquote,
-        Link,
-      ]);
+      const lastArticleContent =
+        item.article_contents[item.article_contents.length - 1];
+
+      if (lastArticleContent.content_bis) {
+        item.content = generateHTML(
+          lastArticleContent.content_bis,
+          [StarterKit, footnoteNode, Link]
+        );
+        delete item.article_contents;
+      }
       return item;
     });
   });
