@@ -4,11 +4,12 @@ import Actu from "../Actu.astro";
 import { getDirectusClient } from "../../utils/get-directus-client";
 import { readItems } from "@directus/sdk";
 
+
 const directus = await getDirectusClient();
 
 const articles = await directus.request(
   readItems("Articles", {
-    fields: ["title", "authors.author_id.*"],
+    fields: ["slug", "title", "authors.author_id.*"],
     sort: ['id'],
     limit: 6,
     filter: {

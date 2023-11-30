@@ -6,7 +6,7 @@ const { article } = Astro.props;
 
 <div >
   <Card
-    href=""
+    href={`/articles/${article.slug}`}
     title={article.title}
     body={article}
   />

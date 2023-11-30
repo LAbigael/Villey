@@ -1,0 +1,49 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Article from "../../components/Article.astro";
+
+import { getDirectusClient } from "../../utils/get-directus-client";
+import { readItems } from "@directus/sdk";
+
+
+export async function getStaticPaths() {
+const directus = await getDirectusClient();
+const articles = await directus.request(
+  readItems("Articles", {
+    fields: ["slug", "title", "authors.author_id.*", "article_contents.content_bis"],
+    sort: ['id'],
+    // limit: 6,
+    filter: {
+      site_id: {
+        _eq: "1",
+      },
+    },
+  }),
+);
+  return articles.map(article => ({params: {slug: article.slug}, props: { article : {...article, contents: article.article_contents}}}))
+}
+// import { getDirectusClient } from "../utils/get-directus-client";
+// import { readItems } from "@directus/sdk";
+
+
+// const directus = await getDirectusClient();
+
+// const articles = await directus.request(
+//   readItems("articles", {
+//     fields: ["*", { author: ["*"] }],
+//   }),
+// );
+const {article} = Astro.props;
+---
+
+<Layout title="Droit & Philosophie.">
+  <main class="font-light">
+    <Article article={article}></Article>
+
+    <style>
+      main {
+        margin: auto;
+      }
+    </style>
+  </main>
+</Layout>
