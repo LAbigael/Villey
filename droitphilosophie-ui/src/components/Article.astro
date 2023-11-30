@@ -1,0 +1,52 @@
+---
+const { article } = Astro.props;
+import FontSize from "./FontSize.astro"
+
+---
+
+<article>
+  <div class="article_topWrapper">
+      <h1 class="article_title">{article.title}</h1>
+      <div class="article_authors">
+        {article.authors.map(( { author_id : author } ) => (
+          <div class="article_author">
+            {author.fullname}
+          </div>
+       ))}
+      </div>
+  </div>
+  <FontSize />
+  <div class="article_content" set:html={article.content}>
+    
+
+  </div>
+</article>
+
+<style>
+
+
+  .article_topWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .article_title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+  }
+  .article_authors {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+  }
+  .article_author {
+    font-size: 1rem;
+    font-weight: 400;
+    margin: 0;
+    padding: 0;
+  }
+</style>
