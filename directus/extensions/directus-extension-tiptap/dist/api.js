@@ -22661,7 +22661,8 @@ const FootnoteView = function ({
   view,
   getPos
 }) {
-  const dom = document.createElement('footnote');
+  const dom = document.createElement('span');
+  dom.classList.add('footnote');
   let innerView;
   const open = function () {
     const tooltip = dom.appendChild(document.createElement('div'));
@@ -22791,16 +22792,41 @@ const FootnoteView = function ({
 };
 
 const footnoteNode = Node.create({
-  name: 'footnote',
-  group: 'inline',
-  content: 'inline*',
+  name: "footnote",
+  group: "inline",
+  content: "inline*",
   inline: true,
   atom: true,
-  renderHTML: function () {
-    return ['footnote', 0];
+  addAttributes() {
+    return {
+      content: {
+        default: ""
+      },
+      href: {
+        default: "#nowhere"
+      }
+    };
+  },
+  renderHTML: function ({
+    node,
+    HTMLAttributes
+  }) {
+    let nodeContent = "";
+    if (node.content.content.length > 0) {
+      nodeContent = node.content.content[0].text;
+    }
+    return ["a", mergeAttributes(HTMLAttributes, {
+      class: "footnote",
+      content: nodeContent
+    }), ""];
   },
   parseHTML: [{
-    tag: 'footnote'
+    tag: "a",
+    getAttrs: function (dom) {
+      // check if element has class "footnote"
+      if (dom.getAttribute("content")) dom.innerText = dom.getAttribute("content");
+      return dom.classList.contains("footnote") ? {} : false;
+    }
   }],
   addNodeView() {
     return ({
@@ -24838,6 +24864,7 @@ const Link = Mark.create({
 var e0 = ({ filter, action }) => {
   filter("Articles.items.read", (items) => {
     return items.map((item) => {
+      if (!item.article_contents) return item;
       const lastArticleContent =
         item.article_contents[item.article_contents.length - 1];
 

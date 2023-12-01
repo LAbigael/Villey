@@ -55,6 +55,6 @@
 		"@tiptap/html": "^2.1.12",
 		"@tiptap/starter-kit": "^2.1.12",
 		"@tiptap/vue-3": "^2.1.12",
-		"tiptap-extension-footnote": "^1.0.1"
+		"tiptap-extension-footnote": "^1.2.0"
 	}
 }
