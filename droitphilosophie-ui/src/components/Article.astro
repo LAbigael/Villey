@@ -16,14 +16,60 @@ import FontSize from "./FontSize.astro"
       </div>
   </div>
   <FontSize />
-  <div class="article_content" set:html={article.content}>
-    
-
-  </div>
+  <div class="article_content" set:html={article.content}/>
 </article>
 
-<style>
+<style is:global>
+.article_content {
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+  text-align: justify;
+  text-justify: inter-word;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  max-width: 800px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  counter-reset: footnote;
+}
 
+.article_content:first-letter {
+    float: left;
+    font-size: 45px;
+    line-height: 1;
+    font-weight: bold;
+    margin-right: 9px;
+}
+
+.footnote {
+  /* font-size: 1px;
+    letter-spacing: -1px; */
+    /* color: transparent; */
+}
+
+a.footnote::after {
+  counter-increment: footnote;
+  content: "[" counter(footnote) "]";
+
+}
+
+.article_content .footnote::after {
+  font-size: 1.3rem; /* Maintain relative font-size in browsers that support it */
+  letter-spacing: normal;
+  display: inline-block;
+  vertical-align: super;
+  font-size: 75%;
+  color: skyblue;
+}
 
   .article_topWrapper {
     display: flex;
