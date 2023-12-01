@@ -6,6 +6,7 @@ import Link from "@tiptap/extension-link";
 export default ({ filter, action }) => {
   filter("Articles.items.read", (items) => {
     return items.map((item) => {
+      if (!item.article_contents) return item;
       const lastArticleContent =
         item.article_contents[item.article_contents.length - 1];
 
