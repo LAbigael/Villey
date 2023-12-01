@@ -1,75 +1,99 @@
 ---
 const { article } = Astro.props;
-import FontSize from "./FontSize.astro"
-
+import FontSize from "./FontSize.astro";
 ---
 
-<article>
+<article class="">
   <div class="article_topWrapper">
-      <h1 class="article_title">{article.title}</h1>
-      <div class="article_authors">
-        {article.authors.map(( { author_id : author } ) => (
-          <div class="article_author">
-            {author.fullname}
-          </div>
-       ))}
-      </div>
+    <h1 class="article_title">{article.title}</h1>
+    <div class="article_authors">
+      {
+        article.authors.map(({ author_id: author }) => (
+          <div class="article_author">{author.fullname}</div>
+        ))
+      }
+    </div>
   </div>
-  <FontSize />
-  <div class="article_content" set:html={article.content}/>
+  <div class="main-content relative flex flex-row">
+    <div class="article_content" set:html={article.content} />
+    <div id="sidebar" class="sidebar">
+      <div class="sidebar__inner">
+        Cotent goes here
+        <FontSize />
+      </div>
+    </div>
+  </div>
 </article>
+<script type="text/javascript" src="/js/sticky-sidebar.js"></script>
+
+<script type="text/javascript">
+  var sidebar = new StickySidebar(".sidebar", {
+    containerSelector: ".main-content",
+    innerWrapperSelector: ".sidebar__inner",
+    topSpacing: 20,
+    bottomSpacing: 20,
+  });
+</script>
 
 <style is:global>
-.article_content {
-  font-size: 1.5rem;
-  font-weight: 400;
-  line-height: 1.5;
-  margin: 0;
-  padding: 0;
-  text-align: justify;
-  text-justify: inter-word;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  hyphens: auto;
-  margin-top: 2rem;
-  margin-bottom: 2rem;
-  max-width: 800px;
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  counter-reset: footnote;
-}
+  .article_content {
+    font-size: 1.5rem;
+    font-weight: 400;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+    text-align: justify;
+    text-justify: inter-word;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    hyphens: auto;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    max-width: 800px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    counter-reset: footnote;
+  }
+  .sidebar {
+    will-change: min-height;
+  }
 
-.article_content:first-letter {
+  .sidebar__inner {
+    transform: translate(0, 0); /* For browsers don't support translate3d. */
+    transform: translate3d(0, 0, 0);
+    will-change: position, transform;
+  }
+
+  .article_content:first-letter {
     float: left;
     font-size: 45px;
     line-height: 1;
     font-weight: bold;
     margin-right: 9px;
-}
+  }
 
-.footnote {
-  /* font-size: 1px;
+  .footnote {
+    /* font-size: 1px;
     letter-spacing: -1px; */
     /* color: transparent; */
-}
+  }
 
-a.footnote::after {
-  counter-increment: footnote;
-  content: "[" counter(footnote) "]";
+  a.footnote::after {
+    counter-increment: footnote;
+    content: "[" counter(footnote) "]";
+  }
 
-}
-
-.article_content .footnote::after {
-  font-size: 1.3rem; /* Maintain relative font-size in browsers that support it */
-  letter-spacing: normal;
-  display: inline-block;
-  vertical-align: super;
-  font-size: 75%;
-  color: skyblue;
-}
+  .article_content .footnote::after {
+    font-size: 1.3rem; /* Maintain relative font-size in browsers that support it */
+    letter-spacing: normal;
+    display: inline-block;
+    vertical-align: super;
+    font-size: 75%;
+    color: skyblue;
+  }
 
   .article_topWrapper {
     display: flex;
