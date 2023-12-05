@@ -16,10 +16,15 @@ import FontSize from "./FontSize.astro";
   </div>
   <div class="main-content relative flex flex-row">
     <div class="article_content" set:html={article.content} />
-    <div id="sidebar" class="sidebar">
+    <div id="sidebar" class="sidebar flex flex-col">
       <div class="sidebar__inner">
-        Cotent goes here
         <FontSize />
+        <div tabindex="0" class="collapse collapse-arrow bg-base-200">
+          <div class="collapse-title text-xl  font-medium">Sommaire</div>
+          <div class="collapse-content">
+            Faire le sommaire en js
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -37,24 +42,7 @@ import FontSize from "./FontSize.astro";
 
 <style is:global>
   .article_content {
-    font-size: 1.5rem;
-    font-weight: 400;
-    line-height: 1.5;
-    margin: 0;
-    padding: 0;
-    text-align: justify;
-    text-justify: inter-word;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-    hyphens: auto;
-    margin-top: 2rem;
-    margin-bottom: 2rem;
-    max-width: 800px;
-    width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-    padding-left: 1rem;
-    padding-right: 1rem;
+    @apply text-base text-justify w-2/3 max-w-3xl mx-auto leading-normal mt-8;
     counter-reset: footnote;
   }
   .sidebar {
