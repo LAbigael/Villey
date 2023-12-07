@@ -1,31 +1,27 @@
-require("dotenv").config();
-const { writeFile } = require("fs");
-const cheerio = require("cheerio");
-const { uid } = require("uid");
-const jsdom = require("jsdom");
-const { JSDOM } = jsdom;
-const { DOMParser } = require("prosemirror-model");
-const pmSchema = require("prosemirror-schema-basic");
+import dotenv from "dotenv";
+dotenv.config();
+import { writeFile } from "fs";
+import { load } from "cheerio";
+import { uid } from "uid";
+import { generateJSON } from "@tiptap/html";
+import TextStyle from "@tiptap/extension-text-style";
+import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
+import TextAlign from "@tiptap/extension-text-align";
+import FontVariant from "./tiptap-extension-font-variant.js";
+import knex from "knex";
+import { warn } from "console";
 
 const modifyJsonToMatchTiptapSchema = (json, footnotes = []) => {
   const jsonParsed = JSON.parse(json);
 
   const replaceWithTiptapMarks = (node) => {
-    if (node.type === "hard_break") {
-      console.log("hard break found");
-      node.type = "hardBreak";
-    }
     if (node.marks) {
       node.marks.forEach((mark) => {
         if (footnotes.length > 0) {
           if (mark.type === "link" && mark.attrs.href) {
             replaceLinkWithFootnote();
           }
-        }
-        if (mark.type === "em") {
-          mark.type = "italic";
-        } else if (mark.type === "strong") {
-          mark.type = "bold";
         }
 
         function replaceLinkWithFootnote() {
@@ -41,23 +37,25 @@ const modifyJsonToMatchTiptapSchema = (json, footnotes = []) => {
           if (footnote) {
             node.type = "footnote";
             // remove [1] from text
-            footnote.content = footnote.content.replace(/\[\d+\]/g, "").trim();
-            node.content = [{ type: "text", text: footnote.content }];
+            // footnote.content = footnote.content.replace(/\[\d+\]/g, "").trim();
+            node.content = JSON.parse(footnote.content);
+            node.dontParse = true;
             delete node.marks;
             delete node.text;
           } else {
-            console.log(
-              "footnote not found",
-              footnoteNumber,
-              JSON.stringify(mark)
-            );
+            // console.log("footnote not found", footnoteNumber);
           }
         }
       });
     }
 
-    if (node.content) {
+    if (node.content && !node.dontParse) {
+      if (!Array.isArray(node.content)) {
+        node.content = [node.content];
+      }
       node.content.forEach((child) => replaceWithTiptapMarks(child));
+    } else if (node.content && node.dontParse) {
+      delete node.dontParse;
     }
   };
 
@@ -67,7 +65,7 @@ const modifyJsonToMatchTiptapSchema = (json, footnotes = []) => {
 };
 
 function getFootnotesContentFromHtml(html) {
-  const $ = cheerio.load(html);
+  const $ = load(html);
   const footnotes = [];
   // TODO : handle two footnotes with id footnote-1250-1
   $("div").each(function (i, elem) {
@@ -76,10 +74,11 @@ function getFootnotesContentFromHtml(html) {
         const footnote = {
           hmtl: html,
           position: $(elem).attr("id").replace("ftn", ""),
-          content: $(elem)
-            .text()
-            .replace(/\[\d+\]\./g, "")
-            .trim(),
+          content: htmlToProsemirror($(elem).html()),
+          // content: $(elem)
+          //   .text()
+          //   .replace(/\[\d+\]\./g, "")
+          //   .trim(),
           uid: uid(),
         };
         footnotes.push(footnote);
@@ -88,11 +87,12 @@ function getFootnotesContentFromHtml(html) {
         const footnote = {
           hmtl: html,
           position: $(elem).find("a.footnote-anchor").text(),
-          content: $(elem).children("p").text().replace(/\d+\./g, "").trim(),
+          content: htmlToProsemirror($(elem).children("p").html()),
         };
         footnotes.push(footnote);
       }
     } catch (e) {
+      console.log("error parsing footnote");
       console.log(e);
     }
   });
@@ -101,18 +101,35 @@ function getFootnotesContentFromHtml(html) {
 function htmlToProsemirror(html, footnotes = []) {
   let $;
   try {
-    $ = cheerio.load(html);
+    $ = load(html);
   } catch (e) {
+    console.log(html)
     throw e;
   }
   $(".JP_citation").replaceWith(function () {
     return `<blockquote>${$(this).html()}</blockquote>`;
   });
+  $(".titre-section").replaceWith(function () {
+    return `<h3>${$(this).html()}</h3>`;
+  });
+  $(".titre-sous-section").replaceWith(function () {
+    return `<h4>${$(this).html()}</h4>`;
+  });
 
-  const { document } = new JSDOM(html).window;
-  const parsedHTML = DOMParser.fromSchema(pmSchema.schema)
-    .parse(document, { preserveWhitespace: true })
-    .toJSON();
+  const parsedHTML = generateJSON(html, [
+    StarterKit,
+    Link.extend({
+      parseHTML() {
+        return [{ tag: "a[href]" }];
+      },
+    }),
+    TextAlign.configure({
+      types: ["paragraph"],
+    }),
+    TextStyle,
+    FontVariant,
+  ]);
+
   const prosemirrorJson = modifyJsonToMatchTiptapSchema(
     JSON.stringify(parsedHTML),
     footnotes
@@ -134,7 +151,7 @@ const migrateDp = async () => {
     "chapitres.titre as chapter_name",
     "volumes.titre as volume_name",
   ];
-  const dp_old = require("knex")({
+  const dp_old = knex({
     client: "mysql",
     connection: {
       host: "127.0.0.1",
@@ -154,7 +171,7 @@ const migrateDp = async () => {
       this.on("chapitres.volume_id", "=", "volumes.id");
     });
 
-  const directus = require("knex")({
+  const directus = knex({
     client: "mysql",
     connection: {
       host: process.env.DB_HOST,
@@ -219,6 +236,7 @@ const migrateDp = async () => {
       .where("article_id", directus_article[0].id);
   }
 };
+
 const migrateJp = async () => {
   const fields = [
     "articles.id",
@@ -230,7 +248,7 @@ const migrateJp = async () => {
     "chapters.slug as chapter_name",
     "releases.slug as volume_name",
   ];
-  const jp_old = require("knex")({
+  const jp_old = knex({
     client: "mysql",
     connection: {
       host: "127.0.0.1",
@@ -248,7 +266,7 @@ const migrateJp = async () => {
     .join("releases", function () {
       this.on("chapters.release_id", "=", "releases.id");
     });
-  const directus = require("knex")({
+  const directus = knex({
     client: "mysql",
     connection: {
       host: process.env.DB_HOST,
@@ -282,16 +300,16 @@ const migrateJp = async () => {
         content_bis: articleContent,
       })
       .where("article_id", directus_article[0].id);
-
     if (directus_article.length > 1) {
       console.log("multiple articles found", directus_article);
     }
+    console.log("migration done for article", article.id);
   }
 };
-migrateJp().then(() => {
-  console.log("done migrating jp");
+// migrateJp().then(() => {
+  // console.log("done migrating jp");
   migrateDp().then(() => {
-    console.log("done migrating dp");
-    process.exit(0);
-  });
+  //   console.log("done migrating dp");
+  process.exit(0);
+  // });
 });

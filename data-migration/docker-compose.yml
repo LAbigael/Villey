@@ -1,19 +1,20 @@
-version: '3'
- 
+version: "3"
+
 services:
   juspoliticum_old:
     image: mariadb:10.3
     container_name: juspoliticum_old
+    command: --max_allowed_packet=323505856
     environment:
       MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: 'juspoliticum_old'
+      MYSQL_DATABASE: "juspoliticum_old"
     ports:
       - 33066:3306
     volumes:
       - db_data:/var/lib/mysql
       # - ./juspoliticum_old.sql:/docker-entrypoint-initdb.d/juspoliticum_old.sql
-    networks:
-      - villey_directus-net
+    # networks:
+    #   - villey_directus-net
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
@@ -30,13 +31,12 @@ services:
       - juspoliticum_old
     ports:
       - 8082:80
-    networks:
-      - villey_directus-net
+    # networks:
+    #   - villey_directus-net
 
-networks: 
-  villey_directus-net:
-    external: true
+# networks:
+#   villey_directus-net:
+#     external: true
 
 volumes:
   db_data:
-
