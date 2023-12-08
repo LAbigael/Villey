@@ -5615,7 +5615,7 @@ const classesById = Object.create(null);
 Superclass for editor selections. Every selection type should
 extend this. Should not be instantiated directly.
 */
-let Selection$1 = class Selection {
+class Selection {
     /**
     Initialize a selection with the head and anchor and ranges. If no
     ranges are given, constructs a single range across `$anchor` and
@@ -5801,8 +5801,8 @@ let Selection$1 = class Selection {
     getBookmark() {
         return TextSelection.between(this.$anchor, this.$head).getBookmark();
     }
-};
-Selection$1.prototype.visible = true;
+}
+Selection.prototype.visible = true;
 /**
 Represents a selected range in a document.
 */
@@ -5836,7 +5836,7 @@ head (the moving side) and anchor (immobile side), both of which
 point into textblock nodes. It can be empty (a regular cursor
 position).
 */
-class TextSelection extends Selection$1 {
+class TextSelection extends Selection {
     /**
     Construct a text selection between the given points.
     */
@@ -5853,7 +5853,7 @@ class TextSelection extends Selection$1 {
     map(doc, mapping) {
         let $head = doc.resolve(mapping.map(this.head));
         if (!$head.parent.inlineContent)
-            return Selection$1.near($head);
+            return Selection.near($head);
         let $anchor = doc.resolve(mapping.map(this.anchor));
         return new TextSelection($anchor.parent.inlineContent ? $anchor : $head, $head);
     }
@@ -5902,18 +5902,18 @@ class TextSelection extends Selection$1 {
         if (!bias || dPos)
             bias = dPos >= 0 ? 1 : -1;
         if (!$head.parent.inlineContent) {
-            let found = Selection$1.findFrom($head, bias, true) || Selection$1.findFrom($head, -bias, true);
+            let found = Selection.findFrom($head, bias, true) || Selection.findFrom($head, -bias, true);
             if (found)
                 $head = found.$head;
             else
-                return Selection$1.near($head, bias);
+                return Selection.near($head, bias);
         }
         if (!$anchor.parent.inlineContent) {
             if (dPos == 0) {
                 $anchor = $head;
             }
             else {
-                $anchor = (Selection$1.findFrom($anchor, -bias, true) || Selection$1.findFrom($anchor, bias, true)).$anchor;
+                $anchor = (Selection.findFrom($anchor, -bias, true) || Selection.findFrom($anchor, bias, true)).$anchor;
                 if (($anchor.pos < $head.pos) != (dPos < 0))
                     $anchor = $head;
             }
@@ -5921,7 +5921,7 @@ class TextSelection extends Selection$1 {
         return new TextSelection($anchor, $head);
     }
 }
-Selection$1.jsonID("text", TextSelection);
+Selection.jsonID("text", TextSelection);
 class TextBookmark {
     constructor(anchor, head) {
         this.anchor = anchor;
@@ -5941,7 +5941,7 @@ target of a node selection. In such a selection, `from` and `to`
 point directly before and after the selected node, `anchor` equals
 `from`, and `head` equals `to`..
 */
-class NodeSelection extends Selection$1 {
+class NodeSelection extends Selection {
     /**
     Create a node selection. Does not verify the validity of its
     argument.
@@ -5956,7 +5956,7 @@ class NodeSelection extends Selection$1 {
         let { deleted, pos } = mapping.mapResult(this.anchor);
         let $pos = doc.resolve(pos);
         if (deleted)
-            return Selection$1.near($pos);
+            return Selection.near($pos);
         return new NodeSelection($pos);
     }
     content() {
@@ -5992,7 +5992,7 @@ class NodeSelection extends Selection$1 {
     }
 }
 NodeSelection.prototype.visible = false;
-Selection$1.jsonID("node", NodeSelection);
+Selection.jsonID("node", NodeSelection);
 class NodeBookmark {
     constructor(anchor) {
         this.anchor = anchor;
@@ -6005,7 +6005,7 @@ class NodeBookmark {
         let $pos = doc.resolve(this.anchor), node = $pos.nodeAfter;
         if (node && NodeSelection.isSelectable(node))
             return new NodeSelection($pos);
-        return Selection$1.near($pos);
+        return Selection.near($pos);
     }
 }
 /**
@@ -6014,7 +6014,7 @@ A selection type that represents selecting the whole document
 there are for example leaf block nodes at the start or end of the
 document).
 */
-class AllSelection extends Selection$1 {
+class AllSelection extends Selection {
     /**
     Create an all-selection over the given document.
     */
@@ -6024,7 +6024,7 @@ class AllSelection extends Selection$1 {
     replace(tr, content = Slice.empty) {
         if (content == Slice.empty) {
             tr.delete(0, tr.doc.content.size);
-            let sel = Selection$1.atStart(tr.doc);
+            let sel = Selection.atStart(tr.doc);
             if (!sel.eq(tr.selection))
                 tr.setSelection(sel);
         }
@@ -6041,7 +6041,7 @@ class AllSelection extends Selection$1 {
     eq(other) { return other instanceof AllSelection; }
     getBookmark() { return AllBookmark; }
 }
-Selection$1.jsonID("all", AllSelection);
+Selection.jsonID("all", AllSelection);
 const AllBookmark = {
     map() { return this; },
     resolve(doc) { return new AllSelection(doc); }
@@ -6077,7 +6077,7 @@ function selectionToInsertionEnd$1(tr, startLen, bias) {
     let map = tr.mapping.maps[last], end;
     map.forEach((_from, _to, _newFrom, newTo) => { if (end == null)
         end = newTo; });
-    tr.setSelection(Selection$1.near(tr.doc.resolve(end), bias));
+    tr.setSelection(Selection.near(tr.doc.resolve(end), bias));
 }
 
 const UPDATED_SEL = 1, UPDATED_MARKS = 2, UPDATED_SCROLL = 4;
@@ -6253,7 +6253,7 @@ class Transaction extends Transform {
             }
             this.replaceRangeWith(from, to, schema.text(text, marks));
             if (!this.selection.empty)
-                this.setSelection(Selection$1.near(this.selection.$to));
+                this.setSelection(Selection.near(this.selection.$to));
             return this;
         }
     }
@@ -6312,7 +6312,7 @@ const baseFields = [
         apply(tr) { return tr.doc; }
     }),
     new FieldDesc("selection", {
-        init(config, instance) { return config.selection || Selection$1.atStart(instance.doc); },
+        init(config, instance) { return config.selection || Selection.atStart(instance.doc); },
         apply(tr) { return tr.selection; }
     }),
     new FieldDesc("storedMarks", {
@@ -6518,7 +6518,7 @@ class EditorState {
                 instance.doc = Node$1.fromJSON(config.schema, json.doc);
             }
             else if (field.name == "selection") {
-                instance.selection = Selection$1.fromJSON(instance.doc, json.selection);
+                instance.selection = Selection.fromJSON(instance.doc, json.selection);
             }
             else if (field.name == "storedMarks") {
                 if (json.storedMarks)
@@ -8926,7 +8926,7 @@ function moveSelectionBlock(state, dir) {
     let { $anchor, $head } = state.selection;
     let $side = dir > 0 ? $anchor.max($head) : $anchor.min($head);
     let $start = !$side.parent.inlineContent ? $side : $side.depth ? state.doc.resolve(dir > 0 ? $side.after() : $side.before()) : null;
-    return $start && Selection$1.findFrom($start, dir);
+    return $start && Selection.findFrom($start, dir);
 }
 function apply(view, sel) {
     view.dispatch(view.state.tr.setSelection(sel).scrollIntoView());
@@ -9200,7 +9200,7 @@ function selectVertically(view, dir, mods) {
     }
     if (!$from.parent.inlineContent) {
         let side = dir < 0 ? $from : $to;
-        let beyond = sel instanceof AllSelection ? Selection$1.near(side, dir) : Selection$1.findFrom(side, dir);
+        let beyond = sel instanceof AllSelection ? Selection.near(side, dir) : Selection.findFrom(side, dir);
         return beyond ? apply(view, beyond) : false;
     }
     return false;
@@ -9911,7 +9911,7 @@ class MouseDown {
                 // works around that.
                 (chrome && !this.view.state.selection.visible &&
                     Math.min(Math.abs(pos.pos - this.view.state.selection.from), Math.abs(pos.pos - this.view.state.selection.to)) <= 2))) {
-            updateSelection(this.view, Selection$1.near(this.view.state.doc.resolve(pos.pos)), "pointer");
+            updateSelection(this.view, Selection.near(this.view.state.doc.resolve(pos.pos)), "pointer");
             event.preventDefault();
         }
         else {
@@ -11174,7 +11174,7 @@ class DOMObserver {
         if (from < 0 && newSel && view.input.lastFocus > Date.now() - 200 &&
             Math.max(view.input.lastTouch, view.input.lastClick.time) < Date.now() - 300 &&
             selectionCollapsed(sel) && (readSel = selectionFromDOM(view)) &&
-            readSel.eq(Selection$1.near(view.state.doc.resolve(0), 1))) {
+            readSel.eq(Selection.near(view.state.doc.resolve(0), 1))) {
             view.input.lastFocus = 0;
             selectionToDOM(view);
             this.currentSelection.set(sel);
@@ -11472,7 +11472,7 @@ function readDOMChange(view, from, to, typeOver, addedNodes) {
     if (((ios && view.input.lastIOSEnter > Date.now() - 225 &&
         (!inlineChange || addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P"))) ||
         (!inlineChange && $from.pos < parse.doc.content.size && !$from.sameParent($to) &&
-            (nextSel = Selection$1.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
+            (nextSel = Selection.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
             nextSel.head == $to.pos)) &&
         view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
         view.input.lastIOSEnter = 0;
@@ -12520,7 +12520,7 @@ const joinBackward$1 = (state, dispatch, view) => {
         if (delStep && delStep.slice.size < delStep.to - delStep.from) {
             if (dispatch) {
                 let tr = state.tr.step(delStep);
-                tr.setSelection(textblockAt(before, "end") ? Selection$1.findFrom(tr.doc.resolve(tr.mapping.map($cut.pos, -1)), -1)
+                tr.setSelection(textblockAt(before, "end") ? Selection.findFrom(tr.doc.resolve(tr.mapping.map($cut.pos, -1)), -1)
                     : NodeSelection.create(tr.doc, $cut.pos - before.nodeSize));
                 dispatch(tr.scrollIntoView());
             }
@@ -12612,7 +12612,7 @@ const joinForward$1 = (state, dispatch, view) => {
         if (delStep && delStep.slice.size < delStep.to - delStep.from) {
             if (dispatch) {
                 let tr = state.tr.step(delStep);
-                tr.setSelection(textblockAt(after, "start") ? Selection$1.findFrom(tr.doc.resolve(tr.mapping.map($cut.pos)), 1)
+                tr.setSelection(textblockAt(after, "start") ? Selection.findFrom(tr.doc.resolve(tr.mapping.map($cut.pos)), 1)
                     : NodeSelection.create(tr.doc, tr.mapping.map($cut.pos)));
                 dispatch(tr.scrollIntoView());
             }
@@ -12755,7 +12755,7 @@ const exitCode$1 = (state, dispatch) => {
         return false;
     if (dispatch) {
         let pos = $head.after(), tr = state.tr.replaceWith(pos, pos, type.createAndFill());
-        tr.setSelection(Selection$1.near(tr.doc.resolve(pos), 1));
+        tr.setSelection(Selection.near(tr.doc.resolve(pos), 1));
         dispatch(tr.scrollIntoView());
     }
     return true;
@@ -12857,7 +12857,7 @@ function deleteBarrier(state, $cut, dispatch) {
         }
         return true;
     }
-    let selAfter = Selection$1.findFrom($cut, 1);
+    let selAfter = Selection.findFrom($cut, 1);
     let range = selAfter && selAfter.$from.blockRange(selAfter.$to), target = range && liftTarget(range);
     if (target != null && target >= $cut.depth) {
         if (dispatch)
@@ -14599,8 +14599,8 @@ function resolveFocusPosition(doc, position = null) {
     if (!position) {
         return null;
     }
-    const selectionAtStart = Selection$1.atStart(doc);
-    const selectionAtEnd = Selection$1.atEnd(doc);
+    const selectionAtStart = Selection.atStart(doc);
+    const selectionAtEnd = Selection.atEnd(doc);
     if (position === 'start' || position === true) {
         return selectionAtStart;
     }
@@ -14734,7 +14734,7 @@ function selectionToInsertionEnd(tr, startLen, bias) {
             end = newTo;
         }
     });
-    tr.setSelection(Selection$1.near(tr.doc.resolve(end), bias));
+    tr.setSelection(Selection.near(tr.doc.resolve(end), bias));
 }
 
 const isFragment = (nodeOrFragment) => {
@@ -16155,7 +16155,7 @@ const Keymap = Extension.create({
                 const parentPos = $anchor.pos - $anchor.parentOffset;
                 const isAtStart = (parentIsIsolating && $parentPos.parent.childCount === 1)
                     ? parentPos === $anchor.pos
-                    : Selection$1.atStart(doc).from === pos;
+                    : Selection.atStart(doc).from === pos;
                 if (!empty || !isAtStart || !parent.type.isTextblock || parent.textContent.length) {
                     return false;
                 }
@@ -16222,8 +16222,8 @@ const Keymap = Extension.create({
                         return;
                     }
                     const { empty, from, to } = oldState.selection;
-                    const allFrom = Selection$1.atStart(oldState.doc).from;
-                    const allEnd = Selection$1.atEnd(oldState.doc).to;
+                    const allFrom = Selection.atStart(oldState.doc).from;
+                    const allEnd = Selection.atEnd(oldState.doc).to;
                     const allWasSelected = from === allFrom && to === allEnd;
                     if (empty || !allWasSelected) {
                         return;
@@ -21136,7 +21136,7 @@ const ListItem$2 = Node.create({
     },
 });
 
-const TextStyle$1 = Mark.create({
+const TextStyle$2 = Mark.create({
     name: 'textStyle',
     addOptions() {
         return {
@@ -21201,7 +21201,7 @@ const BulletList = Node.create({
         return {
             toggleBulletList: () => ({ commands, chain }) => {
                 if (this.options.keepAttributes) {
-                    return chain().toggleList(this.name, this.options.itemTypeName, this.options.keepMarks).updateAttributes(ListItem$2.name, this.editor.getAttributes(TextStyle$1.name)).run();
+                    return chain().toggleList(this.name, this.options.itemTypeName, this.options.keepMarks).updateAttributes(ListItem$2.name, this.editor.getAttributes(TextStyle$2.name)).run();
                 }
                 return commands.toggleList(this.name, this.options.itemTypeName, this.options.keepMarks);
             },
@@ -21223,7 +21223,7 @@ const BulletList = Node.create({
                 type: this.type,
                 keepMarks: this.options.keepMarks,
                 keepAttributes: this.options.keepAttributes,
-                getAttributes: () => { return this.editor.getAttributes(TextStyle$1.name); },
+                getAttributes: () => { return this.editor.getAttributes(TextStyle$2.name); },
                 editor: this.editor,
             });
         }
@@ -21650,7 +21650,7 @@ const Dropcursor = Extension.create({
 Gap cursor selections are represented using this class. Its
 `$anchor` and `$head` properties both point at the cursor position.
 */
-class GapCursor extends Selection$1 {
+class GapCursor extends Selection {
     /**
     Create a gap cursor.
     */
@@ -21659,7 +21659,7 @@ class GapCursor extends Selection$1 {
     }
     map(doc, mapping) {
         let $pos = doc.resolve(mapping.map(this.head));
-        return GapCursor.valid($pos) ? new GapCursor($pos) : Selection$1.near($pos);
+        return GapCursor.valid($pos) ? new GapCursor($pos) : Selection.near($pos);
     }
     content() { return Slice.empty; }
     eq(other) {
@@ -21739,7 +21739,7 @@ class GapCursor extends Selection$1 {
 }
 GapCursor.prototype.visible = false;
 GapCursor.findFrom = GapCursor.findGapCursorFrom;
-Selection$1.jsonID("gapcursor", GapCursor);
+Selection.jsonID("gapcursor", GapCursor);
 class GapBookmark {
     constructor(pos) {
         this.pos = pos;
@@ -21749,7 +21749,7 @@ class GapBookmark {
     }
     resolve(doc) {
         let $pos = doc.resolve(this.pos);
-        return GapCursor.valid($pos) ? new GapCursor($pos) : Selection$1.near($pos);
+        return GapCursor.valid($pos) ? new GapCursor($pos) : Selection.near($pos);
     }
 }
 function closedBefore($pos) {
@@ -22881,7 +22881,7 @@ const ListItem = Node.create({
     },
 });
 
-const TextStyle = Mark.create({
+const TextStyle$1 = Mark.create({
     name: 'textStyle',
     addOptions() {
         return {
@@ -22963,7 +22963,7 @@ const OrderedList = Node.create({
         return {
             toggleOrderedList: () => ({ commands, chain }) => {
                 if (this.options.keepAttributes) {
-                    return chain().toggleList(this.name, this.options.itemTypeName, this.options.keepMarks).updateAttributes(ListItem.name, this.editor.getAttributes(TextStyle.name)).run();
+                    return chain().toggleList(this.name, this.options.itemTypeName, this.options.keepMarks).updateAttributes(ListItem.name, this.editor.getAttributes(TextStyle$1.name)).run();
                 }
                 return commands.toggleList(this.name, this.options.itemTypeName, this.options.keepMarks);
             },
@@ -22987,7 +22987,7 @@ const OrderedList = Node.create({
                 type: this.type,
                 keepMarks: this.options.keepMarks,
                 keepAttributes: this.options.keepAttributes,
-                getAttributes: match => ({ start: +match[1], ...this.editor.getAttributes(TextStyle.name) }),
+                getAttributes: match => ({ start: +match[1], ...this.editor.getAttributes(TextStyle$1.name) }),
                 joinPredicate: (match, node) => node.childCount + node.attrs.start === +match[1],
                 editor: this.editor,
             });
@@ -23169,125 +23169,187 @@ const StarterKit = Extension.create({
     },
 });
 
-const FootnoteView = function ({
-  node,
-  view,
-  getPos
-}) {
-  const dom = document.createElement('span');
-  dom.classList.add('footnote');
-  let innerView;
-  const open = function () {
-    const tooltip = dom.appendChild(document.createElement('div'));
-    tooltip.className = 'footnote-tooltip';
-    innerView = new EditorView(tooltip, {
-      state: EditorState.create({
-        doc: node,
-        plugins: [keymap({
-          // eslint-disable-next-line @typescript-eslint/unbound-method
-          'Mod-z': function () {
-            return undo(view.state, view.dispatch);
-          },
-          // eslint-disable-next-line @typescript-eslint/unbound-method
-          'Mod-y': function () {
-            return redo(view.state, view.dispatch);
+const TextStyle = Mark.create({
+    name: 'textStyle',
+    addOptions() {
+        return {
+            HTMLAttributes: {},
+        };
+    },
+    parseHTML() {
+        return [
+            {
+                tag: 'span',
+                getAttrs: element => {
+                    const hasStyles = element.hasAttribute('style');
+                    if (!hasStyles) {
+                        return false;
+                    }
+                    return {};
+                },
+            },
+        ];
+    },
+    renderHTML({ HTMLAttributes }) {
+        return ['span', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0];
+    },
+    addCommands() {
+        return {
+            removeEmptyTextStyle: () => ({ state, commands }) => {
+                const attributes = getMarkAttributes(state, this.type);
+                const hasStyles = Object.entries(attributes).some(([, value]) => !!value);
+                if (hasStyles) {
+                    return true;
+                }
+                return commands.unsetMark(this.name);
+            },
+        };
+    },
+});
+
+var IDX=256, HEX=[], SIZE=256, BUFFER;
+while (IDX--) HEX[IDX] = (IDX + 256).toString(16).substring(1);
+
+function uid(len) {
+	var i=0, tmp=(len || 11);
+	if (!BUFFER || ((IDX + tmp) > SIZE*2)) {
+		for (BUFFER='',IDX=0; i < SIZE; i++) {
+			BUFFER += HEX[Math.random() * 256 | 0];
+		}
+	}
+
+	return BUFFER.substring(IDX, IDX++ + tmp);
+}
+
+const FontVariant = Extension.create({
+  name: "font-variant",
+  addOptions() {
+    return {
+      types: ['textStyle']
+    };
+  },
+  addGlobalAttributes() {
+    return [{
+      types: this.options.types,
+      attributes: {
+        fontVariant: {
+          default: null,
+          parseHTML: element => element.style.fontVariant?.replace(/['"]+/g, ""),
+          renderHTML: attributes => {
+            if (!attributes.fontVariant) {
+              return {};
+            }
+            return {
+              style: `font-variant: ${attributes.fontVariant}`
+            };
           }
-        })]
-      }),
-      dispatchTransaction: function (tr) {
-        const _a = this.state.applyTransaction(tr),
-          state = _a.state,
-          transactions = _a.transactions;
-        this.updateState(state);
-        if (!tr.getMeta('fromOutside')) {
-          const outerTr_1 = view.state.tr;
-          const offsetMap_1 = StepMap.offset(getPos() + 1);
-          transactions.forEach(function (transaction) {
-            transaction.steps.forEach(function (step) {
-              const newStep = step.map(offsetMap_1);
-              if (newStep) {
-                outerTr_1.step(newStep);
-              }
-            });
-          });
-          if (outerTr_1.docChanged) {
-            view.dispatch(outerTr_1);
-          }
-        }
-      },
-      handleDOMEvents: {
-        mousedown: function (view) {
-          if (innerView && view.hasFocus()) {
-            innerView.focus();
-          }
-          return false;
-        },
-        blur: function () {
-          close();
-          return false;
         }
       }
+    }];
+  },
+  addCommands() {
+    return {
+      setFontVariant: fontVariant => ({
+        chain
+      }) => {
+        return chain().setMark("textStyle", {
+          fontVariant
+        }).run();
+      },
+      unsetFontVariant: () => ({
+        chain
+      }) => {
+        return chain().setMark("textStyle", {
+          fontVariant: null
+        }).removeEmptyTextStyle().run();
+      },
+      toggleSmallCaps: () => ({
+        commands
+      }) => {
+        return commands.toggleMark("textStyle", {
+          fontVariant: "small-caps"
+        });
+      }
+    };
+  }
+});
+
+const FootnoteView = function ({
+  node,
+  editor: outerEditor,
+  getPos
+}) {
+  const dom = document.createElement("footnote");
+  let innerView = null;
+  let editor = null;
+  const open = function () {
+    const tooltip = dom.appendChild(document.createElement("div"));
+    tooltip.className = "footnote-tooltip";
+    tooltip.appendChild(document.createElement("button"));
+    tooltip.lastChild.textContent = "italic";
+    tooltip.lastChild.addEventListener("click", () => {
+      editor.chain().focus().toggleItalic().run();
     });
-    innerView.focus();
+    tooltip.appendChild(document.createElement("button"));
+    tooltip.lastChild.textContent = "smallcaps";
+    tooltip.lastChild.addEventListener("click", () => {
+      // if (editor.isActive("fontVariant", { fontVariant: "small-caps" })) {
+      //   editor.chain().focus().unsetFontVariant().run();
+      // } else {
+      editor.chain().focus().toggleSmallCaps().run();
+      // }
+    });
+    editor = new Editor$1({
+      element: tooltip,
+      extensions: [StarterKit.configure({
+        gapcursor: false,
+        dropcursor: false
+      }), FontVariant, TextStyle],
+      onCreate: function ({
+        editor
+      }) {
+        editor.commands.setContent(node.content.toJSON());
+      }
+    });
+    innerView = editor.view;
+  };
+  const setContent = editor => {
+    outerEditor.chain().setNodeSelection(getPos()).command(({
+      tr
+    }) => {
+      const newNode = outerEditor.schema.nodeFromJSON({
+        type: node.type.name,
+        attrs: {
+          ...node.attrs
+        },
+        content: editor.getJSON().content[0].content
+      });
+      tr.replaceSelectionWith(newNode);
+      return true;
+    }).run();
   };
   const close = function () {
-    if (innerView) {
-      innerView.destroy();
-      innerView = null;
+    if (!innerView) {
+      return;
     }
-    dom.textContent = '';
+    innerView.destroy();
+    innerView = null;
+    editor.destroy();
+    dom.textContent = "";
   };
   return {
-    maybeEscape(unit, dir) {
-      let {
-          state
-        } = this.cm,
-        {
-          main
-        } = state.selection;
-      if (!main.empty) return false;
-      if (unit == 'line') main = state.doc.lineAt(main.head);
-      if (dir < 0 ? main.from > 0 : main.to < state.doc.length) return false;
-      let targetPos = this.getPos() + (dir < 0 ? 0 : this.node.nodeSize);
-      let selection = Selection.near(this.view.state.doc.resolve(targetPos), dir);
-      let tr = this.view.state.tr.setSelection(selection).scrollIntoView();
-      this.view.dispatch(tr);
-      this.view.focus();
-    },
     selectNode: function () {
-      dom.classList.add('ProseMirror-selectednode');
+      dom.classList.add("ProseMirror-selectednode");
       if (!innerView) {
         open();
       }
     },
     deselectNode: function () {
-      if (innerView && !innerView.hasFocus()) {
-        dom.classList.remove('ProseMirror-selectednode');
+      if (!innerView || innerView && !innerView.hasFocus()) {
+        dom.classList.remove("ProseMirror-selectednode");
+        setContent(editor);
         close();
       }
-    },
-    update: function (newNode) {
-      if (!newNode.sameMarkup(node)) {
-        return false;
-      }
-      node = newNode;
-      if (innerView) {
-        const state = innerView.state;
-        const start = node.content.findDiffStart(state.doc.content);
-        if (start != null) {
-          // @ts-ignore
-          let _a = node.content.findDiffEnd(state.doc.content),
-            endA = _a.a,
-            endB = _a.b;
-          const overlap = start - Math.min(endA, endB);
-          if (overlap > 0) {
-            endA += overlap;
-            endB += overlap;
-          }
-          innerView.dispatch(state.tr.replace(start, endB, node.slice(start, endA)).setMeta('fromOutside', true));
-        }
-      }
-      return true;
     },
     destroy: function () {
       if (innerView) {
@@ -23300,7 +23362,8 @@ const FootnoteView = function ({
     ignoreMutation: function () {
       return true;
     },
-    dom
+    dom,
+    domContent: innerView ? innerView.dom : undefined
   };
 };
 
@@ -23312,33 +23375,21 @@ const footnoteNode = Node.create({
   atom: true,
   addAttributes() {
     return {
-      content: {
-        default: ""
-      },
-      href: {
-        default: "#nowhere"
+      uid: {
+        default: uid()
       }
     };
   },
-  renderHTML: function ({
+  renderHTML: ({
     node,
     HTMLAttributes
-  }) {
-    let nodeContent = "";
-    if (node.content.content.length > 0) {
-      nodeContent = node.content.content[0].text;
-    }
-    return ["a", mergeAttributes(HTMLAttributes, {
-      class: "footnote",
-      content: nodeContent
-    }), ""];
-  },
+  }) => ["footnote", mergeAttributes(HTMLAttributes, {
+    uid: node.attrs.uid
+  }), 0],
   parseHTML: [{
-    tag: "a",
-    getAttrs: function (dom) {
-      // check if element has class "footnote"
-      if (dom.getAttribute("content")) dom.innerText = dom.getAttribute("content");
-      return dom.classList.contains("footnote") ? {} : false;
+    tag: "footnote",
+    getAttrs: dom => {
+      dom.getAttribute("uid");
     }
   }],
   addNodeView() {
@@ -23348,7 +23399,7 @@ const footnoteNode = Node.create({
       getPos
     }) => {
       return new FootnoteView({
-        view: editor.view,
+        editor,
         node,
         getPos
       });
@@ -25374,6 +25425,57 @@ const Link = Mark.create({
     },
 });
 
+const TextAlign = Extension.create({
+    name: 'textAlign',
+    addOptions() {
+        return {
+            types: [],
+            alignments: ['left', 'center', 'right', 'justify'],
+            defaultAlignment: 'left',
+        };
+    },
+    addGlobalAttributes() {
+        return [
+            {
+                types: this.options.types,
+                attributes: {
+                    textAlign: {
+                        default: this.options.defaultAlignment,
+                        parseHTML: element => element.style.textAlign || this.options.defaultAlignment,
+                        renderHTML: attributes => {
+                            if (attributes.textAlign === this.options.defaultAlignment) {
+                                return {};
+                            }
+                            return { style: `text-align: ${attributes.textAlign}` };
+                        },
+                    },
+                },
+            },
+        ];
+    },
+    addCommands() {
+        return {
+            setTextAlign: (alignment) => ({ commands }) => {
+                if (!this.options.alignments.includes(alignment)) {
+                    return false;
+                }
+                return this.options.types.every(type => commands.updateAttributes(type, { textAlign: alignment }));
+            },
+            unsetTextAlign: () => ({ commands }) => {
+                return this.options.types.every(type => commands.resetAttributes(type, 'textAlign'));
+            },
+        };
+    },
+    addKeyboardShortcuts() {
+        return {
+            'Mod-Shift-l': () => this.editor.commands.setTextAlign('left'),
+            'Mod-Shift-e': () => this.editor.commands.setTextAlign('center'),
+            'Mod-Shift-r': () => this.editor.commands.setTextAlign('right'),
+            'Mod-Shift-j': () => this.editor.commands.setTextAlign('justify'),
+        };
+    },
+});
+
 var e=[],t=[];function n(n,r){if(n&&"undefined"!=typeof document){var a,s=!0===r.prepend?"prepend":"append",d=!0===r.singleTag,i="string"==typeof r.container?document.querySelector(r.container):document.getElementsByTagName("head")[0];if(d){var u=e.indexOf(i);-1===u&&(u=e.push(i)-1,t[u]={}),a=t[u]&&t[u][s]?t[u][s]:t[u][s]=c();}else a=c();65279===n.charCodeAt(0)&&(n=n.substring(1)),a.styleSheet?a.styleSheet.cssText+=n:a.appendChild(document.createTextNode(n));}function c(){var e=document.createElement("style");if(e.setAttribute("type","text/css"),r.attributes)for(var t=Object.keys(r.attributes),n=0;n<t.length;n++)e.setAttribute(t[n],r.attributes[t[n]]);var a="prepend"===s?"afterbegin":"beforeend";return i.insertAdjacentElement(a,e),e}}
 
 var css$1 = "/*\n! tailwindcss v3.3.5 | MIT License | https://tailwindcss.com\n*//*\n1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)\n2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)\n*/\n\n*,\n::before,\n::after {\n  box-sizing: border-box; /* 1 */\n  border-width: 0; /* 2 */\n  border-style: solid; /* 2 */\n  border-color: #e5e7eb; /* 2 */\n}\n\n::before,\n::after {\n  --tw-content: '';\n}\n\n/*\n1. Use a consistent sensible line-height in all browsers.\n2. Prevent adjustments of font size after orientation changes in iOS.\n3. Use a more readable tab size.\n4. Use the user's configured `sans` font-family by default.\n5. Use the user's configured `sans` font-feature-settings by default.\n6. Use the user's configured `sans` font-variation-settings by default.\n*/\n\nhtml {\n  line-height: 1.5; /* 1 */\n  -webkit-text-size-adjust: 100%; /* 2 */\n  -moz-tab-size: 4; /* 3 */\n  -o-tab-size: 4;\n     tab-size: 4; /* 3 */\n  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"; /* 4 */\n  font-feature-settings: normal; /* 5 */\n  font-variation-settings: normal; /* 6 */\n}\n\n/*\n1. Remove the margin in all browsers.\n2. Inherit line-height from `html` so users can set them as a class directly on the `html` element.\n*/\n\nbody {\n  margin: 0; /* 1 */\n  line-height: inherit; /* 2 */\n}\n\n/*\n1. Add the correct height in Firefox.\n2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)\n3. Ensure horizontal rules are visible by default.\n*/\n\nhr {\n  height: 0; /* 1 */\n  color: inherit; /* 2 */\n  border-top-width: 1px; /* 3 */\n}\n\n/*\nAdd the correct text decoration in Chrome, Edge, and Safari.\n*/\n\nabbr:where([title]) {\n  -webkit-text-decoration: underline dotted;\n          text-decoration: underline dotted;\n}\n\n/*\nRemove the default font size and weight for headings.\n*/\n\nh1,\nh2,\nh3,\nh4,\nh5,\nh6 {\n  font-size: inherit;\n  font-weight: inherit;\n}\n\n/*\nReset links to optimize for opt-in styling instead of opt-out.\n*/\n\na {\n  color: inherit;\n  text-decoration: inherit;\n}\n\n/*\nAdd the correct font weight in Edge and Safari.\n*/\n\nb,\nstrong {\n  font-weight: bolder;\n}\n\n/*\n1. Use the user's configured `mono` font family by default.\n2. Correct the odd `em` font sizing in all browsers.\n*/\n\ncode,\nkbd,\nsamp,\npre {\n  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace; /* 1 */\n  font-size: 1em; /* 2 */\n}\n\n/*\nAdd the correct font size in all browsers.\n*/\n\nsmall {\n  font-size: 80%;\n}\n\n/*\nPrevent `sub` and `sup` elements from affecting the line height in all browsers.\n*/\n\nsub,\nsup {\n  font-size: 75%;\n  line-height: 0;\n  position: relative;\n  vertical-align: baseline;\n}\n\nsub {\n  bottom: -0.25em;\n}\n\nsup {\n  top: -0.5em;\n}\n\n/*\n1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)\n2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)\n3. Remove gaps between table borders by default.\n*/\n\ntable {\n  text-indent: 0; /* 1 */\n  border-color: inherit; /* 2 */\n  border-collapse: collapse; /* 3 */\n}\n\n/*\n1. Change the font styles in all browsers.\n2. Remove the margin in Firefox and Safari.\n3. Remove default padding in all browsers.\n*/\n\nbutton,\ninput,\noptgroup,\nselect,\ntextarea {\n  font-family: inherit; /* 1 */\n  font-feature-settings: inherit; /* 1 */\n  font-variation-settings: inherit; /* 1 */\n  font-size: 100%; /* 1 */\n  font-weight: inherit; /* 1 */\n  line-height: inherit; /* 1 */\n  color: inherit; /* 1 */\n  margin: 0; /* 2 */\n  padding: 0; /* 3 */\n}\n\n/*\nRemove the inheritance of text transform in Edge and Firefox.\n*/\n\nbutton,\nselect {\n  text-transform: none;\n}\n\n/*\n1. Correct the inability to style clickable types in iOS and Safari.\n2. Remove default button styles.\n*/\n\nbutton,\n[type='button'],\n[type='reset'],\n[type='submit'] {\n  -webkit-appearance: button; /* 1 */\n  background-color: transparent; /* 2 */\n  background-image: none; /* 2 */\n}\n\n/*\nUse the modern Firefox focus style for all focusable elements.\n*/\n\n:-moz-focusring {\n  outline: auto;\n}\n\n/*\nRemove the additional `:invalid` styles in Firefox. (https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737)\n*/\n\n:-moz-ui-invalid {\n  box-shadow: none;\n}\n\n/*\nAdd the correct vertical alignment in Chrome and Firefox.\n*/\n\nprogress {\n  vertical-align: baseline;\n}\n\n/*\nCorrect the cursor style of increment and decrement buttons in Safari.\n*/\n\n::-webkit-inner-spin-button,\n::-webkit-outer-spin-button {\n  height: auto;\n}\n\n/*\n1. Correct the odd appearance in Chrome and Safari.\n2. Correct the outline style in Safari.\n*/\n\n[type='search'] {\n  -webkit-appearance: textfield; /* 1 */\n  outline-offset: -2px; /* 2 */\n}\n\n/*\nRemove the inner padding in Chrome and Safari on macOS.\n*/\n\n::-webkit-search-decoration {\n  -webkit-appearance: none;\n}\n\n/*\n1. Correct the inability to style clickable types in iOS and Safari.\n2. Change font properties to `inherit` in Safari.\n*/\n\n::-webkit-file-upload-button {\n  -webkit-appearance: button; /* 1 */\n  font: inherit; /* 2 */\n}\n\n/*\nAdd the correct display in Chrome and Safari.\n*/\n\nsummary {\n  display: list-item;\n}\n\n/*\nRemoves the default spacing and border for appropriate elements.\n*/\n\nblockquote,\ndl,\ndd,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\nhr,\nfigure,\np,\npre {\n  margin: 0;\n}\n\nfieldset {\n  margin: 0;\n  padding: 0;\n}\n\nlegend {\n  padding: 0;\n}\n\nol,\nul,\nmenu {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n\n/*\nReset default styling for dialogs.\n*/\ndialog {\n  padding: 0;\n}\n\n/*\nPrevent resizing textareas horizontally by default.\n*/\n\ntextarea {\n  resize: vertical;\n}\n\n/*\n1. Reset the default placeholder opacity in Firefox. (https://github.com/tailwindlabs/tailwindcss/issues/3300)\n2. Set the default placeholder color to the user's configured gray 400 color.\n*/\n\ninput::-moz-placeholder, textarea::-moz-placeholder {\n  opacity: 1; /* 1 */\n  color: #9ca3af; /* 2 */\n}\n\ninput::placeholder,\ntextarea::placeholder {\n  opacity: 1; /* 1 */\n  color: #9ca3af; /* 2 */\n}\n\n/*\nSet the default cursor for buttons.\n*/\n\nbutton,\n[role=\"button\"] {\n  cursor: pointer;\n}\n\n/*\nMake sure disabled buttons don't get the pointer cursor.\n*/\n:disabled {\n  cursor: default;\n}\n\n/*\n1. Make replaced elements `display: block` by default. (https://github.com/mozdevs/cssremedy/issues/14)\n2. Add `vertical-align: middle` to align replaced elements more sensibly by default. (https://github.com/jensimmons/cssremedy/issues/14#issuecomment-634934210)\n   This can trigger a poorly considered lint error in some tools but is included by design.\n*/\n\nimg,\nsvg,\nvideo,\ncanvas,\naudio,\niframe,\nembed,\nobject {\n  display: block; /* 1 */\n  vertical-align: middle; /* 2 */\n}\n\n/*\nConstrain images and videos to the parent width and preserve their intrinsic aspect ratio. (https://github.com/mozdevs/cssremedy/issues/14)\n*/\n\nimg,\nvideo {\n  max-width: 100%;\n  height: auto;\n}\n\n/* Make elements with the HTML hidden attribute stay hidden by default */\n[hidden] {\n  display: none;\n}\n\n*, ::before, ::after {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x:  ;\n  --tw-pan-y:  ;\n  --tw-pinch-zoom:  ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position:  ;\n  --tw-gradient-via-position:  ;\n  --tw-gradient-to-position:  ;\n  --tw-ordinal:  ;\n  --tw-slashed-zero:  ;\n  --tw-numeric-figure:  ;\n  --tw-numeric-spacing:  ;\n  --tw-numeric-fraction:  ;\n  --tw-ring-inset:  ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur:  ;\n  --tw-brightness:  ;\n  --tw-contrast:  ;\n  --tw-grayscale:  ;\n  --tw-hue-rotate:  ;\n  --tw-invert:  ;\n  --tw-saturate:  ;\n  --tw-sepia:  ;\n  --tw-drop-shadow:  ;\n  --tw-backdrop-blur:  ;\n  --tw-backdrop-brightness:  ;\n  --tw-backdrop-contrast:  ;\n  --tw-backdrop-grayscale:  ;\n  --tw-backdrop-hue-rotate:  ;\n  --tw-backdrop-invert:  ;\n  --tw-backdrop-opacity:  ;\n  --tw-backdrop-saturate:  ;\n  --tw-backdrop-sepia:  ;\n}\n\n::backdrop {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x:  ;\n  --tw-pan-y:  ;\n  --tw-pinch-zoom:  ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position:  ;\n  --tw-gradient-via-position:  ;\n  --tw-gradient-to-position:  ;\n  --tw-ordinal:  ;\n  --tw-slashed-zero:  ;\n  --tw-numeric-figure:  ;\n  --tw-numeric-spacing:  ;\n  --tw-numeric-fraction:  ;\n  --tw-ring-inset:  ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur:  ;\n  --tw-brightness:  ;\n  --tw-contrast:  ;\n  --tw-grayscale:  ;\n  --tw-hue-rotate:  ;\n  --tw-invert:  ;\n  --tw-saturate:  ;\n  --tw-sepia:  ;\n  --tw-drop-shadow:  ;\n  --tw-backdrop-blur:  ;\n  --tw-backdrop-brightness:  ;\n  --tw-backdrop-contrast:  ;\n  --tw-backdrop-grayscale:  ;\n  --tw-backdrop-hue-rotate:  ;\n  --tw-backdrop-invert:  ;\n  --tw-backdrop-opacity:  ;\n  --tw-backdrop-saturate:  ;\n  --tw-backdrop-sepia:  ;\n}\n.absolute {\n  position: absolute;\n}\n.relative {\n  position: relative;\n}\n.inline-flex {\n  display: inline-flex;\n}\n.table {\n  display: table;\n}\n.h-8 {\n  height: 2rem;\n}\n.w-8 {\n  width: 2rem;\n}\n.w-full {\n  width: 100%;\n}\n.shrink-0 {\n  flex-shrink: 0;\n}\n.flex-row {\n  flex-direction: row;\n}\n.flex-wrap {\n  flex-wrap: wrap;\n}\n.items-center {\n  align-items: center;\n}\n.justify-center {\n  justify-content: center;\n}\n.space-x-2 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-x-reverse: 0;\n  margin-right: calc(0.5rem * var(--tw-space-x-reverse));\n  margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));\n}\n.rounded-lg {\n  border-radius: 0.5rem;\n}\n.rounded-md {\n  border-radius: 0.375rem;\n}\n.rounded-t-lg {\n  border-top-left-radius: 0.5rem;\n  border-top-right-radius: 0.5rem;\n}\n.border {\n  border-width: 1px;\n}\n.border-white {\n  --tw-border-opacity: 1;\n  border-color: rgb(255 255 255 / var(--tw-border-opacity));\n}\n.bg-blue-200 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(191 219 254 / var(--tw-bg-opacity));\n}\n.bg-white {\n  --tw-bg-opacity: 1;\n  background-color: rgb(255 255 255 / var(--tw-bg-opacity));\n}\n.px-2 {\n  padding-left: 0.5rem;\n  padding-right: 0.5rem;\n}\n.italic {\n  font-style: italic;\n}\n.text-blue-800 {\n  --tw-text-opacity: 1;\n  color: rgb(30 64 175 / var(--tw-text-opacity));\n}\n.text-gray-600 {\n  --tw-text-opacity: 1;\n  color: rgb(75 85 99 / var(--tw-text-opacity));\n}\n.underline {\n  text-decoration-line: underline;\n}\n.outline {\n  outline-style: solid;\n}\n.filter {\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.transition {\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-backdrop-filter;\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-backdrop-filter;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.hover\\:bg-blue-50:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(239 246 255 / var(--tw-bg-opacity));\n}\n.hover\\:bg-opacity-80:hover {\n  --tw-bg-opacity: 0.8;\n}\n.disabled\\:bg-transparent:disabled {\n  background-color: transparent;\n}\n.disabled\\:text-gray-300:disabled {\n  --tw-text-opacity: 1;\n  color: rgb(209 213 219 / var(--tw-text-opacity));\n}\n";
@@ -25715,7 +25817,16 @@ var script = {
   emits: ["input"],
   setup(props, { emit }) {
     const editor = useEditor({
-      extensions: [StarterKit, footnoteNode, Blockquote, Link, HardBreak],
+      extensions: [
+        StarterKit,
+        Link,
+        TextAlign.configure({
+          types: ["heading", "paragraph"],
+        }),
+        footnoteNode,
+        FontVariant,
+        TextStyle,
+      ],
       onUpdate: ({ editor }) => {
         emit("input", editor.getJSON());
       },

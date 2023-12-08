@@ -5613,7 +5613,7 @@ const classesById = Object.create(null);
 Superclass for editor selections. Every selection type should
 extend this. Should not be instantiated directly.
 */
-let Selection$1 = class Selection {
+class Selection {
     /**
     Initialize a selection with the head and anchor and ranges. If no
     ranges are given, constructs a single range across `$anchor` and
@@ -5799,8 +5799,8 @@ let Selection$1 = class Selection {
     getBookmark() {
         return TextSelection.between(this.$anchor, this.$head).getBookmark();
     }
-};
-Selection$1.prototype.visible = true;
+}
+Selection.prototype.visible = true;
 /**
 Represents a selected range in a document.
 */
@@ -5834,7 +5834,7 @@ head (the moving side) and anchor (immobile side), both of which
 point into textblock nodes. It can be empty (a regular cursor
 position).
 */
-class TextSelection extends Selection$1 {
+class TextSelection extends Selection {
     /**
     Construct a text selection between the given points.
     */
@@ -5851,7 +5851,7 @@ class TextSelection extends Selection$1 {
     map(doc, mapping) {
         let $head = doc.resolve(mapping.map(this.head));
         if (!$head.parent.inlineContent)
-            return Selection$1.near($head);
+            return Selection.near($head);
         let $anchor = doc.resolve(mapping.map(this.anchor));
         return new TextSelection($anchor.parent.inlineContent ? $anchor : $head, $head);
     }
@@ -5900,18 +5900,18 @@ class TextSelection extends Selection$1 {
         if (!bias || dPos)
             bias = dPos >= 0 ? 1 : -1;
         if (!$head.parent.inlineContent) {
-            let found = Selection$1.findFrom($head, bias, true) || Selection$1.findFrom($head, -bias, true);
+            let found = Selection.findFrom($head, bias, true) || Selection.findFrom($head, -bias, true);
             if (found)
                 $head = found.$head;
             else
-                return Selection$1.near($head, bias);
+                return Selection.near($head, bias);
         }
         if (!$anchor.parent.inlineContent) {
             if (dPos == 0) {
                 $anchor = $head;
             }
             else {
-                $anchor = (Selection$1.findFrom($anchor, -bias, true) || Selection$1.findFrom($anchor, bias, true)).$anchor;
+                $anchor = (Selection.findFrom($anchor, -bias, true) || Selection.findFrom($anchor, bias, true)).$anchor;
                 if (($anchor.pos < $head.pos) != (dPos < 0))
                     $anchor = $head;
             }
@@ -5919,7 +5919,7 @@ class TextSelection extends Selection$1 {
         return new TextSelection($anchor, $head);
     }
 }
-Selection$1.jsonID("text", TextSelection);
+Selection.jsonID("text", TextSelection);
 class TextBookmark {
     constructor(anchor, head) {
         this.anchor = anchor;
@@ -5939,7 +5939,7 @@ target of a node selection. In such a selection, `from` and `to`
 point directly before and after the selected node, `anchor` equals
 `from`, and `head` equals `to`..
 */
-class NodeSelection extends Selection$1 {
+class NodeSelection extends Selection {
     /**
     Create a node selection. Does not verify the validity of its
     argument.
@@ -5954,7 +5954,7 @@ class NodeSelection extends Selection$1 {
         let { deleted, pos } = mapping.mapResult(this.anchor);
         let $pos = doc.resolve(pos);
         if (deleted)
-            return Selection$1.near($pos);
+            return Selection.near($pos);
         return new NodeSelection($pos);
     }
     content() {
@@ -5990,7 +5990,7 @@ class NodeSelection extends Selection$1 {
     }
 }
 NodeSelection.prototype.visible = false;
-Selection$1.jsonID("node", NodeSelection);
+Selection.jsonID("node", NodeSelection);
 class NodeBookmark {
     constructor(anchor) {
         this.anchor = anchor;
@@ -6003,7 +6003,7 @@ class NodeBookmark {
         let $pos = doc.resolve(this.anchor), node = $pos.nodeAfter;
         if (node && NodeSelection.isSelectable(node))
             return new NodeSelection($pos);
-        return Selection$1.near($pos);
+        return Selection.near($pos);
     }
 }
 /**
@@ -6012,7 +6012,7 @@ A selection type that represents selecting the whole document
 there are for example leaf block nodes at the start or end of the
 document).
 */
-class AllSelection extends Selection$1 {
+class AllSelection extends Selection {
     /**
     Create an all-selection over the given document.
     */
@@ -6022,7 +6022,7 @@ class AllSelection extends Selection$1 {
     replace(tr, content = Slice.empty) {
         if (content == Slice.empty) {
             tr.delete(0, tr.doc.content.size);
-            let sel = Selection$1.atStart(tr.doc);
+            let sel = Selection.atStart(tr.doc);
             if (!sel.eq(tr.selection))
                 tr.setSelection(sel);
         }
@@ -6039,7 +6039,7 @@ class AllSelection extends Selection$1 {
     eq(other) { return other instanceof AllSelection; }
     getBookmark() { return AllBookmark; }
 }
-Selection$1.jsonID("all", AllSelection);
+Selection.jsonID("all", AllSelection);
 const AllBookmark = {
     map() { return this; },
     resolve(doc) { return new AllSelection(doc); }
@@ -6075,7 +6075,7 @@ function selectionToInsertionEnd$1(tr, startLen, bias) {
     let map = tr.mapping.maps[last], end;
     map.forEach((_from, _to, _newFrom, newTo) => { if (end == null)
         end = newTo; });
-    tr.setSelection(Selection$1.near(tr.doc.resolve(end), bias));
+    tr.setSelection(Selection.near(tr.doc.resolve(end), bias));
 }
 
 const UPDATED_SEL = 1, UPDATED_MARKS = 2, UPDATED_SCROLL = 4;
@@ -6251,7 +6251,7 @@ class Transaction extends Transform {
             }
             this.replaceRangeWith(from, to, schema.text(text, marks));
             if (!this.selection.empty)
-                this.setSelection(Selection$1.near(this.selection.$to));
+                this.setSelection(Selection.near(this.selection.$to));
             return this;
         }
     }
@@ -6310,7 +6310,7 @@ const baseFields = [
         apply(tr) { return tr.doc; }
     }),
     new FieldDesc("selection", {
-        init(config, instance) { return config.selection || Selection$1.atStart(instance.doc); },
+        init(config, instance) { return config.selection || Selection.atStart(instance.doc); },
         apply(tr) { return tr.selection; }
     }),
     new FieldDesc("storedMarks", {
@@ -6516,7 +6516,7 @@ class EditorState {
                 instance.doc = Node$1.fromJSON(config.schema, json.doc);
             }
             else if (field.name == "selection") {
-                instance.selection = Selection$1.fromJSON(instance.doc, json.selection);
+                instance.selection = Selection.fromJSON(instance.doc, json.selection);
             }
             else if (field.name == "storedMarks") {
                 if (json.storedMarks)
@@ -8924,7 +8924,7 @@ function moveSelectionBlock(state, dir) {
     let { $anchor, $head } = state.selection;
     let $side = dir > 0 ? $anchor.max($head) : $anchor.min($head);
     let $start = !$side.parent.inlineContent ? $side : $side.depth ? state.doc.resolve(dir > 0 ? $side.after() : $side.before()) : null;
-    return $start && Selection$1.findFrom($start, dir);
+    return $start && Selection.findFrom($start, dir);
 }
 function apply(view, sel) {
     view.dispatch(view.state.tr.setSelection(sel).scrollIntoView());
@@ -9198,7 +9198,7 @@ function selectVertically(view, dir, mods) {
     }
     if (!$from.parent.inlineContent) {
         let side = dir < 0 ? $from : $to;
-        let beyond = sel instanceof AllSelection ? Selection$1.near(side, dir) : Selection$1.findFrom(side, dir);
+        let beyond = sel instanceof AllSelection ? Selection.near(side, dir) : Selection.findFrom(side, dir);
         return beyond ? apply(view, beyond) : false;
     }
     return false;
@@ -9909,7 +9909,7 @@ class MouseDown {
                 // works around that.
                 (chrome && !this.view.state.selection.visible &&
                     Math.min(Math.abs(pos.pos - this.view.state.selection.from), Math.abs(pos.pos - this.view.state.selection.to)) <= 2))) {
-            updateSelection(this.view, Selection$1.near(this.view.state.doc.resolve(pos.pos)), "pointer");
+            updateSelection(this.view, Selection.near(this.view.state.doc.resolve(pos.pos)), "pointer");
             event.preventDefault();
         }
         else {
@@ -10127,7 +10127,7 @@ function doPaste(view, text, html, preferPlain, event) {
     view.dispatch(tr.scrollIntoView().setMeta("paste", true).setMeta("uiEvent", "paste"));
     return true;
 }
-function getText(clipboardData) {
+function getText$1(clipboardData) {
     let text = clipboardData.getData("text/plain") || clipboardData.getData("Text");
     if (text)
         return text;
@@ -10144,7 +10144,7 @@ editHandlers.paste = (view, _event) => {
         return;
     let data = brokenClipboardAPI ? null : event.clipboardData;
     let plain = view.input.shiftKey && view.input.lastKeyCode != 45;
-    if (data && doPaste(view, getText(data), data.getData("text/html"), plain, event))
+    if (data && doPaste(view, getText$1(data), data.getData("text/html"), plain, event))
         event.preventDefault();
     else
         capturePaste(view, event);
@@ -10208,7 +10208,7 @@ editHandlers.drop = (view, _event) => {
         view.someProp("transformPasted", f => { slice = f(slice, view); });
     }
     else {
-        slice = parseFromClipboard(view, getText(event.dataTransfer), brokenClipboardAPI ? null : event.dataTransfer.getData("text/html"), false, $mouse);
+        slice = parseFromClipboard(view, getText$1(event.dataTransfer), brokenClipboardAPI ? null : event.dataTransfer.getData("text/html"), false, $mouse);
     }
     let move = !!(dragging && !event[dragCopyModifier]);
     if (view.someProp("handleDrop", f => f(view, event, slice || Slice.empty, move))) {
@@ -11172,7 +11172,7 @@ class DOMObserver {
         if (from < 0 && newSel && view.input.lastFocus > Date.now() - 200 &&
             Math.max(view.input.lastTouch, view.input.lastClick.time) < Date.now() - 300 &&
             selectionCollapsed(sel) && (readSel = selectionFromDOM(view)) &&
-            readSel.eq(Selection$1.near(view.state.doc.resolve(0), 1))) {
+            readSel.eq(Selection.near(view.state.doc.resolve(0), 1))) {
             view.input.lastFocus = 0;
             selectionToDOM(view);
             this.currentSelection.set(sel);
@@ -11470,7 +11470,7 @@ function readDOMChange(view, from, to, typeOver, addedNodes) {
     if (((ios && view.input.lastIOSEnter > Date.now() - 225 &&
         (!inlineChange || addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P"))) ||
         (!inlineChange && $from.pos < parse.doc.content.size && !$from.sameParent($to) &&
-            (nextSel = Selection$1.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
+            (nextSel = Selection.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
             nextSel.head == $to.pos)) &&
         view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
         view.input.lastIOSEnter = 0;
@@ -12518,7 +12518,7 @@ const joinBackward$1 = (state, dispatch, view) => {
         if (delStep && delStep.slice.size < delStep.to - delStep.from) {
             if (dispatch) {
                 let tr = state.tr.step(delStep);
-                tr.setSelection(textblockAt(before, "end") ? Selection$1.findFrom(tr.doc.resolve(tr.mapping.map($cut.pos, -1)), -1)
+                tr.setSelection(textblockAt(before, "end") ? Selection.findFrom(tr.doc.resolve(tr.mapping.map($cut.pos, -1)), -1)
                     : NodeSelection.create(tr.doc, $cut.pos - before.nodeSize));
                 dispatch(tr.scrollIntoView());
             }
@@ -12610,7 +12610,7 @@ const joinForward$1 = (state, dispatch, view) => {
         if (delStep && delStep.slice.size < delStep.to - delStep.from) {
             if (dispatch) {
                 let tr = state.tr.step(delStep);
-                tr.setSelection(textblockAt(after, "start") ? Selection$1.findFrom(tr.doc.resolve(tr.mapping.map($cut.pos)), 1)
+                tr.setSelection(textblockAt(after, "start") ? Selection.findFrom(tr.doc.resolve(tr.mapping.map($cut.pos)), 1)
                     : NodeSelection.create(tr.doc, tr.mapping.map($cut.pos)));
                 dispatch(tr.scrollIntoView());
             }
@@ -12753,7 +12753,7 @@ const exitCode$1 = (state, dispatch) => {
         return false;
     if (dispatch) {
         let pos = $head.after(), tr = state.tr.replaceWith(pos, pos, type.createAndFill());
-        tr.setSelection(Selection$1.near(tr.doc.resolve(pos), 1));
+        tr.setSelection(Selection.near(tr.doc.resolve(pos), 1));
         dispatch(tr.scrollIntoView());
     }
     return true;
@@ -12855,7 +12855,7 @@ function deleteBarrier(state, $cut, dispatch) {
         }
         return true;
     }
-    let selAfter = Selection$1.findFrom($cut, 1);
+    let selAfter = Selection.findFrom($cut, 1);
     let range = selAfter && selAfter.$from.blockRange(selAfter.$to), target = range && liftTarget(range);
     if (target != null && target >= $cut.depth) {
         if (dispatch)
@@ -13233,6 +13233,41 @@ class CommandManager {
             },
         };
         return props;
+    }
+}
+
+class EventEmitter {
+    constructor() {
+        this.callbacks = {};
+    }
+    on(event, fn) {
+        if (!this.callbacks[event]) {
+            this.callbacks[event] = [];
+        }
+        this.callbacks[event].push(fn);
+        return this;
+    }
+    emit(event, ...args) {
+        const callbacks = this.callbacks[event];
+        if (callbacks) {
+            callbacks.forEach(callback => callback.apply(this, args));
+        }
+        return this;
+    }
+    off(event, fn) {
+        const callbacks = this.callbacks[event];
+        if (callbacks) {
+            if (fn) {
+                this.callbacks[event] = callbacks.filter(callback => callback !== fn);
+            }
+            else {
+                delete this.callbacks[event];
+            }
+        }
+        return this;
+    }
+    removeAllListeners() {
+        this.callbacks = {};
     }
 }
 
@@ -14299,7 +14334,7 @@ function getTextSerializersFromSchema(schema) {
         .map(([name, node]) => [name, node.spec.toText]));
 }
 
-Extension.create({
+const ClipboardTextSerializer = Extension.create({
     name: 'clipboardTextSerializer',
     addProseMirrorPlugins() {
         return [
@@ -14562,8 +14597,8 @@ function resolveFocusPosition(doc, position = null) {
     if (!position) {
         return null;
     }
-    const selectionAtStart = Selection$1.atStart(doc);
-    const selectionAtEnd = Selection$1.atEnd(doc);
+    const selectionAtStart = Selection.atStart(doc);
+    const selectionAtEnd = Selection.atEnd(doc);
     if (position === 'start' || position === true) {
         return selectionAtStart;
     }
@@ -14697,7 +14732,7 @@ function selectionToInsertionEnd(tr, startLen, bias) {
             end = newTo;
         }
     });
-    tr.setSelection(Selection$1.near(tr.doc.resolve(end), bias));
+    tr.setSelection(Selection.near(tr.doc.resolve(end), bias));
 }
 
 const isFragment = (nodeOrFragment) => {
@@ -15150,9 +15185,25 @@ function findParentNode(predicate) {
     return (selection) => findParentNodeClosestToPos(selection.$from, predicate);
 }
 
+function getHTMLFromFragment$1(fragment, schema) {
+    const documentFragment = DOMSerializer.fromSchema(schema).serializeFragment(fragment);
+    const temporaryDocument = document.implementation.createHTMLDocument();
+    const container = temporaryDocument.createElement('div');
+    container.appendChild(documentFragment);
+    return container.innerHTML;
+}
+
 function getSchema(extensions, editor) {
     const resolvedExtensions = ExtensionManager.resolve(extensions);
     return getSchemaByResolvedExtensions(resolvedExtensions, editor);
+}
+
+function getText(node, options) {
+    const range = {
+        from: 0,
+        to: node.content.size,
+    };
+    return getTextBetween(node, range, options);
 }
 
 function getNodeAttributes(state, typeOrName) {
@@ -15363,6 +15414,20 @@ function isMarkActive(state, typeOrName, attributes = {}) {
     return range >= selectionRange;
 }
 
+function isActive(state, name, attributes = {}) {
+    if (!name) {
+        return isNodeActive(state, null, attributes) || isMarkActive(state, null, attributes);
+    }
+    const schemaType = getSchemaTypeNameByName(name, state.schema);
+    if (schemaType === 'node') {
+        return isNodeActive(state, name, attributes);
+    }
+    if (schemaType === 'mark') {
+        return isMarkActive(state, name, attributes);
+    }
+    return false;
+}
+
 function isList(name, extensions) {
     const { nodeExtensions } = splitExtensions(extensions);
     const extension = nodeExtensions.find(item => item.name === name);
@@ -15379,6 +15444,13 @@ function isList(name, extensions) {
         return false;
     }
     return group.split(' ').includes('list');
+}
+
+function isNodeEmpty(node) {
+    var _a;
+    const defaultContent = (_a = node.type.createAndFill()) === null || _a === void 0 ? void 0 : _a.toJSON();
+    const content = node.toJSON();
+    return JSON.stringify(defaultContent) === JSON.stringify(content);
 }
 
 function canSetMark(state, tr, newMarkType) {
@@ -15981,7 +16053,7 @@ var commands = /*#__PURE__*/Object.freeze({
   wrapInList: wrapInList
 });
 
-Extension.create({
+const Commands = Extension.create({
     name: 'commands',
     addCommands() {
         return {
@@ -15990,7 +16062,7 @@ Extension.create({
     },
 });
 
-Extension.create({
+const Editable = Extension.create({
     name: 'editable',
     addProseMirrorPlugins() {
         return [
@@ -16004,7 +16076,7 @@ Extension.create({
     },
 });
 
-Extension.create({
+const FocusEvents = Extension.create({
     name: 'focusEvents',
     addProseMirrorPlugins() {
         const { editor } = this;
@@ -16036,7 +16108,7 @@ Extension.create({
     },
 });
 
-Extension.create({
+const Keymap = Extension.create({
     name: 'keymap',
     addKeyboardShortcuts() {
         const handleBackspace = () => this.editor.commands.first(({ commands }) => [
@@ -16051,7 +16123,7 @@ Extension.create({
                 const parentPos = $anchor.pos - $anchor.parentOffset;
                 const isAtStart = (parentIsIsolating && $parentPos.parent.childCount === 1)
                     ? parentPos === $anchor.pos
-                    : Selection$1.atStart(doc).from === pos;
+                    : Selection.atStart(doc).from === pos;
                 if (!empty || !isAtStart || !parent.type.isTextblock || parent.textContent.length) {
                     return false;
                 }
@@ -16118,8 +16190,8 @@ Extension.create({
                         return;
                     }
                     const { empty, from, to } = oldState.selection;
-                    const allFrom = Selection$1.atStart(oldState.doc).from;
-                    const allEnd = Selection$1.atEnd(oldState.doc).to;
+                    const allFrom = Selection.atStart(oldState.doc).from;
+                    const allEnd = Selection.atEnd(oldState.doc).to;
                     const allWasSelected = from === allFrom && to === allEnd;
                     if (empty || !allWasSelected) {
                         return;
@@ -16148,7 +16220,7 @@ Extension.create({
     },
 });
 
-Extension.create({
+const Tabindex = Extension.create({
     name: 'tabindex',
     addProseMirrorPlugins() {
         return [
@@ -16161,6 +16233,463 @@ Extension.create({
         ];
     },
 });
+
+var extensions = /*#__PURE__*/Object.freeze({
+  __proto__: null,
+  ClipboardTextSerializer: ClipboardTextSerializer,
+  Commands: Commands,
+  Editable: Editable,
+  FocusEvents: FocusEvents,
+  Keymap: Keymap,
+  Tabindex: Tabindex
+});
+
+const style = `.ProseMirror {
+  position: relative;
+}
+
+.ProseMirror {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  white-space: break-spaces;
+  -webkit-font-variant-ligatures: none;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0; /* the above doesn't seem to work in Edge */
+}
+
+.ProseMirror [contenteditable="false"] {
+  white-space: normal;
+}
+
+.ProseMirror [contenteditable="false"] [contenteditable="true"] {
+  white-space: pre-wrap;
+}
+
+.ProseMirror pre {
+  white-space: pre-wrap;
+}
+
+img.ProseMirror-separator {
+  display: inline !important;
+  border: none !important;
+  margin: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+}
+
+.ProseMirror-gapcursor {
+  display: none;
+  pointer-events: none;
+  position: absolute;
+  margin: 0;
+}
+
+.ProseMirror-gapcursor:after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: -2px;
+  width: 20px;
+  border-top: 1px solid black;
+  animation: ProseMirror-cursor-blink 1.1s steps(2, start) infinite;
+}
+
+@keyframes ProseMirror-cursor-blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+.ProseMirror-hideselection *::selection {
+  background: transparent;
+}
+
+.ProseMirror-hideselection *::-moz-selection {
+  background: transparent;
+}
+
+.ProseMirror-hideselection * {
+  caret-color: transparent;
+}
+
+.ProseMirror-focused .ProseMirror-gapcursor {
+  display: block;
+}
+
+.tippy-box[data-animation=fade][data-state=hidden] {
+  opacity: 0
+}`;
+
+function createStyleTag(style, nonce, suffix) {
+    const tiptapStyleTag = document.querySelector(`style[data-tiptap-style${suffix ? `-${suffix}` : ''}]`);
+    if (tiptapStyleTag !== null) {
+        return tiptapStyleTag;
+    }
+    const styleNode = document.createElement('style');
+    if (nonce) {
+        styleNode.setAttribute('nonce', nonce);
+    }
+    styleNode.setAttribute(`data-tiptap-style${suffix ? `-${suffix}` : ''}`, '');
+    styleNode.innerHTML = style;
+    document.getElementsByTagName('head')[0].appendChild(styleNode);
+    return styleNode;
+}
+
+class Editor extends EventEmitter {
+    constructor(options = {}) {
+        super();
+        this.isFocused = false;
+        this.extensionStorage = {};
+        this.options = {
+            element: document.createElement('div'),
+            content: '',
+            injectCSS: true,
+            injectNonce: undefined,
+            extensions: [],
+            autofocus: false,
+            editable: true,
+            editorProps: {},
+            parseOptions: {},
+            enableInputRules: true,
+            enablePasteRules: true,
+            enableCoreExtensions: true,
+            onBeforeCreate: () => null,
+            onCreate: () => null,
+            onUpdate: () => null,
+            onSelectionUpdate: () => null,
+            onTransaction: () => null,
+            onFocus: () => null,
+            onBlur: () => null,
+            onDestroy: () => null,
+        };
+        this.isCapturingTransaction = false;
+        this.capturedTransaction = null;
+        this.setOptions(options);
+        this.createExtensionManager();
+        this.createCommandManager();
+        this.createSchema();
+        this.on('beforeCreate', this.options.onBeforeCreate);
+        this.emit('beforeCreate', { editor: this });
+        this.createView();
+        this.injectCSS();
+        this.on('create', this.options.onCreate);
+        this.on('update', this.options.onUpdate);
+        this.on('selectionUpdate', this.options.onSelectionUpdate);
+        this.on('transaction', this.options.onTransaction);
+        this.on('focus', this.options.onFocus);
+        this.on('blur', this.options.onBlur);
+        this.on('destroy', this.options.onDestroy);
+        window.setTimeout(() => {
+            if (this.isDestroyed) {
+                return;
+            }
+            this.commands.focus(this.options.autofocus);
+            this.emit('create', { editor: this });
+        }, 0);
+    }
+    /**
+     * Returns the editor storage.
+     */
+    get storage() {
+        return this.extensionStorage;
+    }
+    /**
+     * An object of all registered commands.
+     */
+    get commands() {
+        return this.commandManager.commands;
+    }
+    /**
+     * Create a command chain to call multiple commands at once.
+     */
+    chain() {
+        return this.commandManager.chain();
+    }
+    /**
+     * Check if a command or a command chain can be executed. Without executing it.
+     */
+    can() {
+        return this.commandManager.can();
+    }
+    /**
+     * Inject CSS styles.
+     */
+    injectCSS() {
+        if (this.options.injectCSS && document) {
+            this.css = createStyleTag(style, this.options.injectNonce);
+        }
+    }
+    /**
+     * Update editor options.
+     *
+     * @param options A list of options
+     */
+    setOptions(options = {}) {
+        this.options = {
+            ...this.options,
+            ...options,
+        };
+        if (!this.view || !this.state || this.isDestroyed) {
+            return;
+        }
+        if (this.options.editorProps) {
+            this.view.setProps(this.options.editorProps);
+        }
+        this.view.updateState(this.state);
+    }
+    /**
+     * Update editable state of the editor.
+     */
+    setEditable(editable, emitUpdate = true) {
+        this.setOptions({ editable });
+        if (emitUpdate) {
+            this.emit('update', { editor: this, transaction: this.state.tr });
+        }
+    }
+    /**
+     * Returns whether the editor is editable.
+     */
+    get isEditable() {
+        // since plugins are applied after creating the view
+        // `editable` is always `true` for one tick.
+        // that’s why we also have to check for `options.editable`
+        return this.options.editable && this.view && this.view.editable;
+    }
+    /**
+     * Returns the editor state.
+     */
+    get state() {
+        return this.view.state;
+    }
+    /**
+     * Register a ProseMirror plugin.
+     *
+     * @param plugin A ProseMirror plugin
+     * @param handlePlugins Control how to merge the plugin into the existing plugins.
+     */
+    registerPlugin(plugin, handlePlugins) {
+        const plugins = isFunction(handlePlugins)
+            ? handlePlugins(plugin, [...this.state.plugins])
+            : [...this.state.plugins, plugin];
+        const state = this.state.reconfigure({ plugins });
+        this.view.updateState(state);
+    }
+    /**
+     * Unregister a ProseMirror plugin.
+     *
+     * @param nameOrPluginKey The plugins name
+     */
+    unregisterPlugin(nameOrPluginKey) {
+        if (this.isDestroyed) {
+            return;
+        }
+        // @ts-ignore
+        const name = typeof nameOrPluginKey === 'string' ? `${nameOrPluginKey}$` : nameOrPluginKey.key;
+        const state = this.state.reconfigure({
+            // @ts-ignore
+            plugins: this.state.plugins.filter(plugin => !plugin.key.startsWith(name)),
+        });
+        this.view.updateState(state);
+    }
+    /**
+     * Creates an extension manager.
+     */
+    createExtensionManager() {
+        const coreExtensions = this.options.enableCoreExtensions ? Object.values(extensions) : [];
+        const allExtensions = [...coreExtensions, ...this.options.extensions].filter(extension => {
+            return ['extension', 'node', 'mark'].includes(extension === null || extension === void 0 ? void 0 : extension.type);
+        });
+        this.extensionManager = new ExtensionManager(allExtensions, this);
+    }
+    /**
+     * Creates an command manager.
+     */
+    createCommandManager() {
+        this.commandManager = new CommandManager({
+            editor: this,
+        });
+    }
+    /**
+     * Creates a ProseMirror schema.
+     */
+    createSchema() {
+        this.schema = this.extensionManager.schema;
+    }
+    /**
+     * Creates a ProseMirror view.
+     */
+    createView() {
+        const doc = createDocument$1(this.options.content, this.schema, this.options.parseOptions);
+        const selection = resolveFocusPosition(doc, this.options.autofocus);
+        this.view = new EditorView(this.options.element, {
+            ...this.options.editorProps,
+            dispatchTransaction: this.dispatchTransaction.bind(this),
+            state: EditorState.create({
+                doc,
+                selection: selection || undefined,
+            }),
+        });
+        // `editor.view` is not yet available at this time.
+        // Therefore we will add all plugins and node views directly afterwards.
+        const newState = this.state.reconfigure({
+            plugins: this.extensionManager.plugins,
+        });
+        this.view.updateState(newState);
+        this.createNodeViews();
+        this.prependClass();
+        // Let’s store the editor instance in the DOM element.
+        // So we’ll have access to it for tests.
+        const dom = this.view.dom;
+        dom.editor = this;
+    }
+    /**
+     * Creates all node views.
+     */
+    createNodeViews() {
+        this.view.setProps({
+            nodeViews: this.extensionManager.nodeViews,
+        });
+    }
+    /**
+     * Prepend class name to element.
+     */
+    prependClass() {
+        this.view.dom.className = `tiptap ${this.view.dom.className}`;
+    }
+    captureTransaction(fn) {
+        this.isCapturingTransaction = true;
+        fn();
+        this.isCapturingTransaction = false;
+        const tr = this.capturedTransaction;
+        this.capturedTransaction = null;
+        return tr;
+    }
+    /**
+     * The callback over which to send transactions (state updates) produced by the view.
+     *
+     * @param transaction An editor state transaction
+     */
+    dispatchTransaction(transaction) {
+        // if the editor / the view of the editor was destroyed
+        // the transaction should not be dispatched as there is no view anymore.
+        if (this.view.isDestroyed) {
+            return;
+        }
+        if (this.isCapturingTransaction) {
+            if (!this.capturedTransaction) {
+                this.capturedTransaction = transaction;
+                return;
+            }
+            transaction.steps.forEach(step => { var _a; return (_a = this.capturedTransaction) === null || _a === void 0 ? void 0 : _a.step(step); });
+            return;
+        }
+        const state = this.state.apply(transaction);
+        const selectionHasChanged = !this.state.selection.eq(state.selection);
+        this.view.updateState(state);
+        this.emit('transaction', {
+            editor: this,
+            transaction,
+        });
+        if (selectionHasChanged) {
+            this.emit('selectionUpdate', {
+                editor: this,
+                transaction,
+            });
+        }
+        const focus = transaction.getMeta('focus');
+        const blur = transaction.getMeta('blur');
+        if (focus) {
+            this.emit('focus', {
+                editor: this,
+                event: focus.event,
+                transaction,
+            });
+        }
+        if (blur) {
+            this.emit('blur', {
+                editor: this,
+                event: blur.event,
+                transaction,
+            });
+        }
+        if (!transaction.docChanged || transaction.getMeta('preventUpdate')) {
+            return;
+        }
+        this.emit('update', {
+            editor: this,
+            transaction,
+        });
+    }
+    /**
+     * Get attributes of the currently selected node or mark.
+     */
+    getAttributes(nameOrType) {
+        return getAttributes(this.state, nameOrType);
+    }
+    isActive(nameOrAttributes, attributesOrUndefined) {
+        const name = typeof nameOrAttributes === 'string' ? nameOrAttributes : null;
+        const attributes = typeof nameOrAttributes === 'string' ? attributesOrUndefined : nameOrAttributes;
+        return isActive(this.state, name, attributes);
+    }
+    /**
+     * Get the document as JSON.
+     */
+    getJSON() {
+        return this.state.doc.toJSON();
+    }
+    /**
+     * Get the document as HTML.
+     */
+    getHTML() {
+        return getHTMLFromFragment$1(this.state.doc.content, this.schema);
+    }
+    /**
+     * Get the document as text.
+     */
+    getText(options) {
+        const { blockSeparator = '\n\n', textSerializers = {} } = options || {};
+        return getText(this.state.doc, {
+            blockSeparator,
+            textSerializers: {
+                ...getTextSerializersFromSchema(this.schema),
+                ...textSerializers,
+            },
+        });
+    }
+    /**
+     * Check if there is no content.
+     */
+    get isEmpty() {
+        return isNodeEmpty(this.state.doc);
+    }
+    /**
+     * Get the number of characters for the current document.
+     *
+     * @deprecated
+     */
+    getCharacterCount() {
+        console.warn('[tiptap warn]: "editor.getCharacterCount()" is deprecated. Please use "editor.storage.characterCount.characters()" instead.');
+        return this.state.doc.content.size - 2;
+    }
+    /**
+     * Destroy the editor.
+     */
+    destroy() {
+        this.emit('destroy');
+        if (this.view) {
+            this.view.destroy();
+        }
+        this.removeAllListeners();
+    }
+    /**
+     * Check if the editor is already destroyed.
+     */
+    get isDestroyed() {
+        var _a;
+        // @ts-ignore
+        return !((_a = this.view) === null || _a === void 0 ? void 0 : _a.docView);
+    }
+}
 
 /**
  * Build an input rule that adds a mark when the
@@ -20623,7 +21152,7 @@ const ListItem$2 = Node.create({
     },
 });
 
-const TextStyle$1 = Mark.create({
+const TextStyle$2 = Mark.create({
     name: 'textStyle',
     addOptions() {
         return {
@@ -20688,7 +21217,7 @@ const BulletList = Node.create({
         return {
             toggleBulletList: () => ({ commands, chain }) => {
                 if (this.options.keepAttributes) {
-                    return chain().toggleList(this.name, this.options.itemTypeName, this.options.keepMarks).updateAttributes(ListItem$2.name, this.editor.getAttributes(TextStyle$1.name)).run();
+                    return chain().toggleList(this.name, this.options.itemTypeName, this.options.keepMarks).updateAttributes(ListItem$2.name, this.editor.getAttributes(TextStyle$2.name)).run();
                 }
                 return commands.toggleList(this.name, this.options.itemTypeName, this.options.keepMarks);
             },
@@ -20710,7 +21239,7 @@ const BulletList = Node.create({
                 type: this.type,
                 keepMarks: this.options.keepMarks,
                 keepAttributes: this.options.keepAttributes,
-                getAttributes: () => { return this.editor.getAttributes(TextStyle$1.name); },
+                getAttributes: () => { return this.editor.getAttributes(TextStyle$2.name); },
                 editor: this.editor,
             });
         }
@@ -21137,7 +21666,7 @@ const Dropcursor = Extension.create({
 Gap cursor selections are represented using this class. Its
 `$anchor` and `$head` properties both point at the cursor position.
 */
-class GapCursor extends Selection$1 {
+class GapCursor extends Selection {
     /**
     Create a gap cursor.
     */
@@ -21146,7 +21675,7 @@ class GapCursor extends Selection$1 {
     }
     map(doc, mapping) {
         let $pos = doc.resolve(mapping.map(this.head));
-        return GapCursor.valid($pos) ? new GapCursor($pos) : Selection$1.near($pos);
+        return GapCursor.valid($pos) ? new GapCursor($pos) : Selection.near($pos);
     }
     content() { return Slice.empty; }
     eq(other) {
@@ -21226,7 +21755,7 @@ class GapCursor extends Selection$1 {
 }
 GapCursor.prototype.visible = false;
 GapCursor.findFrom = GapCursor.findGapCursorFrom;
-Selection$1.jsonID("gapcursor", GapCursor);
+Selection.jsonID("gapcursor", GapCursor);
 class GapBookmark {
     constructor(pos) {
         this.pos = pos;
@@ -21236,7 +21765,7 @@ class GapBookmark {
     }
     resolve(doc) {
         let $pos = doc.resolve(this.pos);
-        return GapCursor.valid($pos) ? new GapCursor($pos) : Selection$1.near($pos);
+        return GapCursor.valid($pos) ? new GapCursor($pos) : Selection.near($pos);
     }
 }
 function closedBefore($pos) {
@@ -22368,7 +22897,7 @@ const ListItem = Node.create({
     },
 });
 
-const TextStyle = Mark.create({
+const TextStyle$1 = Mark.create({
     name: 'textStyle',
     addOptions() {
         return {
@@ -22450,7 +22979,7 @@ const OrderedList = Node.create({
         return {
             toggleOrderedList: () => ({ commands, chain }) => {
                 if (this.options.keepAttributes) {
-                    return chain().toggleList(this.name, this.options.itemTypeName, this.options.keepMarks).updateAttributes(ListItem.name, this.editor.getAttributes(TextStyle.name)).run();
+                    return chain().toggleList(this.name, this.options.itemTypeName, this.options.keepMarks).updateAttributes(ListItem.name, this.editor.getAttributes(TextStyle$1.name)).run();
                 }
                 return commands.toggleList(this.name, this.options.itemTypeName, this.options.keepMarks);
             },
@@ -22474,7 +23003,7 @@ const OrderedList = Node.create({
                 type: this.type,
                 keepMarks: this.options.keepMarks,
                 keepAttributes: this.options.keepAttributes,
-                getAttributes: match => ({ start: +match[1], ...this.editor.getAttributes(TextStyle.name) }),
+                getAttributes: match => ({ start: +match[1], ...this.editor.getAttributes(TextStyle$1.name) }),
                 joinPredicate: (match, node) => node.childCount + node.attrs.start === +match[1],
                 editor: this.editor,
             });
@@ -22656,125 +23185,187 @@ const StarterKit = Extension.create({
     },
 });
 
-const FootnoteView = function ({
-  node,
-  view,
-  getPos
-}) {
-  const dom = document.createElement('span');
-  dom.classList.add('footnote');
-  let innerView;
-  const open = function () {
-    const tooltip = dom.appendChild(document.createElement('div'));
-    tooltip.className = 'footnote-tooltip';
-    innerView = new EditorView(tooltip, {
-      state: EditorState.create({
-        doc: node,
-        plugins: [keymap({
-          // eslint-disable-next-line @typescript-eslint/unbound-method
-          'Mod-z': function () {
-            return undo(view.state, view.dispatch);
-          },
-          // eslint-disable-next-line @typescript-eslint/unbound-method
-          'Mod-y': function () {
-            return redo(view.state, view.dispatch);
+const TextStyle = Mark.create({
+    name: 'textStyle',
+    addOptions() {
+        return {
+            HTMLAttributes: {},
+        };
+    },
+    parseHTML() {
+        return [
+            {
+                tag: 'span',
+                getAttrs: element => {
+                    const hasStyles = element.hasAttribute('style');
+                    if (!hasStyles) {
+                        return false;
+                    }
+                    return {};
+                },
+            },
+        ];
+    },
+    renderHTML({ HTMLAttributes }) {
+        return ['span', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0];
+    },
+    addCommands() {
+        return {
+            removeEmptyTextStyle: () => ({ state, commands }) => {
+                const attributes = getMarkAttributes(state, this.type);
+                const hasStyles = Object.entries(attributes).some(([, value]) => !!value);
+                if (hasStyles) {
+                    return true;
+                }
+                return commands.unsetMark(this.name);
+            },
+        };
+    },
+});
+
+var IDX=256, HEX=[], SIZE=256, BUFFER;
+while (IDX--) HEX[IDX] = (IDX + 256).toString(16).substring(1);
+
+function uid(len) {
+	var i=0, tmp=(len || 11);
+	if (!BUFFER || ((IDX + tmp) > SIZE*2)) {
+		for (BUFFER='',IDX=0; i < SIZE; i++) {
+			BUFFER += HEX[Math.random() * 256 | 0];
+		}
+	}
+
+	return BUFFER.substring(IDX, IDX++ + tmp);
+}
+
+const FontVariant = Extension.create({
+  name: "font-variant",
+  addOptions() {
+    return {
+      types: ['textStyle']
+    };
+  },
+  addGlobalAttributes() {
+    return [{
+      types: this.options.types,
+      attributes: {
+        fontVariant: {
+          default: null,
+          parseHTML: element => element.style.fontVariant?.replace(/['"]+/g, ""),
+          renderHTML: attributes => {
+            if (!attributes.fontVariant) {
+              return {};
+            }
+            return {
+              style: `font-variant: ${attributes.fontVariant}`
+            };
           }
-        })]
-      }),
-      dispatchTransaction: function (tr) {
-        const _a = this.state.applyTransaction(tr),
-          state = _a.state,
-          transactions = _a.transactions;
-        this.updateState(state);
-        if (!tr.getMeta('fromOutside')) {
-          const outerTr_1 = view.state.tr;
-          const offsetMap_1 = StepMap.offset(getPos() + 1);
-          transactions.forEach(function (transaction) {
-            transaction.steps.forEach(function (step) {
-              const newStep = step.map(offsetMap_1);
-              if (newStep) {
-                outerTr_1.step(newStep);
-              }
-            });
-          });
-          if (outerTr_1.docChanged) {
-            view.dispatch(outerTr_1);
-          }
-        }
-      },
-      handleDOMEvents: {
-        mousedown: function (view) {
-          if (innerView && view.hasFocus()) {
-            innerView.focus();
-          }
-          return false;
-        },
-        blur: function () {
-          close();
-          return false;
         }
       }
+    }];
+  },
+  addCommands() {
+    return {
+      setFontVariant: fontVariant => ({
+        chain
+      }) => {
+        return chain().setMark("textStyle", {
+          fontVariant
+        }).run();
+      },
+      unsetFontVariant: () => ({
+        chain
+      }) => {
+        return chain().setMark("textStyle", {
+          fontVariant: null
+        }).removeEmptyTextStyle().run();
+      },
+      toggleSmallCaps: () => ({
+        commands
+      }) => {
+        return commands.toggleMark("textStyle", {
+          fontVariant: "small-caps"
+        });
+      }
+    };
+  }
+});
+
+const FootnoteView = function ({
+  node,
+  editor: outerEditor,
+  getPos
+}) {
+  const dom = document.createElement("footnote");
+  let innerView = null;
+  let editor = null;
+  const open = function () {
+    const tooltip = dom.appendChild(document.createElement("div"));
+    tooltip.className = "footnote-tooltip";
+    tooltip.appendChild(document.createElement("button"));
+    tooltip.lastChild.textContent = "italic";
+    tooltip.lastChild.addEventListener("click", () => {
+      editor.chain().focus().toggleItalic().run();
     });
-    innerView.focus();
+    tooltip.appendChild(document.createElement("button"));
+    tooltip.lastChild.textContent = "smallcaps";
+    tooltip.lastChild.addEventListener("click", () => {
+      // if (editor.isActive("fontVariant", { fontVariant: "small-caps" })) {
+      //   editor.chain().focus().unsetFontVariant().run();
+      // } else {
+      editor.chain().focus().toggleSmallCaps().run();
+      // }
+    });
+    editor = new Editor({
+      element: tooltip,
+      extensions: [StarterKit.configure({
+        gapcursor: false,
+        dropcursor: false
+      }), FontVariant, TextStyle],
+      onCreate: function ({
+        editor
+      }) {
+        editor.commands.setContent(node.content.toJSON());
+      }
+    });
+    innerView = editor.view;
+  };
+  const setContent = editor => {
+    outerEditor.chain().setNodeSelection(getPos()).command(({
+      tr
+    }) => {
+      const newNode = outerEditor.schema.nodeFromJSON({
+        type: node.type.name,
+        attrs: {
+          ...node.attrs
+        },
+        content: editor.getJSON().content[0].content
+      });
+      tr.replaceSelectionWith(newNode);
+      return true;
+    }).run();
   };
   const close = function () {
-    if (innerView) {
-      innerView.destroy();
-      innerView = null;
+    if (!innerView) {
+      return;
     }
-    dom.textContent = '';
+    innerView.destroy();
+    innerView = null;
+    editor.destroy();
+    dom.textContent = "";
   };
   return {
-    maybeEscape(unit, dir) {
-      let {
-          state
-        } = this.cm,
-        {
-          main
-        } = state.selection;
-      if (!main.empty) return false;
-      if (unit == 'line') main = state.doc.lineAt(main.head);
-      if (dir < 0 ? main.from > 0 : main.to < state.doc.length) return false;
-      let targetPos = this.getPos() + (dir < 0 ? 0 : this.node.nodeSize);
-      let selection = Selection.near(this.view.state.doc.resolve(targetPos), dir);
-      let tr = this.view.state.tr.setSelection(selection).scrollIntoView();
-      this.view.dispatch(tr);
-      this.view.focus();
-    },
     selectNode: function () {
-      dom.classList.add('ProseMirror-selectednode');
+      dom.classList.add("ProseMirror-selectednode");
       if (!innerView) {
         open();
       }
     },
     deselectNode: function () {
-      if (innerView && !innerView.hasFocus()) {
-        dom.classList.remove('ProseMirror-selectednode');
+      if (!innerView || innerView && !innerView.hasFocus()) {
+        dom.classList.remove("ProseMirror-selectednode");
+        setContent(editor);
         close();
       }
-    },
-    update: function (newNode) {
-      if (!newNode.sameMarkup(node)) {
-        return false;
-      }
-      node = newNode;
-      if (innerView) {
-        const state = innerView.state;
-        const start = node.content.findDiffStart(state.doc.content);
-        if (start != null) {
-          // @ts-ignore
-          let _a = node.content.findDiffEnd(state.doc.content),
-            endA = _a.a,
-            endB = _a.b;
-          const overlap = start - Math.min(endA, endB);
-          if (overlap > 0) {
-            endA += overlap;
-            endB += overlap;
-          }
-          innerView.dispatch(state.tr.replace(start, endB, node.slice(start, endA)).setMeta('fromOutside', true));
-        }
-      }
-      return true;
     },
     destroy: function () {
       if (innerView) {
@@ -22787,7 +23378,8 @@ const FootnoteView = function ({
     ignoreMutation: function () {
       return true;
     },
-    dom
+    dom,
+    domContent: innerView ? innerView.dom : undefined
   };
 };
 
@@ -22799,33 +23391,21 @@ const footnoteNode = Node.create({
   atom: true,
   addAttributes() {
     return {
-      content: {
-        default: ""
-      },
-      href: {
-        default: "#nowhere"
+      uid: {
+        default: uid()
       }
     };
   },
-  renderHTML: function ({
+  renderHTML: ({
     node,
     HTMLAttributes
-  }) {
-    let nodeContent = "";
-    if (node.content.content.length > 0) {
-      nodeContent = node.content.content[0].text;
-    }
-    return ["a", mergeAttributes(HTMLAttributes, {
-      class: "footnote",
-      content: nodeContent
-    }), ""];
-  },
+  }) => ["footnote", mergeAttributes(HTMLAttributes, {
+    uid: node.attrs.uid
+  }), 0],
   parseHTML: [{
-    tag: "a",
-    getAttrs: function (dom) {
-      // check if element has class "footnote"
-      if (dom.getAttribute("content")) dom.innerText = dom.getAttribute("content");
-      return dom.classList.contains("footnote") ? {} : false;
+    tag: "footnote",
+    getAttrs: dom => {
+      dom.getAttribute("uid");
     }
   }],
   addNodeView() {
@@ -22835,7 +23415,7 @@ const footnoteNode = Node.create({
       getPos
     }) => {
       return new FootnoteView({
-        view: editor.view,
+        editor,
         node,
         getPos
       });

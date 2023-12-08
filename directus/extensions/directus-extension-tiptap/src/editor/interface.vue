@@ -48,10 +48,10 @@
 <script>
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
-import Footnote from "tiptap-extension-footnote";
-import Blockquote from "@tiptap/extension-blockquote";
-import Hardbreak from "@tiptap/extension-hard-break";
+import Footnote, { FontVariant } from "tiptap-extension-footnote";
 import Link from "@tiptap/extension-link";
+import TextAlign from "@tiptap/extension-text-align";
+import TextStyle from "@tiptap/extension-text-style";
 import { watch } from "vue";
 import "./style.css";
 import BoldIcon from "../icons/bold.vue";
@@ -68,6 +68,8 @@ import H2Icon from "../icons/h2.vue";
 import H3Icon from "../icons/h3.vue";
 import Toolbar from "./components/ToolbarGroup.vue";
 import ToolbarButton from "./components/ToolbarButton.vue";
+
+import json from "./content.json";
 
 export default {
   components: {
@@ -97,7 +99,16 @@ export default {
   emits: ["input"],
   setup(props, { emit }) {
     const editor = useEditor({
-      extensions: [StarterKit, Footnote, Blockquote, Link, Hardbreak],
+      extensions: [
+        StarterKit,
+        Link,
+        TextAlign.configure({
+          types: ["heading", "paragraph"],
+        }),
+        Footnote,
+        FontVariant,
+        TextStyle,
+      ],
       onUpdate: ({ editor }) => {
         emit("input", editor.getJSON());
       },
@@ -144,7 +155,7 @@ export default {
 };
 </script>
 
-<style>
+<style >
 .ProseMirror {
   font-size: large;
   counter-reset: footnote;
