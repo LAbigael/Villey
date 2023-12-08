@@ -19,10 +19,6 @@
         :isActive="isActive('heading', { level: 2 })">
         <H2Icon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.chain().focus().toggleHeading({ level: 3 }).run()" :label="h3"
-        :isActive="isActive('heading', { level: 3 })">
-        <H3Icon />
-      </ToolbarButton>
       <ToolbarButton @click="
         editor.chain().focus().insertContent({ type: 'footnote' }).run()
         " :label="footnote" :isActive="isActive('footnote')">
@@ -33,6 +29,22 @@
       </ToolbarButton>
       <ToolbarButton @click="setLink()" :label="link">
         <LinkIcon />
+      </ToolbarButton>
+      <ToolbarButton @click="editor.commands.setTextAlign('left')" :label="alignLeft"
+        :isActive="isActive({ textAlign: 'left' })">
+        <AlignLeftIcon />
+      </ToolbarButton>
+      <ToolbarButton @click="editor.commands.setTextAlign('center')" :label="alignCenter"
+        :isActive="isActive({ textAlign: 'center' })">
+        <AlignCenterIcon />
+      </ToolbarButton>
+      <ToolbarButton @click="editor.commands.setTextAlign('justify')" :label="alignJustify"
+        :isActive="isActive({ textAlign: 'justify' })">
+        <AlignJustifyIcon />
+      </ToolbarButton>
+      <ToolbarButton @click="editor.chain().focus().toggleSmallCaps().run()" :label="redo"
+        :isActive="isActive('textStyle', { fontVariant: 'small-caps' })">
+        <span class="small-caps bold">A</span>
       </ToolbarButton>
       <ToolbarButton @click="editor.chain().focus().undo().run()" :label="undo">
         <UndoIcon />
@@ -65,11 +77,13 @@ import UndoIcon from "../icons/arrow-go-back-line.vue";
 import RedoIcon from "../icons/arrow-go-forward-line.vue";
 import H1Icon from "../icons/h1.vue";
 import H2Icon from "../icons/h2.vue";
-import H3Icon from "../icons/h3.vue";
+import AlignLeftIcon from "../icons/align-left.vue";
+import AlignCenterIcon from "../icons/align-center.vue";
+import AlignJustifyIcon from "../icons/align-justify.vue";
+import SmallCapsIcon from "../icons/small-caps.vue";
+
 import Toolbar from "./components/ToolbarGroup.vue";
 import ToolbarButton from "./components/ToolbarButton.vue";
-
-import json from "./content.json";
 
 export default {
   components: {
@@ -80,12 +94,15 @@ export default {
     FootnoteIcon,
     H1Icon,
     H2Icon,
-    H3Icon,
     ClearFormattingIcon,
     LinkIcon,
     ParagraphIcon,
     UndoIcon,
     RedoIcon,
+    AlignLeftIcon,
+    AlignCenterIcon,
+    AlignJustifyIcon,
+    SmallCapsIcon,
     Toolbar,
     ToolbarButton,
   },
@@ -155,7 +172,7 @@ export default {
 };
 </script>
 
-<style >
+<style>
 .ProseMirror {
   font-size: large;
   counter-reset: footnote;
@@ -237,7 +254,7 @@ export default {
   font-style: italic;
 }
 
-.ProseMirror h1 {
+.ProseMirror h3 {
   font-size: 1.5em;
   font-weight: bold;
 }
@@ -247,8 +264,19 @@ export default {
   font-weight: bold;
 }
 
+.ProseMirror p {
+  margin: 15px 0;
+}
+
 .ProseMirror h3 {
+  margin: 30px 0;
   font-size: 1.1em;
+  font-weight: bold;
+}
+
+.ProseMirror h4 {
+  margin: 20px 0;
+  font-size: 1em;
   font-weight: bold;
 }
 
