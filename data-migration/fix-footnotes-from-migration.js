@@ -113,12 +113,19 @@ function htmlToProsemirror(html, footnotes = [], isFootnote = false) {
   $(".JP_citation").replaceWith(function () {
     return `<blockquote>${$(this).html()}</blockquote>`;
   });
+  $(".JPcitation").replaceWith(function () {
+    return `<blockquote>${$(this).html()}</blockquote>`;
+  });
+
   $(".titre-section").replaceWith(function () {
     return `<h3>${$(this).html()}</h3>`;
   });
   $(".titre-sous-section").replaceWith(function () {
+    console.log("titre-sous-section");
     return `<h4>${$(this).html()}</h4>`;
   });
+
+  html = $.html();
 
   const extensions = [
     StarterKit,
@@ -325,10 +332,10 @@ const migrateJp = async () => {
     console.log("migration done for article jp", article.id);
   }
 };
-migrateJp().then(() => {
+// migrateJp().then(() => {
   // console.log("done migrating jp");
   migrateDp().then(() => {
     //   console.log("done migrating dp");
     process.exit(0);
-  });
+  // });
 });
