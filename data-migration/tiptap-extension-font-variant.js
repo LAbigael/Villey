@@ -15,7 +15,7 @@ const FontVariant = Extension.create({
       {
         types: this.options.types,
         attributes: {
-          FontVariant: {
+          fontVariant: {
             default: null,
             parseHTML: (element) =>
               element.style.fontVariant?.replace(/['"]+/g, ""),
@@ -45,7 +45,7 @@ const FontVariant = Extension.create({
         () =>
         ({ chain }) => {
           return chain()
-            .setMark("textStyle", { FontVariant: null })
+            .setMark("textStyle", { fontVariant: null })
             .removeEmptyTextStyle()
             .run();
         },

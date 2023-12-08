@@ -40,6 +40,9 @@ const modifyJsonToMatchTiptapSchema = (json, footnotes = []) => {
             // footnote.content = footnote.content.replace(/\[\d+\]/g, "").trim();
             node.content = JSON.parse(footnote.content);
             node.dontParse = true;
+            node.attrs = {
+              uid: footnote.uid,
+            };
             delete node.marks;
             delete node.text;
           } else {
@@ -59,7 +62,7 @@ const modifyJsonToMatchTiptapSchema = (json, footnotes = []) => {
     }
   };
 
-  jsonParsed.content.forEach((node) => replaceWithTiptapMarks(node));
+  jsonParsed.forEach((node) => replaceWithTiptapMarks(node));
 
   return JSON.stringify(jsonParsed);
 };
@@ -74,7 +77,7 @@ function getFootnotesContentFromHtml(html) {
         const footnote = {
           hmtl: html,
           position: $(elem).attr("id").replace("ftn", ""),
-          content: htmlToProsemirror($(elem).html()),
+          content: htmlToProsemirror($(elem).html(), [], true),
           // content: $(elem)
           //   .text()
           //   .replace(/\[\d+\]\./g, "")
@@ -87,7 +90,8 @@ function getFootnotesContentFromHtml(html) {
         const footnote = {
           hmtl: html,
           position: $(elem).find("a.footnote-anchor").text(),
-          content: htmlToProsemirror($(elem).children("p").html()),
+          content: htmlToProsemirror($(elem).children("p").html(), [], true),
+          uid: uid(),
         };
         footnotes.push(footnote);
       }
@@ -98,12 +102,12 @@ function getFootnotesContentFromHtml(html) {
   });
   return footnotes;
 }
-function htmlToProsemirror(html, footnotes = []) {
+function htmlToProsemirror(html, footnotes = [], isFootnote = false) {
   let $;
   try {
     $ = load(html);
   } catch (e) {
-    console.log(html)
+    // console.log(html);
     throw e;
   }
   $(".JP_citation").replaceWith(function () {
@@ -116,22 +120,35 @@ function htmlToProsemirror(html, footnotes = []) {
     return `<h4>${$(this).html()}</h4>`;
   });
 
-  const parsedHTML = generateJSON(html, [
+  const extensions = [
     StarterKit,
-    Link.extend({
-      parseHTML() {
-        return [{ tag: "a[href]" }];
+    TextStyle.configure({
+      HTMLAttributes: {
+        style: "font-variant",
       },
     }),
-    TextAlign.configure({
-      types: ["paragraph"],
-    }),
-    TextStyle,
     FontVariant,
-  ]);
+  ];
+  if (!isFootnote) {
+    extensions.push(
+      Link.extend({
+        parseHTML() {
+          return [{ tag: "a[href]" }];
+        },
+      })
+    );
+    extensions.push(
+      TextAlign.configure({
+        types: ["paragraph"],
+        alignments: ["left", "center"],
+      })
+    );
+  }
+
+  const parsedJson = generateJSON(html, extensions);
 
   const prosemirrorJson = modifyJsonToMatchTiptapSchema(
-    JSON.stringify(parsedHTML),
+    JSON.stringify(parsedJson.content),
     footnotes
   );
   return prosemirrorJson;
@@ -205,6 +222,7 @@ const migrateDp = async () => {
         content_bis: articleContent,
       })
       .where("article_id", directus_article[0].id);
+    console.log("migration done for article dp", article.id);
   }
 
   const recensions = await dp_old("book_reviews").select(
@@ -234,6 +252,7 @@ const migrateDp = async () => {
         content_bis: articleContent,
       })
       .where("article_id", directus_article[0].id);
+    console.log("migration done for article dp", article.id);
   }
 };
 
@@ -303,13 +322,13 @@ const migrateJp = async () => {
     if (directus_article.length > 1) {
       console.log("multiple articles found", directus_article);
     }
-    console.log("migration done for article", article.id);
+    console.log("migration done for article jp", article.id);
   }
 };
-// migrateJp().then(() => {
+migrateJp().then(() => {
   // console.log("done migrating jp");
   migrateDp().then(() => {
-  //   console.log("done migrating dp");
-  process.exit(0);
-  // });
+    //   console.log("done migrating dp");
+    process.exit(0);
+  });
 });
