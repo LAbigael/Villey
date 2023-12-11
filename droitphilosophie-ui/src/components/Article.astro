@@ -1,9 +1,13 @@
 ---
 const { article } = Astro.props;
 import FontSize from "./FontSize.astro";
+import { Debug } from 'astro:components';
+
 ---
 
 <article class="">
+
+  <Debug answer={article.content} />
   <div class="article_topWrapper">
     <h1 class="article_title">{article.title}</h1>
     <div class="article_authors">
@@ -29,6 +33,7 @@ import FontSize from "./FontSize.astro";
     </div>
   </div>
 </article>
+
 <script type="text/javascript" src="/js/sticky-sidebar.js"></script>
 
 <script type="text/javascript">
@@ -42,7 +47,7 @@ import FontSize from "./FontSize.astro";
 
 <style is:global>
   .article_content {
-    @apply text-base text-justify w-2/3 max-w-3xl mx-auto leading-normal mt-8;
+    @apply text-lg text-justify w-2/3 max-w-3xl mx-auto leading-normal mt-8;
     counter-reset: footnote;
   }
   .sidebar {
@@ -63,18 +68,18 @@ import FontSize from "./FontSize.astro";
     margin-right: 9px;
   }
 
-  .footnote {
+  .footnote-link {
     /* font-size: 1px;
     letter-spacing: -1px; */
     /* color: transparent; */
   }
 
-  a.footnote::after {
+  a.footnote-link::after {
     counter-increment: footnote;
     content: "[" counter(footnote) "]";
   }
 
-  .article_content .footnote::after {
+  .article_content .footnote-link::after {
     font-size: 1.3rem; /* Maintain relative font-size in browsers that support it */
     letter-spacing: normal;
     display: inline-block;
