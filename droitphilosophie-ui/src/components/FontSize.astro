@@ -1,38 +1,47 @@
-<input class="hidden" type="radio" name="font_button" id="small_font"  />
-<label class="font_size_button small_font" for="small_font">A</label>
-<input class="hidden" type="radio" name="font_button" id="medium_font" />
-<label class="font_size_button medium_font" for="medium_font" >A</label >
-<input class="hidden" type="radio" name="font_button" id="big_font" />
-<label class="font_size_button big_font" for="big_font">A</label>
+<div class="font_size_buttons">
+  <input class="hidden" type="radio" name="font_button" id="small_font" />
+  <label class="font_size_button small_font" for="small_font">A</label>
+  <input class="hidden" type="radio" name="font_button" id="medium_font" />
+  <label class="font_size_button medium_font" for="medium_font">A</label>
+  <input class="hidden" type="radio" name="font_button" id="big_font" />
+  <label class="font_size_button big_font" for="big_font">A</label>
+</div>
 
 <script>
+  const small_font = document.getElementById("small_font");
+  const medium_font = document.getElementById("medium_font");
+  const big_font = document.getElementById("big_font");
 
-const small_font = document.getElementById("small_font");
-const medium_font = document.getElementById("medium_font");
-const big_font = document.getElementById("big_font");
-
-small_font.addEventListener("click", () => {
-  document.querySelector(".article_content").style.fontSize  =  "1em";
-});
-medium_font.addEventListener("click", () => {
-  document.querySelector(".article_content").style.fontSize  =  "1.5em";
-});
-big_font.addEventListener("click", () => {
-  document.querySelector(".article_content").style.fontSize  =  "2em";
-});
+  small_font.addEventListener("click", () => {
+    document.querySelector(".article_content").style.fontSize = "1em";
+  });
+  medium_font.addEventListener("click", () => {
+    document.querySelector(".article_content").style.fontSize = "1.5em";
+  });
+  big_font.addEventListener("click", () => {
+    document.querySelector(".article_content").style.fontSize = "2em";
+  });
 </script>
 
 <style>
-
-.small_font {
-  font-size: 0.8rem;
-}
-.medium_font {
-  font-size: 1rem;
-}
-.big_font {
-  font-size: 1.2rem;
-}
+  .font_size_buttons {
+    @apply flex justify-center items-center;
+    height: 2rem;
+    widows: 2rem;
+    cursor: pointer;
+    color: #444;
+    padding: 1px 5px;
+    display: block;
+  }
+  .small_font {
+    font-size: 0.8rem;
+  }
+  .medium_font {
+    font-size: 1rem;
+  }
+  .big_font {
+    font-size: 1.2rem;
+  }
 
   .font_size_button {
     @apply flex justify-center items-center;
@@ -45,6 +54,5 @@ big_font.addEventListener("click", () => {
     border: 1px solid #ddd;
     display: block;
     float: left;
-
   }
 </style>
