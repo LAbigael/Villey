@@ -1,0 +1,51 @@
+<div tabindex="0" id="toc" class="collapse collapse-arrow">
+  <div class="collapse-title text-xl font-medium">Sommaire</div>
+  <div class="collapse-content">
+    <div class="table_of_content">
+      <div class="table_of_content_title">Table of Content</div>
+      <div class="table_of_content_content">
+        <ul class="table_of_content_list">
+            <a class="3" href="#introduction">Introduction</a>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // for each h3, and h4 within, add a list item to the table of content
+  // Add id to headings dynamically
+  var toc = document.querySelector(".table_of_content_list");
+  var headings = document.querySelectorAll("h3, h4");
+
+  // Loop through all heading
+  for (var i = 0; i < headings.length; i++) {
+    var heading = headings[i];
+    var headingText = heading.textContent;
+    var headingLevel = heading.tagName.slice(-1);
+    var headingId = headingText.replace(/\s+/g, "-").toLowerCase();
+    heading.id = headingId;
+    var listItem = document.createElement("li");
+    listItem.innerHTML = `<a class="${headingLevel}" href="#${headingId}">${headingText}</a>`;
+    toc.appendChild(listItem);
+  }
+</script>
+
+<style is:global>
+  #toc {
+    @apply p-2 m-3 mt-8 border-y border-white rounded-none
+  }
+  a.3 {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: #000;
+    text-decoration: none;
+  }
+  a.4 {
+    font-size: 1rem;
+    font-weight: 400;
+    color: #000;
+    text-decoration: none;
+    padding-left: 3rem;
+  }
+</style>

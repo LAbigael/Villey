@@ -11,11 +11,6 @@ import TextStyle from "@tiptap/extension-text-style";
 export default ({ filter, action }) => {
   filter("Articles.items.read", (items) => {
     return items.map((item) => {
-      if (
-        item.slug !==
-        "la-querelle-de-machiavel-en-france-aux-xixe-et-xxe-siecles-124"
-      )
-        return item;
 
       if (!item.article_contents) return item;
       const lastArticleContent =

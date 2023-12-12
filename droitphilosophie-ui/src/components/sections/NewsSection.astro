@@ -10,7 +10,7 @@ const directus = await getDirectusClient();
 const articles = await directus.request(
   readItems("Articles", {
     fields: ["slug", "title", "authors.author_id.*"],
-    sort: ['id'],
+    sort: ['-id'],
     limit: 6,
     filter: {
       site_id: {
