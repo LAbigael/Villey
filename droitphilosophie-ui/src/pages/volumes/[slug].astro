@@ -1,23 +1,17 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import Article from "../../components/Article.astro";
+import Volume from "../../components/Volume.astro";
 
 import { getDirectusClient } from "../../utils/get-directus-client";
 import { readItems } from "@directus/sdk";
 
+
 export async function getStaticPaths() {
   const directus = await getDirectusClient();
   const articles = await directus.request(
-    readItems("Articles", {
-      fields: [
-        "slug",
-        "title",
-        "authors.author_id.*",
-        "article_contents.content_bis",
-        { section_id: ["*"] },
-      ],
+    readItems("Volumes", {
+      fields: ["slug", "title", "number", "published_at"],
       sort: ["-id"],
-      limit: 6,
       filter: {
         site_id: {
           _eq: "1",
@@ -27,17 +21,15 @@ export async function getStaticPaths() {
   );
   return articles.map((article) => ({
     params: { slug: article.slug },
-    props: { article: { ...article, contents: article.article_contents } },
+    props: { volume: { ...volume } },
   }));
 }
-const { article } = Astro.props;
-import { Debug } from "astro:components";
+const { volume } = Astro.props;
 ---
 
 <Layout title="Droit & Philosophie.">
-  <Debug content={article} />
   <main class="font-light">
-    <Article article={article} />
+    <Volume volume={volume} />
 
     <style>
       main {
