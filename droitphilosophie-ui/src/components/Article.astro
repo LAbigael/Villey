@@ -1,13 +1,9 @@
 ---
 const { article } = Astro.props;
 import FontSize from "./FontSize.astro";
-import { Debug } from 'astro:components';
-
 ---
 
 <article class="">
-
-  <Debug answer={article.content} />
   <div class="article_topWrapper">
     <h1 class="article_title">{article.title}</h1>
     <div class="article_authors">
@@ -19,97 +15,102 @@ import { Debug } from 'astro:components';
     </div>
   </div>
   <div class="main-content relative flex flex-row">
-    <div class="article_content" set:html={article.content} />
-    <div id="sidebar" class="sidebar flex flex-col">
-      <div class="sidebar__inner">
+    <div id="sidebar" class="sidebar sidebar-1 flex flex-col">
+      <div class="sidebar__inner sidebar__inner-1">
         <FontSize />
         <div tabindex="0" class="collapse collapse-arrow bg-base-200">
-          <div class="collapse-title text-xl  font-medium">Sommaire</div>
-          <div class="collapse-content">
-            Faire le sommaire en js
-          </div>
+          <div class="collapse-title text-xl font-medium">Sommaire</div>
+          <div class="collapse-content">Faire le sommaire en js</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="article_content" set:html={article.content} />
+    <div id="sidebar-2" class="sidebar sidebar-2 flex flex-col">
+      <div class="sidebar__inner sidebar__inner-2">
+        <FontSize />
+        <div tabindex="0" class="collapse collapse-arrow bg-base-200">
+          <div class="collapse-title text-xl font-medium">Sommaire</div>
+          <div class="collapse-content">Faire le sommaire en js</div>
         </div>
       </div>
     </div>
   </div>
-</article>
 
-<script type="text/javascript" src="/js/sticky-sidebar.js"></script>
+  <script type="text/javascript" src="/js/sticky-sidebar.js"></script>
 
-<script type="text/javascript">
-  var sidebar = new StickySidebar(".sidebar", {
-    containerSelector: ".main-content",
-    innerWrapperSelector: ".sidebar__inner",
-    topSpacing: 20,
-    bottomSpacing: 20,
-  });
-</script>
+  <script>
+    new StickySidebar(`.sidebar-1`, {
+      containerSelector: ".main-content",
+      innerWrapperSelector: ".sidebar__inner-1",
+      topSpacing: 20,
+      bottomSpacing: 20,
+    });
+    new StickySidebar(`.sidebar-2`, {
+      containerSelector: ".main-content",
+      innerWrapperSelector: ".sidebar__inner-2",
+      topSpacing: 20,
+      bottomSpacing: 20,
+    });
+  </script>
 
-<style is:global>
-  .article_content {
-    @apply text-lg text-justify w-2/3 max-w-3xl mx-auto leading-normal mt-8;
-    counter-reset: footnote;
-  }
-  .sidebar {
-    will-change: min-height;
-  }
+  <style is:global>
+    .article_content {
+      @apply text-lg text-justify w-2/4 max-w-3xl mx-auto leading-normal mt-8;
+      counter-reset: footnote;
+    }
 
-  .sidebar__inner {
-    transform: translate(0, 0); /* For browsers don't support translate3d. */
-    transform: translate3d(0, 0, 0);
-    will-change: position, transform;
-  }
+    .article_content:first-letter {
+      float: left;
+      font-size: 45px;
+      line-height: 1;
+      font-weight: bold;
+      margin-right: 9px;
+    }
 
-  .article_content:first-letter {
-    float: left;
-    font-size: 45px;
-    line-height: 1;
-    font-weight: bold;
-    margin-right: 9px;
-  }
-
-  .footnote-link {
-    /* font-size: 1px;
+    .footnote-link {
+      /* font-size: 1px;
     letter-spacing: -1px; */
-    /* color: transparent; */
-  }
+      /* color: transparent; */
+    }
 
-  a.footnote-link::after {
-    counter-increment: footnote;
-    content: "[" counter(footnote) "]";
-  }
+    a.footnote-link::after {
+      counter-increment: footnote;
+      content: "[" counter(footnote) "]";
+    }
 
-  .article_content .footnote-link::after {
-    font-size: 1.3rem; /* Maintain relative font-size in browsers that support it */
-    letter-spacing: normal;
-    display: inline-block;
-    vertical-align: super;
-    font-size: 75%;
-    color: skyblue;
-  }
+    .article_content .footnote-link::after {
+      font-size: 1.3rem; /* Maintain relative font-size in browsers that support it */
+      letter-spacing: normal;
+      display: inline-block;
+      vertical-align: super;
+      font-size: 75%;
+      color: skyblue;
+    }
 
-  .article_topWrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .article_title {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0;
-    padding: 0;
-  }
-  .article_authors {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-  }
-  .article_author {
-    font-size: 1rem;
-    font-weight: 400;
-    margin: 0;
-    padding: 0;
-  }
-</style>
+    .article_topWrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .article_title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0;
+      padding: 0;
+    }
+    .article_authors {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+    }
+    .article_author {
+      font-size: 1rem;
+      font-weight: 400;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</article>

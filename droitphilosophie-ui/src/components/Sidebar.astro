@@ -1,0 +1,70 @@
+---
+import FontSize from "./FontSize.astro";
+const { className } = Astro.props;
+---
+
+<sticky-sidebar data-classname={className}>
+  <div
+    id={`sidebar-${className}`}
+    class=`sidebar sidebar-${className} flex flex-col`
+  >
+    <div class="sidebar__inner">
+      <FontSize />
+      <div tabindex="0" class="collapse collapse-arrow bg-base-200">
+        <div class="collapse-title text-xl font-medium">Sommaire</div>
+        <div class="collapse-content">Faire le sommaire en js</div>
+      </div>
+    </div>
+  </div>
+</sticky-sidebar>
+
+<script type="text/javascript" src="/js/sticky-sidebar.js"></script>
+
+<script type="text/javascript">
+  class Sidebar extends HTMLElement {
+    constructor() {
+      super();
+      const className = this.dataset.className;
+      var sidebar = new StickySidebar(`.sidebar-${className}`, {
+        containerSelector: ".main-content",
+        innerWrapperSelector: ".sidebar__inner",
+        topSpacing: 20,
+        bottomSpacing: 20,
+      });
+    }
+  }
+  customElements.define("sticky-sidebar", Sidebar);
+</script>
+<script>
+  // Define the behaviour for our new type of HTML element.
+  class AstroHeart extends HTMLElement {
+    constructor() {
+      super();
+      let count = 0;
+
+      const heartButton = this.querySelector("button");
+      const countSpan = this.querySelector("span");
+
+      // Each time the button is clicked, update the count.
+      heartButton.addEventListener("click", () => {
+        count++;
+        countSpan.textContent = count.toString();
+      });
+    }
+  }
+
+  // Tell the browser to use our AstroHeart class for <astro-heart> elements.
+</script>
+
+<style>
+  .sidebar {
+    @apply w-1/4;
+    will-change: min-height;
+  }
+
+  .sidebar__inner {
+    transform: translate(0, 0); /* For browsers don't support translate3d. */
+    transform: translate3d(0, 0, 0);
+    will-change: position, transform;
+  }
+</style>
