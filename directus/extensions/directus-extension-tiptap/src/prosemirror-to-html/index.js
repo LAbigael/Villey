@@ -1,7 +1,7 @@
 import { generateHTML } from "@tiptap/html";
 import { writeFileSync } from "fs";
-import { load } from "cheerio";
 import * as htmlparser2 from "htmlparser2";
+import render from "dom-serializer";
 import StarterKit from "@tiptap/starter-kit";
 import Footnote, { FontVariant } from "tiptap-extension-footnote";
 import Link from "@tiptap/extension-link";
@@ -34,71 +34,6 @@ export default ({ filter, action }) => {
             content: lastArticleContent.content_bis,
           };
         }
-        articleContent = {
-          type: "doc",
-          content: [
-            {
-              type: "paragraph",
-              attrs: {
-                textAlign: "left",
-              },
-              content: [
-                {
-                  type: "text",
-                  text: "Au XVIIIe siècle, cependant permis de lever en partie la condamnation de Machiavel comme un conseiller en tyrannie. Celle de Rousseau, affirmant dans le Contrat social que « le Prince de Machiavel est le grand livre des républicains » puisque « en feignant de donner des leçons aux rois, il en a donné de grandes aux peuples »",
-                },
-                {
-                  type: "footnote",
-                  attrs: {
-                    uid: "fc10c97b3fd",
-                  },
-                  content: [
-                    {
-                      type: "paragraph",
-                      attrs: {
-                        textAlign: "left",
-                      },
-                      content: [
-                        {
-                          type: "text",
-                          text: "2. J.-J. Rousseau, Œuvres complètes, vol. III, Paris, Gallimard, coll. La Pléiade, 1964, p. 409.",
-                        },
-                      ],
-                    },
-                  ],
-                },
-                {
-                  type: "text",
-                  text: ", en est la plus représentative",
-                },
-                {
-                  type: "footnote",
-                  attrs: {
-                    uid: "c10c97b3fd7",
-                  },
-                  content: [
-                    {
-                      type: "paragraph",
-                      attrs: {
-                        textAlign: "left",
-                      },
-                      content: [
-                        {
-                          type: "text",
-                          text: "3. Voir R. Mortier, « Les ambiguïtés du machiavélisme en France », in : A. Dierkens (dir.), L’antimachiavélisme : de la Renaissance aux Lumières, Bruxelles, Éditions de l’Université de Bruxelles, 1997.",
-                        },
-                      ],
-                    },
-                  ],
-                },
-                {
-                  type: "text",
-                  text: ". Cette lecture opposition entre le Prince et les Discours sur la première décade de Tite-Live, et la préférence donnée aux Discours, considérés comme un bréviaire de vie civile, constituait un des traits marquants de la disposition des hommes des Lumières à l’égard de Machiavel.",
-                },
-              ],
-            },
-          ],
-        };
 
         item.content = generateHTML(articleContent, [
           StarterKit,
@@ -122,7 +57,10 @@ export default ({ filter, action }) => {
       htmlparser2.DomUtils.getElements({ tag_name: "footnote" }, dom).forEach(
         (el) => {
           const id = el.attribs.uid;
-          const content = el.children[0].children[0].data;
+          console.log(el)
+          const content = el.children
+            .map((child) => render(child))
+            .join("");
           el.name = "a";
           el.attribs = {
             class: "footnote-link",
@@ -133,7 +71,7 @@ export default ({ filter, action }) => {
           el.children = [];
         }
       );
-      item.content = htmlparser2.DomUtils.getOuterHTML(dom);
+      item.content = render(dom);
 
       return item;
     });
