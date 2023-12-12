@@ -1,4 +1,4 @@
-import { writeFileSync } from 'fs';
+import 'fs';
 
 // ::- Persistent data structure representing an ordered mapping from
 // strings to values, with some convenient update methods.
@@ -33139,11 +33139,6 @@ var e0 = ({ filter, action }) => {
 
       if (lastArticleContent.content_bis) {
         let articleContent = lastArticleContent.content_bis;
-        console.log("writing test.json");
-        writeFileSync(
-          "./test.json",
-          JSON.stringify(lastArticleContent.content_bis)
-        );
         if (articleContent.type !== "doc") {
           articleContent = {
             type: "doc",
@@ -33173,7 +33168,6 @@ var e0 = ({ filter, action }) => {
       getElements({ tag_name: "footnote" }, dom).forEach(
         (el) => {
           const id = el.attribs.uid;
-          console.log(el);
           const content = el.children
             .map((child) => _default(child))
             .join("");

@@ -23,11 +23,6 @@ export default ({ filter, action }) => {
 
       if (lastArticleContent.content_bis) {
         let articleContent = lastArticleContent.content_bis;
-        console.log("writing test.json");
-        writeFileSync(
-          "./test.json",
-          JSON.stringify(lastArticleContent.content_bis)
-        );
         if (articleContent.type !== "doc") {
           articleContent = {
             type: "doc",
@@ -57,7 +52,6 @@ export default ({ filter, action }) => {
       htmlparser2.DomUtils.getElements({ tag_name: "footnote" }, dom).forEach(
         (el) => {
           const id = el.attribs.uid;
-          console.log(el)
           const content = el.children
             .map((child) => render(child))
             .join("");
