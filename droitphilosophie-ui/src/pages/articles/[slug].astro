@@ -10,14 +10,16 @@ export async function getStaticPaths() {
   const articles = await directus.request(
     readItems("Articles", {
       fields: [
+        "id",
         "slug",
         "title",
+        "subtitle",
         "authors.author_id.*",
         "article_contents.content_bis",
-        { section_id: ["*"] },
+        "section_id.volume_id", // Quentin
       ],
       sort: ["-id"],
-      limit: 6,
+      limit: 20,
       filter: {
         site_id: {
           _eq: "1",
@@ -25,11 +27,34 @@ export async function getStaticPaths() {
       },
     }),
   );
+
+  // Quentin
+  let sections =[]
+  const index = 0 //0 , 10 , 11
+  if (articles[index].section_id){
+  sections = await directus.request(
+    readItems("VolumeSections", {
+      fields: [
+        "title"
+      ],
+      filter: {
+        volume_id: {
+          _eq: articles[index].section_id.volume_id,
+        },
+      },
+      }))
+    }
+    else{  sections =[] }
+
   return articles.map((article) => ({
     params: { slug: article.slug },
-    props: { article: { ...article, contents: article.article_contents } },
+    props: { article: { ...article, contents: article.article_contents, sections  } }, //Quentin //
   }));
 }
+
+
+
+
 const { article } = Astro.props;
 import { Debug } from "astro:components";
 ---
