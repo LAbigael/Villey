@@ -71,12 +71,15 @@ import { Debug } from "astro:components";
         will-change: position, transform;
       }
 
-      .article_content:first-letter {
+      article p:first-of-type::first-letter {
         float: left;
-        font-size: 45px;
+        font-size: 55px;
         line-height: 1;
         font-weight: bold;
         margin-right: 9px;
+        /* Add any other styles you want to apply to the first letter */
+      }
+      .article_content p:first-child {
       }
 
       .footnote-link {
@@ -106,10 +109,7 @@ import { Debug } from "astro:components";
         justify-content: center;
       }
       .article_title {
-        font-size: 2rem;
-        font-weight: 700;
-        margin: 0;
-        padding: 0;
+        @apply text-center font-bold text-3xl my-8;
         border-bottom: 1px solid rgba(var(--secondary));
       }
       .article_authors {
