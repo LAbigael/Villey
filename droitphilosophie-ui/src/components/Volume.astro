@@ -1,0 +1,91 @@
+---
+const { volume } = Astro.props;
+import OtherVolumes from "./OtherVolumes.astro";
+---
+
+<article class="volume">
+  <div class="volume_topWrapper">
+    <h1 class="volume_title">{volume.title}</h1>
+  </div>
+  <div class="main-content relative flex flex-row">
+    <div id="sidebar" class="sidebar sidebar-1 flex flex-col">
+      <div class="sidebar__inner sidebar__inner-1">
+        <OtherVolumes volume={volume} />
+      </div>
+    </div>
+    <div class="volume_content">
+      {
+        volume.sections.map((section, i) => (
+          <>
+            <h2 class="section_title" id={section.id}>
+              {section.title}
+            </h2>
+            <ul>
+              {section.articles.map((article) => (
+                <li>
+                  <span class="authors">
+                    {article.authors
+                      .map((a) => a.author_id.fullname)
+                      .join(", ")}{" "}
+                    :
+                  </span>
+                  <h3>
+                    <a href={article.slug}>{article.title}</a>
+                  </h3>
+                </li>
+              ))}
+            </ul>
+          </>
+        ))
+      }
+      <div></div>
+    </div>
+  </div>
+</article>
+
+<script type="text/javascript" src="/js/sticky-sidebar.js"></script>
+
+<script>
+  new StickySidebar(`.sidebar-1`, {
+    containerSelector: ".main-content",
+    innerWrapperSelector: ".sidebar__inner-1",
+    topSpacing: 20,
+    bottomSpacing: 20,
+  });
+</script>
+
+<style>
+  .volume_content {
+    @apply text-lg text-justify w-2/4 max-w-3xl mx-auto leading-normal mt-8;
+    counter-reset: footnote;
+  }
+
+  .authors {
+    @apply mr-2;
+  }
+
+  .volume_title {
+    @apply text-center font-bold text-3xl my-8;
+    border-bottom: 1px solid rgba(var(--secondary));
+  }
+  .volume_topWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .section_title {
+    @apply text-xl my-2;
+    color: rgba(var(--secondary));
+  }
+  h3 {
+    @apply text-lg font-semibold;
+  }
+  h4 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+  }
+</style>

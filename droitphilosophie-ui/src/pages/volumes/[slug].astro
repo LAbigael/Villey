@@ -5,12 +5,24 @@ import Volume from "../../components/Volume.astro";
 import { getDirectusClient } from "../../utils/get-directus-client";
 import { readItems } from "@directus/sdk";
 
-
 export async function getStaticPaths() {
   const directus = await getDirectusClient();
-  const articles = await directus.request(
+  const volumes = await directus.request(
     readItems("Volumes", {
-      fields: ["slug", "title", "number", "published_at"],
+      fields: [
+        "slug",
+        "title",
+        "number",
+        "published_at",
+        {
+          sections: [
+            "title",
+            {
+              articles: ["title", "slug", { authors: ["author_id.fullname"] }],
+            },
+          ],
+        },
+      ],
       sort: ["-id"],
       filter: {
         site_id: {
@@ -19,18 +31,18 @@ export async function getStaticPaths() {
       },
     }),
   );
-  return articles.map((article) => ({
-    params: { slug: article.slug },
-    props: { volume: { ...volume } },
+  return volumes.map((volume) => ({
+    params: { slug: volume.slug },
+    props: { volume },
   }));
 }
+
 const { volume } = Astro.props;
 ---
 
 <Layout title="Droit & Philosophie.">
   <main class="font-light">
     <Volume volume={volume} />
-
     <style>
       main {
         margin: auto;
