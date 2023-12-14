@@ -7,7 +7,7 @@ import Chapters from "./Chapters.astro";
 import { Debug } from "astro:components";
 ---
 
-<article class="">
+<article class="article">
   <!-- <Debug {article} /> -->
   <div class="article_topWrapper">
     <h1 class="article_title">{article.title}</h1>
@@ -25,7 +25,6 @@ import { Debug } from "astro:components";
         <Chapters article={article} />
       </div>
     </div>
-
     <div class="article_content" set:html={article.content} />
     <div id="sidebar-2" class="sidebar sidebar-2 flex flex-col">
       <div class="sidebar__inner sidebar__inner-2 ml-3">
@@ -111,6 +110,7 @@ import { Debug } from "astro:components";
         font-weight: 700;
         margin: 0;
         padding: 0;
+        border-bottom: 1px solid rgba(var(--secondary));
       }
       .article_authors {
         display: flex;
@@ -119,7 +119,7 @@ import { Debug } from "astro:components";
         justify-content: center;
       }
       .article_author {
-        font-size: 1rem;
+        font-size: 1.5rem;
         font-weight: 400;
         margin: 0;
         padding: 0;
