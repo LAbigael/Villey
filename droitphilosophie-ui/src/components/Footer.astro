@@ -1,11 +1,10 @@
 ---
 import GithubIcon from "./icons/Github.astro";
-import TwitterIcon from "./icons/Twitter.astro";
 
 const currentYear = new Date().getFullYear();
 ---
 
-<div class="footer">
+<footer class="footer">
   <div class="flex my-4 flex-row justify-center items-center">
     <a href="" class="logo" target="_blank" rel="noreferrer noopener">
       Accueil
@@ -35,21 +34,19 @@ const currentYear = new Date().getFullYear();
       Contact
     </a>
   </div>
-  <span class="flex flex-row items-center mb-4">
-    Made with ❤️ by RubidiumWeb ({currentYear})  <GithubIcon  />
-  </span>
-</div>
+  <div class="flex flex-row items-center mb-4">
+    Made with ❤️ by RubidiumWeb ({currentYear}) <GithubIcon />
+  </div>
+</footer>
 
 <style>
   .footer {
-    @apply flex flex-col my-auto items-center;
+    @apply flex flex-col justify-around items-center;
     background-color: rgba(var(--accent));
-    min-height: 80px;
-    bottom: 0;
-    position: fixed;
+    height: 100px;
   }
   .footer a {
-    @apply m-1 text-lg ;
+    @apply m-1;
     list-style: none;
   }
 </style>

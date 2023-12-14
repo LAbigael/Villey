@@ -3,11 +3,11 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import Menu from "../components/Menu.astro";
 
-import "../css/global.css"
-import '@fontsource/twinkle-star';
-import '@fontsource-variable/lora';
-import '@fontsource-variable/cormorant';
-import '@fontsource-variable/open-sans';
+import "../css/global.css";
+import "@fontsource/twinkle-star";
+import "@fontsource-variable/lora";
+import "@fontsource-variable/cormorant";
+import "@fontsource-variable/open-sans";
 
 interface Props {
   title: string;
@@ -28,17 +28,14 @@ const { title } = Astro.props;
   </head>
   <body>
     <header>
-      <Header/>
+      <Header />
     </header>
     <menu>
-		<Menu/>
-	</menu>
-
-    <main>
+      <Menu />
+    </menu>
+    <main class="min-h-screen">
       <slot />
     </main>
-
-    <footer><Footer /></footer>
+    <Footer />
   </body>
 </html>
-

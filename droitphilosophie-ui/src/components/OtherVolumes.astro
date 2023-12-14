@@ -1,32 +1,29 @@
 ---
 import BookIcon from "./icons/book.astro";
 const { volume } = Astro.props;
+import { Debug } from "astro:components";
+
+const res = await fetch(`${import.meta.env.PUBLIC_DIRECTUS_URL}items/Volumes?filter[site_id]=${1}`);
+const { data: volumes } = await res.json();
 ---
 
 <div class="m-4">
-  <h2>Autres volumes</h2>
+  <div class="other_volume">Autres Numéros</div>
   {
-    volume.sections.map((section) => (
-      <div>
-        <h2>
-          <!-- <BookIcon /> {section.title} -->
-        </h2>
+    volumes && volumes.map((volume) => (
+      <div class="flex flex-row">
+        <BookIcon /> 
+        <h2><a href={`/volumes/${volume.slug}`} >{volume.title}</a></h2>
       </div>
     ))
   }
 </div>
 
 <style>
-  h2 {
-    @apply text-2xl p-4 text-center;
+  .other_volume {
+    @apply text-2xl p-1 mb-4 text-center;
     background-color: rgba(var(--accent-light));
     color: rgba(var(--accent-dark));
-  }
-  ul {
-    @apply list-disc my-2;
-  }
-  li {
-    @apply text-lg mb-2 ml-4;
   }
   li a:hover {
     color: rgba(var(--accent-dark));
