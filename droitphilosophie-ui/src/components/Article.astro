@@ -3,6 +3,7 @@ const { article } = Astro.props;
 import FontSize from "./FontSize.astro";
 import Footnotes from "./Footnotes.astro";
 import TableOfContent from "./TableOfContent.astro";
+import Chapters from "./Chapters.astro";
 import { Debug } from "astro:components";
 ---
 
@@ -21,9 +22,7 @@ import { Debug } from "astro:components";
   <div class="main-content relative flex flex-row">
     <div id="sidebar" class="sidebar sidebar-1 flex flex-col">
       <div class="sidebar__inner sidebar__inner-1">
-        <div tabindex="0" class="collapse collapse-arrow bg-base-200">
-          <div class="collapse-title text-xl font-medium">Chapitres</div>
-        </div>
+        <Chapters article={article} />
       </div>
     </div>
 

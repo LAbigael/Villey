@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Article from "../../components/Article.astro";
 
 import { getDirectusClient } from "../../utils/get-directus-client";
-import { readItems } from "@directus/sdk";
+import { readItems, readItem } from "@directus/sdk";
 
 export async function getStaticPaths() {
   const directus = await getDirectusClient();
@@ -28,42 +28,46 @@ export async function getStaticPaths() {
     }),
   );
 
-  // Quentin
-  let sections =[]
-  const index = 0 //0 , 10 , 11
-  if (articles[index].section_id){
-  sections = await directus.request(
-    readItems("VolumeSections", {
-      fields: [
-        "title"
-      ],
-      filter: {
-        volume_id: {
-          _eq: articles[index].section_id.volume_id,
-        },
-      },
-      }))
-    }
-    else{  sections =[] }
-
-  return articles.map((article) => ({
-    params: { slug: article.slug },
-    props: { article: { ...article, contents: article.article_contents, sections  } }, //Quentin //
-  }));
+  return Promise.all(
+    articles.map(async (article) => {
+      let sections = [];
+      let volume = null;
+      if (article.section_id) {
+        sections = await directus.request(
+          readItems("VolumeSections", {
+            fields: ["title", "slug", "id", { articles: ["slug", "title"] }],
+            filter: {
+              volume_id: {
+                _eq: article.section_id.volume_id,
+              },
+            },
+          }),
+        );
+        volume = await directus.request(
+          readItem("Volumes", article.section_id.volume_id),
+        );
+      }
+      return {
+        params: { slug: article.slug },
+        props: {
+          article: {
+            ...article,
+            contents: article.article_contents,
+            sections,
+            volume,
+          },
+        }, //Quentin //
+      };
+    }),
+  );
 }
 
-
-
-
 const { article } = Astro.props;
-import { Debug } from "astro:components";
 ---
 
 <Layout title="Droit & Philosophie.">
-  <Debug content={article} />
   <main class="font-light">
     <Article article={article} />
-
     <style>
       main {
         margin: auto;
