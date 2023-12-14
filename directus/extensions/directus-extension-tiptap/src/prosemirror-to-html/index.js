@@ -29,7 +29,7 @@ export default ({ filter, action }) => {
           StarterKit,
           Link,
           TextAlign.configure({
-            types: ["paragraph"],
+            types: ["paragraph", "heading"],
           }),
           TextStyle.configure({
             HTMLAttributes: {

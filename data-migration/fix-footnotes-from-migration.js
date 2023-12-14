@@ -146,8 +146,8 @@ function htmlToProsemirror(html, footnotes = [], isFootnote = false) {
     );
     extensions.push(
       TextAlign.configure({
-        types: ["paragraph"],
-        alignments: ["left", "center"],
+        types: ["paragraph", "heading"],
+        alignments: ["left", "center", "justify"],
       })
     );
   }
