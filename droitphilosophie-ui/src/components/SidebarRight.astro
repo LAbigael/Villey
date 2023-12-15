@@ -1,0 +1,23 @@
+---
+import StickySidebar from "sticky-sidebar";
+import FontSize from "./FontSize.astro";
+import TableOfContent from "./TableOfContent.astro";
+import Footnotes from "./Footnotes.astro";
+---
+
+<div id="sidebar-2" class="sidebar sidebar-2 flex flex-col">
+  <div class="sidebar__inner sidebar__inner-2 ml-3">
+    <FontSize />
+    <TableOfContent />
+    <Footnotes />
+  </div>
+</div>
+<script>
+  new StickySidebar(`.sidebar-2`, {
+    containerSelector: ".main-content",
+    innerWrapperSelector: ".sidebar__inner-2",
+    topSpacing: 20,
+    bottomSpacing: 20,
+    stickyClass: "is-affixed",
+  });
+</script>

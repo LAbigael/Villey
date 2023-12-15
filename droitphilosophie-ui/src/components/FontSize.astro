@@ -23,7 +23,7 @@
   });
 </script>
 
-<style>
+<style is:global>
   .font_size_buttons {
     @apply flex justify-center items-center;
     height: 2rem;
@@ -33,6 +33,10 @@
     padding: 1px 5px;
     display: block;
   }
+  .is-affixed .font_size_buttons {
+    @apply hidden ;
+  }
+
   .small_font {
     font-size: 0.8rem;
   }

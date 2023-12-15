@@ -22,16 +22,16 @@ import OtherVolumes from "./OtherVolumes.astro";
             </h2>
             <ul>
               {section.articles.map((article) => (
-                <li>
-                  <span class="authors">
-                    {article.authors
-                      .map((a) => a.author_id.fullname)
-                      .join(", ")}{" "}
-                    :
-                  </span>
-                  <h3>
-                    <a href={article.slug}>{article.title}</a>
-                  </h3>
+              <li class="">
+                    <span class="mr-1 ">
+                      {article.authors
+                        .map((a) => a.author_id.fullname)
+                        .join(", ")}{" "}
+                      :
+                    </span>
+                    <span class="article_title ">
+                      <a href={article.slug}>{article.title}</a>
+                    </span>
                 </li>
               ))}
             </ul>
@@ -43,11 +43,9 @@ import OtherVolumes from "./OtherVolumes.astro";
   </div>
 </article>
 
-
-
 <style>
   .volume_content {
-    @apply text-lg text-justify w-3/4 max-w-3xl mb-40 mx-auto leading-normal mt-8;
+    @apply ml-4 text-lg text-justify w-2/4 max-w-3xl mb-40  leading-normal mt-8;
     counter-reset: footnote;
   }
 
@@ -56,7 +54,7 @@ import OtherVolumes from "./OtherVolumes.astro";
   }
 
   .volume_title {
-    @apply text-center font-bold text-3xl my-8;
+    @apply text-center font-bold text-3xl mt-8;
     border-bottom: 1px solid rgba(var(--secondary));
   }
   .volume_topWrapper {
@@ -70,7 +68,7 @@ import OtherVolumes from "./OtherVolumes.astro";
     @apply text-xl my-2;
     color: rgba(var(--secondary));
   }
-  h3 {
+  .article_title {
     @apply text-lg font-semibold;
   }
   h4 {
