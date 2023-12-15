@@ -1,6 +1,7 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import Volume from "../../components/Volume.astro";
+import OtherVolumes from "../../components/OtherVolumes.astro";
 
 import { getDirectusClient } from "../../utils/get-directus-client";
 import { readItems } from "@directus/sdk";
@@ -42,7 +43,10 @@ const { volume } = Astro.props;
 
 <Layout title="Droit & Philosophie.">
   <main class="font-light">
-    <Volume volume={volume} />
+    <div class="flex flex-row">
+      <OtherVolumes volume={volume} />
+      <Volume volume={volume} />
+    </div>
     <style>
       main {
         margin: auto;

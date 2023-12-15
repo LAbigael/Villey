@@ -2,13 +2,22 @@
 import BookIcon from "./icons/book.astro";
 const { volume } = Astro.props;
 
-const res = await fetch(
-  `${
-    import.meta.env.PUBLIC_DIRECTUS_URL
-  }items/Volumes?filter[site_id]=${1}&sort=-published_at`,
+import { getDirectusClient } from "../utils/get-directus-client.js";
+import { readItems } from "@directus/sdk";
+
+const directus = await getDirectusClient();
+let volumes = await directus.request(
+  readItems("Volumes", {
+    fields: ["slug", "title", "number", "published_at"],
+    sort: ["-id"],
+    filter: {
+      site_id: {
+        _eq: "1",
+      },
+    },
+  }),
 );
-let { data: volumes } = await res.json();
-volumes && (volumes = volumes.filter((v) => v.slug !== volume.slug));
+volume && volumes && (volumes = volumes.filter((v) => v.slug !== volume.slug));
 ---
 
 <div class="m-4">

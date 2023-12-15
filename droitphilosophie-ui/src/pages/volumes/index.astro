@@ -1,11 +1,43 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import Volume from "../../components/Volume.astro";
+import { Debug } from "astro:components";
+import { getDirectusClient } from "../../utils/get-directus-client.js";
+import { readItems } from "@directus/sdk";
+import OtherVolumes from "../../components/OtherVolumes.astro";
+
+const directus = await getDirectusClient();
+const volumes = await directus.request(
+  readItems("Volumes", {
+    fields: [
+      "slug",
+      "title",
+      "number",
+      "published_at",
+      {
+        sections: [
+          "title",
+          {
+            articles: ["title", "slug", { authors: ["author_id.fullname"] }],
+          },
+        ],
+      },
+    ],
+    sort: ["-id"],
+    filter: {
+      site_id: {
+        _eq: "1",
+      },
+    },
+  }),
+);
 ---
 
-
 <Layout title="Droit & Philosophie.">
-  <main class="font-light">
-    <div>tutu</div>
+  <main class="font-light max-w-screen-lg">
+    <span class="mt-20 text-2xl">Dernier numéro</span>
+    <Volume volume={volumes[0]} />
+    <OtherVolumes volume={volumes[0]} />
     <style>
       main {
         margin: auto;

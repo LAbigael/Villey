@@ -1,6 +1,5 @@
 ---
 const { volume } = Astro.props;
-import OtherVolumes from "./OtherVolumes.astro";
 ---
 
 <article class="volume">
@@ -8,11 +7,6 @@ import OtherVolumes from "./OtherVolumes.astro";
     <h1 class="volume_title">{volume.title}</h1>
   </div>
   <div class="main-content relative flex flex-row">
-    <div id="sidebar" class="sidebar sidebar-1 flex flex-col">
-      <div class="sidebar__inner sidebar__inner-1">
-        <OtherVolumes volume={volume} />
-      </div>
-    </div>
     <div class="volume_content">
       {
         volume.sections.map((section, i) => (
@@ -45,8 +39,7 @@ import OtherVolumes from "./OtherVolumes.astro";
 
 <style>
   .volume_content {
-    @apply ml-4 text-lg text-justify w-2/4 max-w-3xl mb-40  leading-normal mt-8;
-    counter-reset: footnote;
+    @apply mx-4 text-lg text-justify w-full max-w-3xl mb-20  leading-normal mt-4;
   }
 
   .authors {
