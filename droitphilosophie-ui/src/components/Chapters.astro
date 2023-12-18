@@ -5,7 +5,7 @@ const { article } = Astro.props;
 
 <div class="lg:block hidden m-4">
   <h1 class="sidebar_title">
-    <a href=`/volumes/${article.volume.slug}`>{article.volume.title}</a>
+    <a href={`/volumes/${article.volume.slug}`}>{article.volume.title}</a>
   </h1>
   {
     article.sections.map((section) => (

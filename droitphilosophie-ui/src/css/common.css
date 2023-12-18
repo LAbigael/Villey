@@ -2,12 +2,22 @@
   @apply text-2xl p-1 my-2 italic;
   color: rgba(var(--secondary));
 }
+
 .page_title {
   @apply text-4xl p-1 my-4 border-b;
   border-color: rgba(var(--secondary));
 }
+
 .sidebar_title {
-    @apply m-6 text-2xl p-4 text-center;
-    background-color: rgba(var(--accent-light));
-    color: rgba(var(--accent-dark));
+  @apply m-3 text-2xl p-4 text-center;
+  background-color: rgba(var(--accent-light));
+  color: rgba(var(--accent-dark));
+}
+
+.article_title {
+  @apply text-xl my-1 italic;
+}
+
+.article_author {
+  @apply text-lg font-semibold my-1;
 }

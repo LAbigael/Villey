@@ -1,0 +1,48 @@
+---
+import BookIcon from "./icons/book.astro";
+const { article } = Astro.props;
+
+import { getDirectusClient } from "../utils/get-directus-client.js";
+import { readItems } from "@directus/sdk";
+
+const directus = await getDirectusClient();
+let recensions = await directus.request(
+  readItems("Articles", {
+    fields: ["slug", "title", "position"],
+    sort: ["-position"],
+    filter: {
+      _and: [
+        {
+          site_id: {
+            _eq: "1",
+          },
+          type: {
+            _eq: "recension",
+          },
+        },
+      ],
+    },
+  }),
+);
+recensions && (recensions = recensions.filter((r) => r.slug !== article.slug));
+---
+
+<div class="m-4">
+  <h1 class="sidebar_title">Les autres recensions</h1>
+  {
+    recensions &&
+      recensions.map((recension) => (
+        <div class="flex  items-center">
+          <h2 class="mx-4 text-lg my-1">
+            <a href={`/articles/${recension.slug}`}>{recension.title}</a>
+          </h2>
+        </div>
+      ))
+  }
+</div>
+
+<style>
+  li a:hover {
+    color: rgba(var(--accent-dark));
+  }
+</style>

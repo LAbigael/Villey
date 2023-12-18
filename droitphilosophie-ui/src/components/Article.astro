@@ -4,6 +4,7 @@ import FontSize from "./FontSize.astro";
 import Footnotes from "./Footnotes.astro";
 import TableOfContent from "./TableOfContent.astro";
 import Chapters from "./Chapters.astro";
+import OtherRecensions from "./OtherRecensions.astro";
 import SidebarRight from "./SidebarRight.astro";
 ---
 
@@ -21,7 +22,8 @@ import SidebarRight from "./SidebarRight.astro";
   <div class="main-content px-3 relative flex lg:flex-row flex-col-reverse">
     <div id="sidebar" class="sidebar sidebar-1 flex flex-col">
       <div class="sidebar__inner sidebar__inner-1">
-        <Chapters article={article} />
+        {article.type === "article" && <Chapters article={article} /> }
+        {article.type === "recension" && <OtherRecensions article={article} /> }
       </div>
     </div>
     <div class="article_content" set:html={article.content} />

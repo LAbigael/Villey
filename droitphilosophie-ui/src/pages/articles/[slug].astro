@@ -11,6 +11,8 @@ export async function getStaticPaths() {
     readItems("Articles", {
       fields: [
         "id",
+        "position",
+        "type",
         "slug",
         "title",
         "subtitle",
