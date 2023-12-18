@@ -135,6 +135,7 @@ export default {
       () => props.value,
       (value) => {
         if (value) {
+          console.log(value);
           editor.value?.commands.setContent(value);
           unwatch();
         }
