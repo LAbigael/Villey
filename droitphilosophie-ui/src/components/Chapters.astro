@@ -4,7 +4,7 @@ const { article } = Astro.props;
 ---
 
 <div class="lg:block hidden m-4">
-  <h1>
+  <h1 class="sidebar_title">
     <a href=`/volumes/${article.volume.slug}`>{article.volume.title}</a>
   </h1>
   {
@@ -24,11 +24,6 @@ const { article } = Astro.props;
 </div>
 
 <style>
-  h1 {
-    @apply text-2xl p-4 text-center;
-    background-color: rgba(var(--accent-light));
-    color: rgba(var(--accent-dark));
-  }
   h2 {
     @apply text-2xl mt-4;
     color: rgba(var(--secondary));

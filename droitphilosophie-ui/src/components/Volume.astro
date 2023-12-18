@@ -4,14 +4,14 @@ const { volume } = Astro.props;
 
 <article class="volume">
   <div class="volume_topWrapper">
-    <h1 class="volume_title">{volume.title}</h1>
+    <h1 class="page_title">{volume.title}</h1>
   </div>
   <div class="main-content relative flex flex-row">
     <div class="volume_content">
       {
         volume.sections.map((section, i) => (
           <>
-            <h2 class="section_title" id={section.id}>
+            <h2 class="chapter_title" id={section.id}>
               {section.title}
             </h2>
             <ul>
@@ -39,28 +39,14 @@ const { volume } = Astro.props;
 
 <style>
   .volume_content {
-    @apply mx-4 text-lg text-justify w-full max-w-3xl mb-20  leading-normal mt-4;
+    @apply mx-4 text-lg text-left w-full max-w-3xl mb-20  leading-normal mt-4;
   }
 
   .authors {
     @apply mr-2;
   }
 
-  .volume_title {
-    @apply text-center font-bold text-3xl mt-8;
-    border-bottom: 1px solid rgba(var(--secondary));
-  }
-  .volume_topWrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
 
-  .section_title {
-    @apply text-xl my-2;
-    color: rgba(var(--secondary));
-  }
   .article_title {
     @apply text-lg font-semibold;
   }

@@ -17,17 +17,16 @@ let volumes = await directus.request(
     },
   }),
 );
-volume && volumes && (volumes = volumes.filter((v) => v.slug !== volume.slug));
+volumes && (volumes = volumes.filter((v) => v.slug !== volume.slug));
 ---
 
 <div class="m-4">
-  <div class="other_volume">Autres Numéros</div>
   {
     volumes &&
       volumes.map((volume) => (
-        <div class="flex flex-row">
+        <div class="flex  items-center">
           <BookIcon />
-          <h2>
+          <h2 class="text-xl my-1">
             <a href={`/volumes/${volume.slug}`}>{volume.title}</a>
           </h2>
         </div>
@@ -36,11 +35,6 @@ volume && volumes && (volumes = volumes.filter((v) => v.slug !== volume.slug));
 </div>
 
 <style>
-  .other_volume {
-    @apply text-2xl p-1 mb-4 text-center;
-    background-color: rgba(var(--accent-light));
-    color: rgba(var(--accent-dark));
-  }
   li a:hover {
     color: rgba(var(--accent-dark));
   }
