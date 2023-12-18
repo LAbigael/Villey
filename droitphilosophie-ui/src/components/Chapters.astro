@@ -3,7 +3,7 @@ import Link from "./icons/Link.astro";
 const { article } = Astro.props;
 ---
 
-<div class="lg:block hidden m-4">
+<div class="lg:block hidden">
   <h1 class="sidebar_title">
     <a href={`/volumes/${article.volume.slug}`}>{article.volume.title}</a>
   </h1>

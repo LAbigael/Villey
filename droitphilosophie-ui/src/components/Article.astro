@@ -5,13 +5,13 @@ import Footnotes from "./Footnotes.astro";
 import TableOfContent from "./TableOfContent.astro";
 import Chapters from "./Chapters.astro";
 import OtherRecensions from "./OtherRecensions.astro";
-import SidebarRight from "./SidebarRight.astro";
+import Download from "./Download.astro";
 ---
 
 <article class="article">
   <div class="article_topWrapper">
-    <h1 class="article_title">{article.title}</h1>
-    <div class="article_authors">
+    <h1 class="mx-10 my-2 page_title">{article.title}</h1>
+    <div class="mx-10 my-2">
       {
         article.authors.map(({ author_id: author }) => (
           <div class="article_author">{author.fullname}</div>
@@ -21,7 +21,7 @@ import SidebarRight from "./SidebarRight.astro";
   </div>
   <div class="main-content px-3 relative flex lg:flex-row flex-col-reverse">
     <div id="sidebar" class="sidebar sidebar-1 flex flex-col">
-      <div class="sidebar__inner sidebar__inner-1">
+      <div class="sidebar__inner sidebar__inner-1 mx-3">
         {article.type === "article" && <Chapters article={article} /> }
         {article.type === "recension" && <OtherRecensions article={article} /> }
       </div>
@@ -30,6 +30,7 @@ import SidebarRight from "./SidebarRight.astro";
     <div id="sidebar-2" class="sidebar sidebar-2 flex flex-col">
       <div class="sidebar__inner sidebar__inner-2 mx-3">
         <FontSize />
+        <Download />
         <TableOfContent />
         <Footnotes />
       </div>
@@ -110,22 +111,6 @@ import SidebarRight from "./SidebarRight.astro";
     color: skyblue;
   }
 
-  .article_topWrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .article_title {
-    @apply text-center font-bold text-3xl my-8;
-    border-bottom: 1px solid rgba(var(--secondary));
-  }
-  .article_authors {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-  }
   .article_author {
     font-size: 1.5rem;
     font-weight: 400;
@@ -133,15 +118,10 @@ import SidebarRight from "./SidebarRight.astro";
     padding: 0;
   }
   h3 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 0;
-    padding: 0;
+    @apply text-2xl font-bold mt-6 mb-2; 
   }
   h4 {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin: 0;
-    padding: 0;
+    @apply text-xl font-semibold mt-4 mb-2; 
+
   }
 </style>

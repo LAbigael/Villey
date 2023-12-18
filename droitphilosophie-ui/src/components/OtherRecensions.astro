@@ -27,7 +27,7 @@ let recensions = await directus.request(
 recensions && (recensions = recensions.filter((r) => r.slug !== article.slug));
 ---
 
-<div class="m-4">
+<div class="lg:block hidden">
   <h1 class="sidebar_title">Les autres recensions</h1>
   {
     recensions &&
