@@ -106,6 +106,17 @@ function getFootnotesContentFromHtml(html) {
   });
   return footnotes;
 }
+
+function replaceTagWithNewTag($, oldTag, newTag) {
+  // New type of the tag
+  var replacementTag = newTag;
+
+  // Replace all a tags with the type of replacementTag
+  $(oldTag).each(function (i, elem) {
+    return (elem.name = replacementTag);
+  });
+}
+
 function htmlToProsemirror(html, footnotes = [], isFootnote = false) {
   let $;
   try {
@@ -114,20 +125,30 @@ function htmlToProsemirror(html, footnotes = [], isFootnote = false) {
     // console.log(html);
     throw e;
   }
-  $(".JP_citation").replaceWith(function () {
-    return `<blockquote>${$(this).html()}</blockquote>`;
-  });
-  $(".JPcitation").replaceWith(function () {
-    return `<blockquote>${$(this).html()}</blockquote>`;
-  });
+  replaceTagWithNewTag($, ".JP_citation", "blockquote");
+  replaceTagWithNewTag($, ".JPcitation", "blockquote");
+  replaceTagWithNewTag($, ".titre-section", "h3");
+  replaceTagWithNewTag($, ".titre-sous-section", "h4");
+  // $(".JP_citation").replaceWith(function () {
+  //   return `<blockquote>${$(this).html()}</blockquote>`;
+  //   const elem = $(this);
+  //   elem.attr("style", $(this).attr("style"));
+  //   return $(elem).html();
+  // });
+  // $(".JPcitation").replaceWith(function () {
+  //   return `<blockquote>${$(this).html()}</blockquote>`;
+  //   const elem = document.createElement("blockquote");
+  //   elem.innerHTML = $(this).html();
+  //   elem.attributes.style = $(this).attr("style");
+  //   return $(elem).html();
+  // });
 
-  $(".titre-section").replaceWith(function () {
-    return `<h3>${$(this).html()}</h3>`;
-  });
-  $(".titre-sous-section").replaceWith(function () {
-    console.log("titre-sous-section");
-    return `<h4>${$(this).html()}</h4>`;
-  });
+  // $(".titre-section").replaceWith(function () {
+  //   return `<h3>${$(this).html()}</h3>`;
+  // });
+  // $(".titre-sous-section").replaceWith(function () {
+  //   return `<h4>${$(this).html()}</h4>`;
+  // });
 
   html = $.html();
 
@@ -136,6 +157,11 @@ function htmlToProsemirror(html, footnotes = [], isFootnote = false) {
     TextStyle.configure({
       HTMLAttributes: {
         style: "font-variant",
+      },
+    }),
+    Link.extend({
+      parseHTML() {
+        return [{ tag: "a[href]" }];
       },
     }),
     FontVariant,
@@ -147,16 +173,9 @@ function htmlToProsemirror(html, footnotes = [], isFootnote = false) {
 
   if (!isFootnote) {
     extensions.push(
-      Link.extend({
-        parseHTML() {
-          return [{ tag: "a[href]" }];
-        },
-      })
-    );
-    extensions.push(
       TextAlign.configure({
-        types: ["paragraph", "heading"],
-        alignments: ["left", "center", "justify"],
+        types: ["paragraph", "heading", "blockquote"],
+        alignments: ["right", "left", "center", "justify"],
       })
     );
   }
@@ -233,12 +252,13 @@ const migrateDp = async () => {
     await directus("Articles").where("id", directus_article[0].id).update({
       old_article_id: article.id,
     });
+
     await directus("ArticleContents")
       .update({
         content_bis: articleContent,
       })
       .where("article_id", directus_article[0].id);
-    console.log("migration done for article dp", article.id);
+    // console.log("migration done for article dp", article.id);
   }
 
   const recensions = await dp_old("book_reviews").select(
@@ -268,7 +288,7 @@ const migrateDp = async () => {
         content_bis: articleContent,
       })
       .where("article_id", directus_article[0].id);
-    console.log("migration done for article dp", article.id);
+    // console.log("migration done for article dp", article.id);
   }
 };
 
@@ -314,37 +334,52 @@ const migrateJp = async () => {
   for (const article of articles) {
     const footnotes = getFootnotesContentFromHtml(article.footnotes);
     const articleContent = htmlToProsemirror(article.content, footnotes);
+    // const command = directus("Articles")
+    //   .select("Articles.id")
+    //   .join("VolumeSections", "Articles.section_id", "VolumeSections.id")
+    //   .join("Volumes", "VolumeSections.volume_id", "Volumes.id")
+    //   .where("Articles.slug", article.article_slug)
+    //   .andWhere("Articles.position", article.article_position)
+    //   .andWhere("VolumeSections.slug", article.chapter_name)
+    //   .andWhere("Volumes.slug", article.volume_name.toLowerCase());
     const command = directus("Articles")
       .select("Articles.id")
-      .join("VolumeSections", "Articles.section_id", "VolumeSections.id")
-      .join("Volumes", "VolumeSections.volume_id", "Volumes.id")
-      .where("Articles.slug", article.article_slug)
-      .andWhere("Articles.position", article.article_position)
-      .andWhere("VolumeSections.slug", article.chapter_name)
-      .andWhere("Volumes.slug", article.volume_name);
+      .where("Articles.old_article_id", article.id)
+      .andWhere("Articles.site_id", 2);
 
     const directus_article = await command;
+
+    if (directus_article.length === 0) {
+      console.log(
+        "no article found",
+        article.article_slug,
+        article.article_position,
+        article.chapter_name,
+        article.volume_name
+      );
+      continue;
+    }
+    if (directus_article.length > 1) {
+      console.log("multiple articles found", directus_article);
+    }
 
     await directus("Articles")
       .update({
         old_article_id: article.id,
       })
       .where("id", directus_article[0].id);
+
     await directus("ArticleContents")
       .update({
         content_bis: articleContent,
       })
       .where("article_id", directus_article[0].id);
-    if (directus_article.length > 1) {
-      console.log("multiple articles found", directus_article);
-    }
-    console.log("migration done for article jp", article.id);
   }
 };
-// migrateJp().then(() => {
-  // console.log("done migrating jp");
+migrateJp().then(() => {
+  console.log("done migrating jp");
   migrateDp().then(() => {
     //   console.log("done migrating dp");
     process.exit(0);
-  // });
+  });
 });

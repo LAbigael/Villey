@@ -80,7 +80,7 @@ import Download from "./Download.astro";
     will-change: position, transform;
   }
 
-  .article_content p:first-of-type::first-letter {
+  .article_content p:first-child::first-letter {
     float: left;
     font-size: 55px;
     line-height: 1;
@@ -89,6 +89,9 @@ import Download from "./Download.astro";
     /* Add any other styles you want to apply to the first letter */
   }
   .article_content p:first-child {
+  }
+  blockquote {
+    @apply border-l-4 border-gray-400 pl-4 my-4;
   }
 
   .footnote-link {

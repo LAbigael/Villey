@@ -35802,7 +35802,7 @@ function generateHTMLFromJSON(articleContent) {
     StarterKit,
     Link,
     TextAlign.configure({
-      types: ["paragraph", "heading"],
+      types: ["paragraph", "heading","blockquote"],
     }),
     TextStyle.configure({
       HTMLAttributes: {
