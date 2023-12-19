@@ -54,6 +54,7 @@ import Download from "./Download.astro";
     topSpacing: 20,
     bottomSpacing: 20,
   });
+  // add class to first letter of first paragraph
 </script>
 
 <style is:global>
@@ -80,18 +81,18 @@ import Download from "./Download.astro";
     will-change: position, transform;
   }
 
-  .article_content p:first-child::first-letter {
-    float: left;
-    font-size: 55px;
-    line-height: 1;
-    font-weight: bold;
-    margin-right: 9px;
-    /* Add any other styles you want to apply to the first letter */
-  }
-  .article_content p:first-child {
-  }
+  /* .article_content p:first-child::first-letter { */
+  /*   float: left; */
+  /*   font-size: 55px; */
+  /*   line-height: 1; */
+  /*   font-weight: bold; */
+  /*   margin-right: 9px; */
+  /*   /1* Add any other styles you want to apply to the first letter *1/ */
+  /* } */
+  /* .article_content p:first-child { */
+  /* } */
   blockquote {
-    @apply border-l-4 border-gray-400 pl-4 my-4;
+    @apply  border-gray-400 pl-6 my-4;
   }
 
   .footnote-link {

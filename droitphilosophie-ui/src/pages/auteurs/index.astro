@@ -2,12 +2,12 @@
 import Layout from "../../layouts/Layout.astro";
 import { getDirectusClient } from "../../utils/get-directus-client.js";
 import { readItems } from "@directus/sdk";
-import { Debug } from "astro:components";
 
 const directus = await getDirectusClient();
-const authors = await directus.request(
+let authors = await directus.request(
   readItems("Authors", {
     fields: [
+      "id",
       "fullname",
       "bio",
       "articles.article_id.title",
@@ -23,16 +23,29 @@ const authors = await directus.request(
     },
   }),
 );
+authors = authors.filter((author) => author.articles.length > 0);
 ---
 
 <Layout title="Droit & Philosophie.">
-  <main class="font-light flex flex-row max-w-screen-lg">
-    <div class="w-1/4">side</div>
+  <main class="font-light flex flex-row max-w-screen-xl">
+    <div class="mx-8 my-8 w-1/4 h-auto">
+      <span class="sidebar_title  flex w-full !m-0 ">Tous les auteurs</span>
+      <ul class="border list-disc p-4 list-inside">
+        {
+          authors.map((author) => (
+            <li>
+              <a href={`#${author.id}`}>{author.fullname}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
     <div class="w-3/4">
       <h3 class="page_title">Auteurs de la revue</h3>
       {
         authors.map((author) => (
-          <div class="mb-8 author_section">
+          <div id={author.id} class="mb-8 author_section">
             <h4 class="text-2xl italic font-bold">{author.fullname}</h4>
             <div class="text-lg my-6" set:html={author.bio} />
             <span class="pr-4 my-4 font-semibold text-xl">
@@ -48,8 +61,8 @@ const authors = await directus.request(
                     >
                       {article.article_id.section_id.volume_id.title}
                     </a>
-                  )}
-                  {" "}:{" "}
+                  )}{" "}
+                  :{" "}
                   <a href={`/articles/${article.article_id.slug}`}>
                     {article.article_id.title}
                   </a>
@@ -77,5 +90,8 @@ const authors = await directus.request(
   .volume_title {
     @apply text-lg;
     color: rgba(var(--secondary));
+  }
+  ul {
+    border-color: rgba(var(--accent-light));
   }
 </style>
