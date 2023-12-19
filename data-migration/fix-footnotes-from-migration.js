@@ -8,6 +8,10 @@ import TextStyle from "@tiptap/extension-text-style";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
+import Table from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableHeader from "@tiptap/extension-table-header";
+import TableCell from "@tiptap/extension-table-cell";
 import FontVariant from "./tiptap-extension-font-variant.js";
 import knex from "knex";
 import { warn } from "console";
@@ -135,7 +139,12 @@ function htmlToProsemirror(html, footnotes = [], isFootnote = false) {
       },
     }),
     FontVariant,
+    Table,
+    TableRow,
+    TableHeader,
+    TableCell,
   ];
+
   if (!isFootnote) {
     extensions.push(
       Link.extend({

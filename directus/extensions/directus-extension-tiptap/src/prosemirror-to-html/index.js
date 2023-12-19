@@ -1,5 +1,4 @@
 import { generateHTML } from "@tiptap/html";
-import { writeFileSync } from "fs";
 import * as htmlparser2 from "htmlparser2";
 import render from "dom-serializer";
 import StarterKit from "@tiptap/starter-kit";
@@ -7,6 +6,10 @@ import Footnote, { FontVariant } from "tiptap-extension-footnote";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import TextStyle from "@tiptap/extension-text-style";
+import Table from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableCell from "@tiptap/extension-table-cell";
+import TableHeader from "@tiptap/extension-table-header";
 
 export default ({ filter }) => {
   filter("Articles.items.read", (items) => {
@@ -72,6 +75,10 @@ function generateHTMLFromJSON(articleContent) {
     }),
     FontVariant,
     Footnote,
+    Table,
+    TableRow,
+    TableCell,
+    TableHeader,
   ]);
   return articleContent;
 }
