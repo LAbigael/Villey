@@ -1,74 +1,75 @@
 ---
+export const prerender = false;
+
 import Layout from "../../layouts/Layout.astro";
 import Article from "../../components/Article.astro";
 
 import { getDirectusClient } from "../../utils/get-directus-client";
 import { readItems, readItem } from "@directus/sdk";
 
-export async function getStaticPaths() {
-  const directus = await getDirectusClient();
-  const articles = await directus.request(
-    readItems("Articles", {
-      fields: [
-        "id",
-        "position",
-        "type",
-        "slug",
-        "title",
-        "subtitle",
-        "authors.author_id.*",
-        "article_contents.content_bis",
-        "section_id.volume_id", // Quentin
+const { slug } = Astro.params;
+
+const directus = await getDirectusClient();
+const articles = await directus.request(
+  readItems("Articles", {
+    fields: [
+      "id",
+      "position",
+      "type",
+      "slug",
+      "title",
+      "subtitle",
+      "authors.author_id.*",
+      "article_contents.content_bis",
+      "section_id.volume_id", // Quentin
+    ],
+    sort: ["-id"],
+    filter: {
+      _and: [
+        {
+          site_id: {
+            _eq: "1",
+          },
+          slug: {
+            _eq: slug
+          },
+        },
       ],
-      sort: ["-id"],
-      limit: 20,
+    },
+  }),
+);
+let article = articles[0];
+
+let sections = [];
+let volume = null;
+if (article.section_id) {
+  sections = await directus.request(
+    readItems("VolumeSections", {
+      fields: ["title", "slug", "id", { articles: ["slug", "title"] }],
       filter: {
-        site_id: {
-          _eq: "1",
+        volume_id: {
+          _eq: article.section_id.volume_id,
         },
       },
     }),
   );
-
-  return Promise.all(
-    articles.map(async (article) => {
-      let sections = [];
-      let volume = null;
-      if (article.section_id) {
-        sections = await directus.request(
-          readItems("VolumeSections", {
-            fields: ["title", "slug", "id", { articles: ["slug", "title"] }],
-            filter: {
-              volume_id: {
-                _eq: article.section_id.volume_id,
-              },
-            },
-          }),
-        );
-        volume = await directus.request(
-          readItem("Volumes", article.section_id.volume_id),
-        );
-      }
-      return {
-        params: { slug: article.slug },
-        props: {
-          article: {
-            ...article,
-            contents: article.article_contents,
-            sections,
-            volume,
-          },
-        }, //Quentin //
-      };
-    }),
+  volume = await directus.request(
+    readItem("Volumes", article.section_id.volume_id),
   );
 }
 
-const { article } = Astro.props;
+article = {
+  ...article,
+  contents: article.article_contents,
+  sections,
+  volume,
+};
+import {Debug} from "astro:components";
 ---
 
 <Layout title="Droit & Philosophie.">
   <main class="font-light">
+    <Debug value={article} />
     <Article article={article} />
     <style>
       main {

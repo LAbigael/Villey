@@ -24,7 +24,7 @@ const { volume } = Astro.props;
                       :
                     </span>
                     <span class="article_title ">
-                      <a href={article.slug}>{article.title}</a>
+                      <a href={`/articles/${article.slug}`}>{article.title}</a>
                     </span>
                 </li>
               ))}
