@@ -129,26 +129,6 @@ function htmlToProsemirror(html, footnotes = [], isFootnote = false) {
   replaceTagWithNewTag($, ".JPcitation", "blockquote");
   replaceTagWithNewTag($, ".titre-section", "h3");
   replaceTagWithNewTag($, ".titre-sous-section", "h4");
-  // $(".JP_citation").replaceWith(function () {
-  //   return `<blockquote>${$(this).html()}</blockquote>`;
-  //   const elem = $(this);
-  //   elem.attr("style", $(this).attr("style"));
-  //   return $(elem).html();
-  // });
-  // $(".JPcitation").replaceWith(function () {
-  //   return `<blockquote>${$(this).html()}</blockquote>`;
-  //   const elem = document.createElement("blockquote");
-  //   elem.innerHTML = $(this).html();
-  //   elem.attributes.style = $(this).attr("style");
-  //   return $(elem).html();
-  // });
-
-  // $(".titre-section").replaceWith(function () {
-  //   return `<h3>${$(this).html()}</h3>`;
-  // });
-  // $(".titre-sous-section").replaceWith(function () {
-  //   return `<h4>${$(this).html()}</h4>`;
-  // });
 
   html = $.html();
 
