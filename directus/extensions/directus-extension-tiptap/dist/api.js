@@ -28631,7 +28631,7 @@ function renderComment(elem) {
     return "<!--" + elem.data + "-->";
 }
 
-const inputRegex$4 = /^\s*>\s$/;
+const inputRegex$5 = /^\s*>\s$/;
 const Blockquote = Node$1.create({
     name: 'blockquote',
     addOptions() {
@@ -28671,7 +28671,7 @@ const Blockquote = Node$1.create({
     addInputRules() {
         return [
             wrappingInputRule({
-                find: inputRegex$4,
+                find: inputRegex$5,
                 type: this.type,
             }),
         ];
@@ -28820,7 +28820,7 @@ const TextStyle$2 = Mark.create({
     },
 });
 
-const inputRegex$3 = /^\s*([-+*])\s$/;
+const inputRegex$4 = /^\s*([-+*])\s$/;
 const BulletList = Node$1.create({
     name: 'bulletList',
     addOptions() {
@@ -28860,12 +28860,12 @@ const BulletList = Node$1.create({
     },
     addInputRules() {
         let inputRule = wrappingInputRule({
-            find: inputRegex$3,
+            find: inputRegex$4,
             type: this.type,
         });
         if (this.options.keepMarks || this.options.keepAttributes) {
             inputRule = wrappingInputRule({
-                find: inputRegex$3,
+                find: inputRegex$4,
                 type: this.type,
                 keepMarks: this.options.keepMarks,
                 keepAttributes: this.options.keepAttributes,
@@ -28879,7 +28879,7 @@ const BulletList = Node$1.create({
     },
 });
 
-const inputRegex$2 = /(?:^|\s)((?:`)((?:[^`]+))(?:`))$/;
+const inputRegex$3 = /(?:^|\s)((?:`)((?:[^`]+))(?:`))$/;
 const pasteRegex$1 = /(?:^|\s)((?:`)((?:[^`]+))(?:`))/g;
 const Code = Mark.create({
     name: 'code',
@@ -28920,7 +28920,7 @@ const Code = Mark.create({
     addInputRules() {
         return [
             markInputRule({
-                find: inputRegex$2,
+                find: inputRegex$3,
                 type: this.type,
             }),
         ];
@@ -30565,7 +30565,7 @@ const TextStyle$1 = Mark.create({
     },
 });
 
-const inputRegex$1 = /^(\d+)\.\s$/;
+const inputRegex$2 = /^(\d+)\.\s$/;
 const OrderedList = Node$1.create({
     name: 'orderedList',
     addOptions() {
@@ -30622,14 +30622,14 @@ const OrderedList = Node$1.create({
     },
     addInputRules() {
         let inputRule = wrappingInputRule({
-            find: inputRegex$1,
+            find: inputRegex$2,
             type: this.type,
             getAttributes: match => ({ start: +match[1] }),
             joinPredicate: (match, node) => node.childCount + node.attrs.start === +match[1],
         });
         if (this.options.keepMarks || this.options.keepAttributes) {
             inputRule = wrappingInputRule({
-                find: inputRegex$1,
+                find: inputRegex$2,
                 type: this.type,
                 keepMarks: this.options.keepMarks,
                 keepAttributes: this.options.keepAttributes,
@@ -30676,7 +30676,7 @@ const Paragraph = Node$1.create({
     },
 });
 
-const inputRegex = /(?:^|\s)((?:~~)((?:[^~]+))(?:~~))$/;
+const inputRegex$1 = /(?:^|\s)((?:~~)((?:[^~]+))(?:~~))$/;
 const pasteRegex = /(?:^|\s)((?:~~)((?:[^~]+))(?:~~))/g;
 const Strike = Mark.create({
     name: 'strike',
@@ -30732,7 +30732,7 @@ const Strike = Mark.create({
     addInputRules() {
         return [
             markInputRule({
-                find: inputRegex,
+                find: inputRegex$1,
                 type: this.type,
             }),
         ];
@@ -35747,6 +35747,72 @@ const TableHeader = Node$1.create({
     },
 });
 
+const inputRegex = /(?:^|\s)(!\[(.+|:?)]\((\S+)(?:(?:\s+)["'](\S+)["'])?\))$/;
+const Image = Node$1.create({
+    name: 'image',
+    addOptions() {
+        return {
+            inline: false,
+            allowBase64: false,
+            HTMLAttributes: {},
+        };
+    },
+    inline() {
+        return this.options.inline;
+    },
+    group() {
+        return this.options.inline ? 'inline' : 'block';
+    },
+    draggable: true,
+    addAttributes() {
+        return {
+            src: {
+                default: null,
+            },
+            alt: {
+                default: null,
+            },
+            title: {
+                default: null,
+            },
+        };
+    },
+    parseHTML() {
+        return [
+            {
+                tag: this.options.allowBase64
+                    ? 'img[src]'
+                    : 'img[src]:not([src^="data:"])',
+            },
+        ];
+    },
+    renderHTML({ HTMLAttributes }) {
+        return ['img', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes)];
+    },
+    addCommands() {
+        return {
+            setImage: options => ({ commands }) => {
+                return commands.insertContent({
+                    type: this.name,
+                    attrs: options,
+                });
+            },
+        };
+    },
+    addInputRules() {
+        return [
+            nodeInputRule({
+                find: inputRegex,
+                type: this.type,
+                getAttributes: match => {
+                    const [, , alt, src, title] = match;
+                    return { src, alt, title };
+                },
+            }),
+        ];
+    },
+});
+
 var e0 = ({ filter }) => {
   filter("Articles.items.read", (items) => {
     return items.map((item) => {
@@ -35781,14 +35847,24 @@ var e0 = ({ filter }) => {
       return item;
     });
   });
-  filter("Authors.items.read", (items) => {
+  transformItemsFieldFromToHTML(filter, "Authors.items.read", "bio");
+  transformItemsFieldFromToHTML(filter, "VolumeReleases.items.read", "abstract");
+  transformItemsFieldFromToHTML(filter, "VolumeReleases.items.read", "subtitle");
+  transformItemsFieldFromToHTML(filter, "VolumeReleases.items.read", "tableOfContents");
+};
+
+function transformItemsFieldFromToHTML(filter, collection, field) {
+  filter(collection, (items) => {
     return items.map((item) => {
-      if (!item.bio) return item;
-      item.bio = generateHTMLFromJSON(item.bio);
-      return item
+      if (!item[field]) return item;
+      if (item[field].type === "doc") {
+        item[field] = item[field].content;
+      }
+      item[field] = generateHTMLFromJSON(item[field]);
+      return item;
     });
   });
-};
+}
 
 function generateHTMLFromJSON(articleContent) {
   if (articleContent.type !== "doc") {
@@ -35802,7 +35878,7 @@ function generateHTMLFromJSON(articleContent) {
     StarterKit,
     Link,
     TextAlign.configure({
-      types: ["paragraph", "heading","blockquote"],
+      types: ["paragraph", "heading", "blockquote"],
     }),
     TextStyle.configure({
       HTMLAttributes: {
@@ -35815,6 +35891,7 @@ function generateHTMLFromJSON(articleContent) {
     TableRow,
     TableCell,
     TableHeader,
+    Image,
   ]);
   return articleContent;
 }

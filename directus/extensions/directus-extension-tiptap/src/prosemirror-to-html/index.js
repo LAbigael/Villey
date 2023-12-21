@@ -10,6 +10,7 @@ import Table from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
+import Image from "@tiptap/extension-image";
 
 export default ({ filter }) => {
   filter("Articles.items.read", (items) => {
@@ -45,14 +46,24 @@ export default ({ filter }) => {
       return item;
     });
   });
-  filter("Authors.items.read", (items) => {
+  transformItemsFieldFromToHTML(filter, "Authors.items.read", "bio");
+  transformItemsFieldFromToHTML(filter, "VolumeReleases.items.read", "abstract");
+  transformItemsFieldFromToHTML(filter, "VolumeReleases.items.read", "subtitle");
+  transformItemsFieldFromToHTML(filter, "VolumeReleases.items.read", "tableOfContents");
+};
+
+function transformItemsFieldFromToHTML(filter, collection, field) {
+  filter(collection, (items) => {
     return items.map((item) => {
-      if (!item.bio) return item;
-      item.bio = generateHTMLFromJSON(item.bio);
-      return item
+      if (!item[field]) return item;
+      if (item[field].type === "doc") {
+        item[field] = item[field].content;
+      }
+      item[field] = generateHTMLFromJSON(item[field]);
+      return item;
     });
   });
-};
+}
 
 function generateHTMLFromJSON(articleContent) {
   if (articleContent.type !== "doc") {
@@ -66,7 +77,7 @@ function generateHTMLFromJSON(articleContent) {
     StarterKit,
     Link,
     TextAlign.configure({
-      types: ["paragraph", "heading","blockquote"],
+      types: ["paragraph", "heading", "blockquote"],
     }),
     TextStyle.configure({
       HTMLAttributes: {
@@ -79,6 +90,7 @@ function generateHTMLFromJSON(articleContent) {
     TableRow,
     TableCell,
     TableHeader,
+    Image,
   ]);
   return articleContent;
 }
