@@ -49,7 +49,7 @@ export default ({ filter }) => {
   transformItemsFieldFromToHTML(filter, "Authors.items.read", "bio");
   transformItemsFieldFromToHTML(filter, "VolumeReleases.items.read", "abstract");
   transformItemsFieldFromToHTML(filter, "VolumeReleases.items.read", "subtitle");
-  transformItemsFieldFromToHTML(filter, "VolumeReleases.items.read", "tableOfContents");
+  transformItemsFieldFromToHTML(filter, "VolumeReleases.items.read", "table_of_content");
 };
 
 function transformItemsFieldFromToHTML(filter, collection, field) {

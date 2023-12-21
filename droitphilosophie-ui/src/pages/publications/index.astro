@@ -21,12 +21,16 @@ const latestVolume = await directus.request(
   readItem("VolumeReleases", volumes[0].id, {
     fields: [
       "title",
+      "cover",
       "number",
       "released_on",
+      "publisher",
+      "link",
       "abstract",
       "cover",
+      "price",
       "subtitle",
-      "tableOfContents",
+      "table_of_contents",
     ],
   }),
 );
@@ -34,7 +38,7 @@ const latestVolume = await directus.request(
 
 <Layout title="Droit & Philosophie.">
   <main class="font-light max-w-screen-lg">
-    <h3 class="page_title">Dernier numéro</h3>
+    <h3 class="page_title">Dernier volume paru</h3>
     <div>
       <VolumeRelease volume={latestVolume} />
     </div>
@@ -43,7 +47,7 @@ const latestVolume = await directus.request(
       {
         volumes.map((volume) => (
           <li>
-            {volume.title}
+            <a href=`/publications/${volume.number}` >{volume.title}</a>
           </li>
         ))
       }

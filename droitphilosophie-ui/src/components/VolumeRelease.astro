@@ -1,7 +1,46 @@
 ---
-const {volume} = Astro.props
+const { volume } = Astro.props;
+import { getImagePath } from "../utils/get-directus-client.js";
 ---
 
+<div>
+  <h2>{volume.title}</h2>
+  <div class="flex">
+    <img
+      src={getImagePath(volume.cover)}
+      alt=""
+      class="float-left h-auto w-64"
+    />
+    <div class="information_list">
+      <span set:html={volume.subtitle} />
+      <span>Éditeur : {volume.publisher}</span>
+      <span>Date de publication : {volume.released_on}</span>
+      <span>Prix : {volume.price} €</span>
+      <a href={volume.link} class="btn btn-primary">Acheter</a>
+    </div>
+  </div>
+  <div set:html={volume.abstract} class="my-16" />
+  <h2 class="page_title">Sommaire</h2>
+  <div set:html={volume.table_of_content} />
+</div>
 
-
-<div>{volume.title}</div>
+<style is:global>
+  h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+  .information_list {
+    margin-left: 1rem;
+    @apply text-lg ml-4 flex flex-col;
+  }
+  .information_list span {
+    @apply my-2;
+  }
+  .information_list img {
+    @apply my-2;
+  }
+  li {
+    @apply my-2 flex flex-row;
+  }
+</style>

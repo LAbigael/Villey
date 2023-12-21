@@ -1,0 +1,70 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import VolumeRelease from "../../../components/VolumeRelease.astro";
+
+import { getDirectusClient } from "../../../utils/get-directus-client";
+import { readItems } from "@directus/sdk";
+
+
+export async function getStaticPaths() {
+  const directus = await getDirectusClient();
+  const volumes = await directus.request(
+    readItems("VolumeReleases", {
+      fields: [
+        "title",
+        "cover",
+        "number",
+        "released_on",
+        "publisher",
+        "link",
+        "abstract",
+        "cover",
+        "price",
+        "subtitle",
+        "table_of_content",
+      ],
+      sort: "-number",
+      filter: {
+        site_id: {
+          _eq: "1",
+        },
+      },
+    }),
+  );
+  return volumes.map((volume) => ({
+    params: { number: volume.number },
+    props: { volume, volumes },
+  }));
+}
+
+const { volume, volumes } = Astro.props;
+---
+
+<Layout title="Droit & Philosophie.">
+  <main class="font-light max-w-screen-xl flex flex-row">
+    <div class="mx-8 my-8 w-1/4 h-auto">
+      <span class="sidebar_title flex w-full !m-0">Toutes les publications</span
+      >
+      <ul class="border list-disc p-4 list-inside">
+        {
+          volumes
+            .filter((v) => v.number !== volume.number)
+            .map((v) => (
+              <li>
+                <a href={`/publications/${v.number}`}>{v.title}</a>
+              </li>
+            ))
+        }
+      </ul>
+    </div>
+    <div class="w-3/4 flex flex-col">
+      <h3 class="page_title">Dernier volume paru</h3>
+      <VolumeRelease volume={volume} />
+    </div>
+  </main>
+  <style>
+    main {
+      margin: auto;
+    }
+  </style>
+</Layout>

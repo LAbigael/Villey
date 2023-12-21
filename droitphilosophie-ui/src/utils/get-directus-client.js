@@ -6,3 +6,7 @@ export const getDirectusClient = async () => {
                       .with(rest());
   return directus;
 };
+
+export const getImagePath = (image) => {
+  return `http://localhost:8055/assets/${image}`;
+};
