@@ -76,6 +76,13 @@
         <AlignJustifyIcon />
       </ToolbarButton>
       <ToolbarButton
+        @click="editor.commands.toggleBulletList()"
+        :label="bulletList"
+        :isActive="isActive('bulletList')"
+      >
+        <BulletListIcon />
+      </ToolbarButton>
+      <ToolbarButton
         @click="editor.chain().focus().toggleSmallCaps().run()"
         :label="redo"
         :isActive="isActive('textStyle', { fontVariant: 'small-caps' })"
@@ -117,6 +124,7 @@ import AlignLeftIcon from "../icons/align-left.vue";
 import AlignCenterIcon from "../icons/align-center.vue";
 import AlignJustifyIcon from "../icons/align-justify.vue";
 import SmallCapsIcon from "../icons/small-caps.vue";
+import BulletListIcon from "../icons/list-unordered.vue";
 
 import Toolbar from "./components/ToolbarGroup.vue";
 import ToolbarButton from "./components/ToolbarButton.vue";
@@ -139,6 +147,7 @@ export default {
     AlignCenterIcon,
     AlignJustifyIcon,
     SmallCapsIcon,
+    BulletListIcon,
     Toolbar,
     ToolbarButton,
   },
@@ -333,5 +342,10 @@ export default {
 
 .footnote-toolbar .button {
   @apply mr-2 border;
+}
+.content .ProseMirror ul {
+  list-style-type: disc ;
+  margin: 0;
+  padding-left: 1em ;
 }
 </style>

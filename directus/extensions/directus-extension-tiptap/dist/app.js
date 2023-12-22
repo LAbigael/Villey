@@ -19279,7 +19279,7 @@ function getChildren(popper) {
     })
   };
 }
-function render$h(instance) {
+function render$i(instance) {
   var popper = div();
   var box = div();
   box.className = BOX_CLASS;
@@ -19348,7 +19348,7 @@ function render$h(instance) {
 } // Runtime check to identify if the render function is the default one; this
 // way we can apply default CSS transitions logic and it can be tree-shaken away
 
-render$h.$$tippy = true;
+render$i.$$tippy = true;
 
 var idCounter = 1;
 var mouseMoveListeners = []; // Used by `hideAll()`
@@ -20361,7 +20361,7 @@ Object.assign({}, applyStyles$1, {
 });
 
 tippy.setDefaultProps({
-  render: render$h
+  render: render$i
 });
 
 class BubbleMenuView {
@@ -25513,13 +25513,34 @@ var e=[],t=[];function n(n,r){if(n&&"undefined"!=typeof document){var a,s=!0===r
 var css$1 = "/*\n! tailwindcss v3.3.5 | MIT License | https://tailwindcss.com\n*//*\n1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)\n2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)\n*/\n\n*,\n::before,\n::after {\n  box-sizing: border-box; /* 1 */\n  border-width: 0; /* 2 */\n  border-style: solid; /* 2 */\n  border-color: #e5e7eb; /* 2 */\n}\n\n::before,\n::after {\n  --tw-content: '';\n}\n\n/*\n1. Use a consistent sensible line-height in all browsers.\n2. Prevent adjustments of font size after orientation changes in iOS.\n3. Use a more readable tab size.\n4. Use the user's configured `sans` font-family by default.\n5. Use the user's configured `sans` font-feature-settings by default.\n6. Use the user's configured `sans` font-variation-settings by default.\n*/\n\nhtml {\n  line-height: 1.5; /* 1 */\n  -webkit-text-size-adjust: 100%; /* 2 */\n  -moz-tab-size: 4; /* 3 */\n  -o-tab-size: 4;\n     tab-size: 4; /* 3 */\n  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"; /* 4 */\n  font-feature-settings: normal; /* 5 */\n  font-variation-settings: normal; /* 6 */\n}\n\n/*\n1. Remove the margin in all browsers.\n2. Inherit line-height from `html` so users can set them as a class directly on the `html` element.\n*/\n\nbody {\n  margin: 0; /* 1 */\n  line-height: inherit; /* 2 */\n}\n\n/*\n1. Add the correct height in Firefox.\n2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)\n3. Ensure horizontal rules are visible by default.\n*/\n\nhr {\n  height: 0; /* 1 */\n  color: inherit; /* 2 */\n  border-top-width: 1px; /* 3 */\n}\n\n/*\nAdd the correct text decoration in Chrome, Edge, and Safari.\n*/\n\nabbr:where([title]) {\n  -webkit-text-decoration: underline dotted;\n          text-decoration: underline dotted;\n}\n\n/*\nRemove the default font size and weight for headings.\n*/\n\nh1,\nh2,\nh3,\nh4,\nh5,\nh6 {\n  font-size: inherit;\n  font-weight: inherit;\n}\n\n/*\nReset links to optimize for opt-in styling instead of opt-out.\n*/\n\na {\n  color: inherit;\n  text-decoration: inherit;\n}\n\n/*\nAdd the correct font weight in Edge and Safari.\n*/\n\nb,\nstrong {\n  font-weight: bolder;\n}\n\n/*\n1. Use the user's configured `mono` font family by default.\n2. Correct the odd `em` font sizing in all browsers.\n*/\n\ncode,\nkbd,\nsamp,\npre {\n  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace; /* 1 */\n  font-size: 1em; /* 2 */\n}\n\n/*\nAdd the correct font size in all browsers.\n*/\n\nsmall {\n  font-size: 80%;\n}\n\n/*\nPrevent `sub` and `sup` elements from affecting the line height in all browsers.\n*/\n\nsub,\nsup {\n  font-size: 75%;\n  line-height: 0;\n  position: relative;\n  vertical-align: baseline;\n}\n\nsub {\n  bottom: -0.25em;\n}\n\nsup {\n  top: -0.5em;\n}\n\n/*\n1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)\n2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)\n3. Remove gaps between table borders by default.\n*/\n\ntable {\n  text-indent: 0; /* 1 */\n  border-color: inherit; /* 2 */\n  border-collapse: collapse; /* 3 */\n}\n\n/*\n1. Change the font styles in all browsers.\n2. Remove the margin in Firefox and Safari.\n3. Remove default padding in all browsers.\n*/\n\nbutton,\ninput,\noptgroup,\nselect,\ntextarea {\n  font-family: inherit; /* 1 */\n  font-feature-settings: inherit; /* 1 */\n  font-variation-settings: inherit; /* 1 */\n  font-size: 100%; /* 1 */\n  font-weight: inherit; /* 1 */\n  line-height: inherit; /* 1 */\n  color: inherit; /* 1 */\n  margin: 0; /* 2 */\n  padding: 0; /* 3 */\n}\n\n/*\nRemove the inheritance of text transform in Edge and Firefox.\n*/\n\nbutton,\nselect {\n  text-transform: none;\n}\n\n/*\n1. Correct the inability to style clickable types in iOS and Safari.\n2. Remove default button styles.\n*/\n\nbutton,\n[type='button'],\n[type='reset'],\n[type='submit'] {\n  -webkit-appearance: button; /* 1 */\n  background-color: transparent; /* 2 */\n  background-image: none; /* 2 */\n}\n\n/*\nUse the modern Firefox focus style for all focusable elements.\n*/\n\n:-moz-focusring {\n  outline: auto;\n}\n\n/*\nRemove the additional `:invalid` styles in Firefox. (https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737)\n*/\n\n:-moz-ui-invalid {\n  box-shadow: none;\n}\n\n/*\nAdd the correct vertical alignment in Chrome and Firefox.\n*/\n\nprogress {\n  vertical-align: baseline;\n}\n\n/*\nCorrect the cursor style of increment and decrement buttons in Safari.\n*/\n\n::-webkit-inner-spin-button,\n::-webkit-outer-spin-button {\n  height: auto;\n}\n\n/*\n1. Correct the odd appearance in Chrome and Safari.\n2. Correct the outline style in Safari.\n*/\n\n[type='search'] {\n  -webkit-appearance: textfield; /* 1 */\n  outline-offset: -2px; /* 2 */\n}\n\n/*\nRemove the inner padding in Chrome and Safari on macOS.\n*/\n\n::-webkit-search-decoration {\n  -webkit-appearance: none;\n}\n\n/*\n1. Correct the inability to style clickable types in iOS and Safari.\n2. Change font properties to `inherit` in Safari.\n*/\n\n::-webkit-file-upload-button {\n  -webkit-appearance: button; /* 1 */\n  font: inherit; /* 2 */\n}\n\n/*\nAdd the correct display in Chrome and Safari.\n*/\n\nsummary {\n  display: list-item;\n}\n\n/*\nRemoves the default spacing and border for appropriate elements.\n*/\n\nblockquote,\ndl,\ndd,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\nhr,\nfigure,\np,\npre {\n  margin: 0;\n}\n\nfieldset {\n  margin: 0;\n  padding: 0;\n}\n\nlegend {\n  padding: 0;\n}\n\nol,\nul,\nmenu {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n\n/*\nReset default styling for dialogs.\n*/\ndialog {\n  padding: 0;\n}\n\n/*\nPrevent resizing textareas horizontally by default.\n*/\n\ntextarea {\n  resize: vertical;\n}\n\n/*\n1. Reset the default placeholder opacity in Firefox. (https://github.com/tailwindlabs/tailwindcss/issues/3300)\n2. Set the default placeholder color to the user's configured gray 400 color.\n*/\n\ninput::-moz-placeholder, textarea::-moz-placeholder {\n  opacity: 1; /* 1 */\n  color: #9ca3af; /* 2 */\n}\n\ninput::placeholder,\ntextarea::placeholder {\n  opacity: 1; /* 1 */\n  color: #9ca3af; /* 2 */\n}\n\n/*\nSet the default cursor for buttons.\n*/\n\nbutton,\n[role=\"button\"] {\n  cursor: pointer;\n}\n\n/*\nMake sure disabled buttons don't get the pointer cursor.\n*/\n:disabled {\n  cursor: default;\n}\n\n/*\n1. Make replaced elements `display: block` by default. (https://github.com/mozdevs/cssremedy/issues/14)\n2. Add `vertical-align: middle` to align replaced elements more sensibly by default. (https://github.com/jensimmons/cssremedy/issues/14#issuecomment-634934210)\n   This can trigger a poorly considered lint error in some tools but is included by design.\n*/\n\nimg,\nsvg,\nvideo,\ncanvas,\naudio,\niframe,\nembed,\nobject {\n  display: block; /* 1 */\n  vertical-align: middle; /* 2 */\n}\n\n/*\nConstrain images and videos to the parent width and preserve their intrinsic aspect ratio. (https://github.com/mozdevs/cssremedy/issues/14)\n*/\n\nimg,\nvideo {\n  max-width: 100%;\n  height: auto;\n}\n\n/* Make elements with the HTML hidden attribute stay hidden by default */\n[hidden] {\n  display: none;\n}\n\n*, ::before, ::after {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x:  ;\n  --tw-pan-y:  ;\n  --tw-pinch-zoom:  ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position:  ;\n  --tw-gradient-via-position:  ;\n  --tw-gradient-to-position:  ;\n  --tw-ordinal:  ;\n  --tw-slashed-zero:  ;\n  --tw-numeric-figure:  ;\n  --tw-numeric-spacing:  ;\n  --tw-numeric-fraction:  ;\n  --tw-ring-inset:  ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur:  ;\n  --tw-brightness:  ;\n  --tw-contrast:  ;\n  --tw-grayscale:  ;\n  --tw-hue-rotate:  ;\n  --tw-invert:  ;\n  --tw-saturate:  ;\n  --tw-sepia:  ;\n  --tw-drop-shadow:  ;\n  --tw-backdrop-blur:  ;\n  --tw-backdrop-brightness:  ;\n  --tw-backdrop-contrast:  ;\n  --tw-backdrop-grayscale:  ;\n  --tw-backdrop-hue-rotate:  ;\n  --tw-backdrop-invert:  ;\n  --tw-backdrop-opacity:  ;\n  --tw-backdrop-saturate:  ;\n  --tw-backdrop-sepia:  ;\n}\n\n::backdrop {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x:  ;\n  --tw-pan-y:  ;\n  --tw-pinch-zoom:  ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position:  ;\n  --tw-gradient-via-position:  ;\n  --tw-gradient-to-position:  ;\n  --tw-ordinal:  ;\n  --tw-slashed-zero:  ;\n  --tw-numeric-figure:  ;\n  --tw-numeric-spacing:  ;\n  --tw-numeric-fraction:  ;\n  --tw-ring-inset:  ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur:  ;\n  --tw-brightness:  ;\n  --tw-contrast:  ;\n  --tw-grayscale:  ;\n  --tw-hue-rotate:  ;\n  --tw-invert:  ;\n  --tw-saturate:  ;\n  --tw-sepia:  ;\n  --tw-drop-shadow:  ;\n  --tw-backdrop-blur:  ;\n  --tw-backdrop-brightness:  ;\n  --tw-backdrop-contrast:  ;\n  --tw-backdrop-grayscale:  ;\n  --tw-backdrop-hue-rotate:  ;\n  --tw-backdrop-invert:  ;\n  --tw-backdrop-opacity:  ;\n  --tw-backdrop-saturate:  ;\n  --tw-backdrop-sepia:  ;\n}\n.fixed {\n  position: fixed;\n}\n.absolute {\n  position: absolute;\n}\n.relative {\n  position: relative;\n}\n.ml-4 {\n  margin-left: 1rem;\n}\n.mr-2 {\n  margin-right: 0.5rem;\n}\n.inline-flex {\n  display: inline-flex;\n}\n.table {\n  display: table;\n}\n.h-8 {\n  height: 2rem;\n}\n.w-8 {\n  width: 2rem;\n}\n.w-full {\n  width: 100%;\n}\n.shrink-0 {\n  flex-shrink: 0;\n}\n.flex-row {\n  flex-direction: row;\n}\n.flex-wrap {\n  flex-wrap: wrap;\n}\n.items-center {\n  align-items: center;\n}\n.justify-center {\n  justify-content: center;\n}\n.space-x-2 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-x-reverse: 0;\n  margin-right: calc(0.5rem * var(--tw-space-x-reverse));\n  margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));\n}\n.rounded-lg {\n  border-radius: 0.5rem;\n}\n.rounded-md {\n  border-radius: 0.375rem;\n}\n.rounded-t-lg {\n  border-top-left-radius: 0.5rem;\n  border-top-right-radius: 0.5rem;\n}\n.border {\n  border-width: 1px;\n}\n.border-white {\n  --tw-border-opacity: 1;\n  border-color: rgb(255 255 255 / var(--tw-border-opacity));\n}\n.bg-blue-200 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(191 219 254 / var(--tw-bg-opacity));\n}\n.bg-white {\n  --tw-bg-opacity: 1;\n  background-color: rgb(255 255 255 / var(--tw-bg-opacity));\n}\n.px-2 {\n  padding-left: 0.5rem;\n  padding-right: 0.5rem;\n}\n.italic {\n  font-style: italic;\n}\n.text-blue-800 {\n  --tw-text-opacity: 1;\n  color: rgb(30 64 175 / var(--tw-text-opacity));\n}\n.text-gray-600 {\n  --tw-text-opacity: 1;\n  color: rgb(75 85 99 / var(--tw-text-opacity));\n}\n.underline {\n  text-decoration-line: underline;\n}\n.outline {\n  outline-style: solid;\n}\n.filter {\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.transition {\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-backdrop-filter;\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-backdrop-filter;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.hover\\:bg-blue-50:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(239 246 255 / var(--tw-bg-opacity));\n}\n.hover\\:bg-opacity-80:hover {\n  --tw-bg-opacity: 0.8;\n}\n.disabled\\:bg-transparent:disabled {\n  background-color: transparent;\n}\n.disabled\\:text-gray-300:disabled {\n  --tw-text-opacity: 1;\n  color: rgb(209 213 219 / var(--tw-text-opacity));\n}\n";
 n(css$1,{});
 
+const _hoisted_1$i = {
+  xmlns: "http://www.w3.org/2000/svg",
+  viewBox: "0 0 24 24",
+  width: "24",
+  height: "24"
+};
+const _hoisted_2$g = /*#__PURE__*/createElementVNode("path", { d: "M8 11h4.5a2.5 2.5 0 1 0 0-5H8v5zm10 4.5a4.5 4.5 0 0 1-4.5 4.5H6V4h6.5a4.5 4.5 0 0 1 3.256 7.606A4.498 4.498 0 0 1 18 15.5zM8 13v5h5.5a2.5 2.5 0 1 0 0-5H8z" }, null, -1 /* HOISTED */);
+const _hoisted_3$f = [
+  _hoisted_2$g
+];
+
+function render$h(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$i, [..._hoisted_3$f]))
+}
+
+const script$i = {};
+
+
+script$i.render = render$h;
+script$i.__file = "src/icons/bold.vue";
+
 const _hoisted_1$h = {
   xmlns: "http://www.w3.org/2000/svg",
   viewBox: "0 0 24 24",
   width: "24",
   height: "24"
 };
-const _hoisted_2$f = /*#__PURE__*/createElementVNode("path", { d: "M8 11h4.5a2.5 2.5 0 1 0 0-5H8v5zm10 4.5a4.5 4.5 0 0 1-4.5 4.5H6V4h6.5a4.5 4.5 0 0 1 3.256 7.606A4.498 4.498 0 0 1 18 15.5zM8 13v5h5.5a2.5 2.5 0 1 0 0-5H8z" }, null, -1 /* HOISTED */);
+const _hoisted_2$f = /*#__PURE__*/createElementVNode("path", { d: "M15 20H7v-2h2.927l2.116-12H9V4h8v2h-2.927l-2.116 12H15z" }, null, -1 /* HOISTED */);
 const _hoisted_3$e = [
   _hoisted_2$f
 ];
@@ -25532,7 +25553,7 @@ const script$h = {};
 
 
 script$h.render = render$g;
-script$h.__file = "src/icons/bold.vue";
+script$h.__file = "src/icons/italic.vue";
 
 const _hoisted_1$g = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -25540,7 +25561,7 @@ const _hoisted_1$g = {
   width: "24",
   height: "24"
 };
-const _hoisted_2$e = /*#__PURE__*/createElementVNode("path", { d: "M15 20H7v-2h2.927l2.116-12H9V4h8v2h-2.927l-2.116 12H15z" }, null, -1 /* HOISTED */);
+const _hoisted_2$e = /*#__PURE__*/createElementVNode("path", { d: "M21 4H3V6H21V4ZM21 11H8V13H21V11ZM21 18H8V20H21V18ZM5 11H3V20H5V11Z" }, null, -1 /* HOISTED */);
 const _hoisted_3$d = [
   _hoisted_2$e
 ];
@@ -25553,56 +25574,56 @@ const script$g = {};
 
 
 script$g.render = render$f;
-script$g.__file = "src/icons/italic.vue";
+script$g.__file = "src/icons/quote-text.vue";
 
 const _hoisted_1$f = {
-  xmlns: "http://www.w3.org/2000/svg",
-  viewBox: "0 0 24 24",
   width: "24",
-  height: "24"
+  height: "24",
+  viewBox: "0 0 24 24",
+  xmlns: "http://www.w3.org/2000/svg"
 };
-const _hoisted_2$d = /*#__PURE__*/createElementVNode("path", { d: "M21 4H3V6H21V4ZM21 11H8V13H21V11ZM21 18H8V20H21V18ZM5 11H3V20H5V11Z" }, null, -1 /* HOISTED */);
-const _hoisted_3$c = [
-  _hoisted_2$d
+const _hoisted_2$d = /*#__PURE__*/createElementVNode("path", { d: "M20.5 7.26348C20.3072 7.43773 20.1033 7.5974 19.8927 7.73783C19.548 7.9676 19.0824 7.87447 18.8526 7.52982C18.6228 7.18517 18.716 6.71952 19.0606 6.48976C19.825 5.98018 20.3901 5.1686 20.5167 4.58989C20.597 4.22259 20.9339 3.97754 21.298 4.00163C21.6898 4.02637 22 4.35202 22 4.75012V11.2501C22 11.6643 21.6642 12.0001 21.25 12.0001C20.8358 12.0001 20.5 11.6643 20.5 11.2501V7.26348Z" }, null, -1 /* HOISTED */);
+const _hoisted_3$c = /*#__PURE__*/createElementVNode("path", { d: "M12.2219 17.7558C12.0685 17.5885 12 17.3779 12 17.1467V7.91037C12 7.66413 12.0737 7.44165 12.2367 7.26514L12.2401 7.26139C12.4083 7.08646 12.6239 7.00012 12.8676 7.00012C13.1106 7.00012 13.3253 7.0861 13.4898 7.26326C13.6579 7.43907 13.7353 7.66213 13.7353 7.91037V10.7508C13.9176 10.5594 14.1259 10.3947 14.3599 10.2576L14.361 10.2569C14.8183 9.99191 15.3282 9.86118 15.8849 9.86118C16.889 9.86118 17.7135 10.2402 18.3355 10.9959C18.9544 11.7477 19.2515 12.7345 19.2515 13.9306C19.2515 15.1313 18.9545 16.1205 18.3355 16.8725C17.7124 17.6243 16.8799 18.0001 15.8636 18.0001C15.2941 18.0001 14.7767 17.87 14.3184 17.6044L14.3173 17.6037C14.0786 17.4638 13.8656 17.2942 13.6785 17.0957V17.1467C13.6785 17.3815 13.5998 17.5916 13.4349 17.7565C13.27 17.9214 13.0599 18.0001 12.8251 18.0001C12.5938 18.0001 12.3846 17.9259 12.2255 17.7596L12.2219 17.7558ZM16.972 15.7798C17.3067 15.3446 17.4878 14.7372 17.4878 13.9306C17.4878 13.129 17.3067 12.5236 16.9717 12.0881C16.6432 11.6611 16.2024 11.4474 15.6222 11.4474C15.0714 11.4474 14.6267 11.6639 14.2703 12.1125C13.9164 12.5592 13.7282 13.1575 13.7282 13.9306C13.7282 14.7087 13.9165 15.3091 14.27 15.7555C14.626 16.1992 15.0707 16.4139 15.6222 16.4139C16.2031 16.4139 16.6439 16.202 16.972 15.7798Z" }, null, -1 /* HOISTED */);
+const _hoisted_4$2 = /*#__PURE__*/createElementVNode("path", {
+  d: "M2 17.1862C2 17.4211 2.09349 17.6243 2.26916 17.7801L2.27702 17.7868C2.45701 17.9336 2.67599 18.0001 2.91624 18.0001C3.11952 18.0001 3.30806 17.9464 3.46676 17.8264C3.62332 17.708 3.73178 17.5391 3.80285 17.3424L4.68223 14.9522H8.56084L9.44715 17.3424L9.44756 17.3436C9.51862 17.5401 9.62678 17.7081 9.78324 17.8264C9.94194 17.9464 10.1305 18.0001 10.3338 18.0001C10.5737 18.0001 10.793 17.9333 10.9698 17.7833C11.1511 17.6286 11.25 17.4247 11.25 17.1862C11.25 17.0479 11.2113 16.8958 11.152 16.7397L7.70955 7.77399C7.61797 7.53666 7.4837 7.3393 7.29665 7.20204C7.10789 7.06352 6.88428 7.00012 6.63981 7.00012C6.38569 7.00012 6.15364 7.06271 5.95825 7.20162C5.76377 7.33988 5.62502 7.54014 5.5327 7.78203L2.09775 16.7405C2.0384 16.8965 2 17.0479 2 17.1862ZM6.625 9.58303L8.00016 13.3601H5.24984L6.625 9.58303Z",
+  fill: "#212121"
+}, null, -1 /* HOISTED */);
+const _hoisted_5 = [
+  _hoisted_2$d,
+  _hoisted_3$c,
+  _hoisted_4$2
 ];
 
 function render$e(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$f, [..._hoisted_3$c]))
+  return (openBlock(), createElementBlock("svg", _hoisted_1$f, [..._hoisted_5]))
 }
 
 const script$f = {};
 
 
 script$f.render = render$e;
-script$f.__file = "src/icons/quote-text.vue";
+script$f.__file = "src/icons/footnote.vue";
 
 const _hoisted_1$e = {
-  width: "24",
-  height: "24",
+  xmlns: "http://www.w3.org/2000/svg",
   viewBox: "0 0 24 24",
-  xmlns: "http://www.w3.org/2000/svg"
+  width: "24",
+  height: "24"
 };
-const _hoisted_2$c = /*#__PURE__*/createElementVNode("path", { d: "M20.5 7.26348C20.3072 7.43773 20.1033 7.5974 19.8927 7.73783C19.548 7.9676 19.0824 7.87447 18.8526 7.52982C18.6228 7.18517 18.716 6.71952 19.0606 6.48976C19.825 5.98018 20.3901 5.1686 20.5167 4.58989C20.597 4.22259 20.9339 3.97754 21.298 4.00163C21.6898 4.02637 22 4.35202 22 4.75012V11.2501C22 11.6643 21.6642 12.0001 21.25 12.0001C20.8358 12.0001 20.5 11.6643 20.5 11.2501V7.26348Z" }, null, -1 /* HOISTED */);
-const _hoisted_3$b = /*#__PURE__*/createElementVNode("path", { d: "M12.2219 17.7558C12.0685 17.5885 12 17.3779 12 17.1467V7.91037C12 7.66413 12.0737 7.44165 12.2367 7.26514L12.2401 7.26139C12.4083 7.08646 12.6239 7.00012 12.8676 7.00012C13.1106 7.00012 13.3253 7.0861 13.4898 7.26326C13.6579 7.43907 13.7353 7.66213 13.7353 7.91037V10.7508C13.9176 10.5594 14.1259 10.3947 14.3599 10.2576L14.361 10.2569C14.8183 9.99191 15.3282 9.86118 15.8849 9.86118C16.889 9.86118 17.7135 10.2402 18.3355 10.9959C18.9544 11.7477 19.2515 12.7345 19.2515 13.9306C19.2515 15.1313 18.9545 16.1205 18.3355 16.8725C17.7124 17.6243 16.8799 18.0001 15.8636 18.0001C15.2941 18.0001 14.7767 17.87 14.3184 17.6044L14.3173 17.6037C14.0786 17.4638 13.8656 17.2942 13.6785 17.0957V17.1467C13.6785 17.3815 13.5998 17.5916 13.4349 17.7565C13.27 17.9214 13.0599 18.0001 12.8251 18.0001C12.5938 18.0001 12.3846 17.9259 12.2255 17.7596L12.2219 17.7558ZM16.972 15.7798C17.3067 15.3446 17.4878 14.7372 17.4878 13.9306C17.4878 13.129 17.3067 12.5236 16.9717 12.0881C16.6432 11.6611 16.2024 11.4474 15.6222 11.4474C15.0714 11.4474 14.6267 11.6639 14.2703 12.1125C13.9164 12.5592 13.7282 13.1575 13.7282 13.9306C13.7282 14.7087 13.9165 15.3091 14.27 15.7555C14.626 16.1992 15.0707 16.4139 15.6222 16.4139C16.2031 16.4139 16.6439 16.202 16.972 15.7798Z" }, null, -1 /* HOISTED */);
-const _hoisted_4$2 = /*#__PURE__*/createElementVNode("path", {
-  d: "M2 17.1862C2 17.4211 2.09349 17.6243 2.26916 17.7801L2.27702 17.7868C2.45701 17.9336 2.67599 18.0001 2.91624 18.0001C3.11952 18.0001 3.30806 17.9464 3.46676 17.8264C3.62332 17.708 3.73178 17.5391 3.80285 17.3424L4.68223 14.9522H8.56084L9.44715 17.3424L9.44756 17.3436C9.51862 17.5401 9.62678 17.7081 9.78324 17.8264C9.94194 17.9464 10.1305 18.0001 10.3338 18.0001C10.5737 18.0001 10.793 17.9333 10.9698 17.7833C11.1511 17.6286 11.25 17.4247 11.25 17.1862C11.25 17.0479 11.2113 16.8958 11.152 16.7397L7.70955 7.77399C7.61797 7.53666 7.4837 7.3393 7.29665 7.20204C7.10789 7.06352 6.88428 7.00012 6.63981 7.00012C6.38569 7.00012 6.15364 7.06271 5.95825 7.20162C5.76377 7.33988 5.62502 7.54014 5.5327 7.78203L2.09775 16.7405C2.0384 16.8965 2 17.0479 2 17.1862ZM6.625 9.58303L8.00016 13.3601H5.24984L6.625 9.58303Z",
-  fill: "#212121"
-}, null, -1 /* HOISTED */);
-const _hoisted_5 = [
-  _hoisted_2$c,
-  _hoisted_3$b,
-  _hoisted_4$2
+const _hoisted_2$c = /*#__PURE__*/createElementVNode("path", { d: "M12.651 14.065L11.605 20H9.574l1.35-7.661-7.41-7.41L4.93 3.515 20.485 19.07l-1.414 1.414-6.42-6.42zm-.878-6.535l.27-1.53h-1.8l-2-2H20v2h-5.927L13.5 9.257 11.773 7.53z" }, null, -1 /* HOISTED */);
+const _hoisted_3$b = [
+  _hoisted_2$c
 ];
 
 function render$d(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$e, [..._hoisted_5]))
+  return (openBlock(), createElementBlock("svg", _hoisted_1$e, [..._hoisted_3$b]))
 }
 
 const script$e = {};
 
 
 script$e.render = render$d;
-script$e.__file = "src/icons/footnote.vue";
+script$e.__file = "src/icons/format-clear.vue";
 
 const _hoisted_1$d = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -25610,7 +25631,7 @@ const _hoisted_1$d = {
   width: "24",
   height: "24"
 };
-const _hoisted_2$b = /*#__PURE__*/createElementVNode("path", { d: "M12.651 14.065L11.605 20H9.574l1.35-7.661-7.41-7.41L4.93 3.515 20.485 19.07l-1.414 1.414-6.42-6.42zm-.878-6.535l.27-1.53h-1.8l-2-2H20v2h-5.927L13.5 9.257 11.773 7.53z" }, null, -1 /* HOISTED */);
+const _hoisted_2$b = /*#__PURE__*/createElementVNode("path", { d: "M17.6572 14.8282L16.2429 13.414L17.6572 11.9998C19.2193 10.4377 19.2193 7.90506 17.6572 6.34296C16.0951 4.78086 13.5624 4.78086 12.0003 6.34296L10.5861 7.75717L9.17188 6.34296L10.5861 4.92875C12.9292 2.5856 16.7282 2.5856 19.0714 4.92875C21.4145 7.27189 21.4145 11.0709 19.0714 13.414L17.6572 14.8282ZM14.8287 17.6567L13.4145 19.0709C11.0714 21.414 7.27238 21.414 4.92923 19.0709C2.58609 16.7277 2.58609 12.9287 4.92923 10.5856L6.34345 9.17139L7.75766 10.5856L6.34345 11.9998C4.78135 13.5619 4.78135 16.0946 6.34345 17.6567C7.90555 19.2188 10.4382 19.2188 12.0003 17.6567L13.4145 16.2425L14.8287 17.6567ZM14.8287 7.75717L16.2429 9.17139L9.17188 16.2425L7.75766 14.8282L14.8287 7.75717Z" }, null, -1 /* HOISTED */);
 const _hoisted_3$a = [
   _hoisted_2$b
 ];
@@ -25623,7 +25644,7 @@ const script$d = {};
 
 
 script$d.render = render$c;
-script$d.__file = "src/icons/format-clear.vue";
+script$d.__file = "src/icons/link.vue";
 
 const _hoisted_1$c = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -25631,7 +25652,7 @@ const _hoisted_1$c = {
   width: "24",
   height: "24"
 };
-const _hoisted_2$a = /*#__PURE__*/createElementVNode("path", { d: "M17.6572 14.8282L16.2429 13.414L17.6572 11.9998C19.2193 10.4377 19.2193 7.90506 17.6572 6.34296C16.0951 4.78086 13.5624 4.78086 12.0003 6.34296L10.5861 7.75717L9.17188 6.34296L10.5861 4.92875C12.9292 2.5856 16.7282 2.5856 19.0714 4.92875C21.4145 7.27189 21.4145 11.0709 19.0714 13.414L17.6572 14.8282ZM14.8287 17.6567L13.4145 19.0709C11.0714 21.414 7.27238 21.414 4.92923 19.0709C2.58609 16.7277 2.58609 12.9287 4.92923 10.5856L6.34345 9.17139L7.75766 10.5856L6.34345 11.9998C4.78135 13.5619 4.78135 16.0946 6.34345 17.6567C7.90555 19.2188 10.4382 19.2188 12.0003 17.6567L13.4145 16.2425L14.8287 17.6567ZM14.8287 7.75717L16.2429 9.17139L9.17188 16.2425L7.75766 14.8282L14.8287 7.75717Z" }, null, -1 /* HOISTED */);
+const _hoisted_2$a = /*#__PURE__*/createElementVNode("path", { d: "M12 6v15h-2v-5a6 6 0 1 1 0-12h10v2h-3v15h-2V6h-3zm-2 0a4 4 0 1 0 0 8V6z" }, null, -1 /* HOISTED */);
 const _hoisted_3$9 = [
   _hoisted_2$a
 ];
@@ -25644,7 +25665,7 @@ const script$c = {};
 
 
 script$c.render = render$b;
-script$c.__file = "src/icons/link.vue";
+script$c.__file = "src/icons/paragraph.vue";
 
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -25652,20 +25673,25 @@ const _hoisted_1$b = {
   width: "24",
   height: "24"
 };
-const _hoisted_2$9 = /*#__PURE__*/createElementVNode("path", { d: "M12 6v15h-2v-5a6 6 0 1 1 0-12h10v2h-3v15h-2V6h-3zm-2 0a4 4 0 1 0 0 8V6z" }, null, -1 /* HOISTED */);
-const _hoisted_3$8 = [
-  _hoisted_2$9
+const _hoisted_2$9 = /*#__PURE__*/createElementVNode("path", {
+  fill: "none",
+  d: "M0 0h24v24H0z"
+}, null, -1 /* HOISTED */);
+const _hoisted_3$8 = /*#__PURE__*/createElementVNode("path", { d: "M5.828 7l2.536 2.536L6.95 10.95 2 6l4.95-4.95 1.414 1.414L5.828 5H13a8 8 0 1 1 0 16H4v-2h9a6 6 0 1 0 0-12H5.828z" }, null, -1 /* HOISTED */);
+const _hoisted_4$1 = [
+  _hoisted_2$9,
+  _hoisted_3$8
 ];
 
 function render$a(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$b, [..._hoisted_3$8]))
+  return (openBlock(), createElementBlock("svg", _hoisted_1$b, [..._hoisted_4$1]))
 }
 
 const script$b = {};
 
 
 script$b.render = render$a;
-script$b.__file = "src/icons/paragraph.vue";
+script$b.__file = "src/icons/arrow-go-back-line.vue";
 
 const _hoisted_1$a = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -25677,21 +25703,21 @@ const _hoisted_2$8 = /*#__PURE__*/createElementVNode("path", {
   fill: "none",
   d: "M0 0h24v24H0z"
 }, null, -1 /* HOISTED */);
-const _hoisted_3$7 = /*#__PURE__*/createElementVNode("path", { d: "M5.828 7l2.536 2.536L6.95 10.95 2 6l4.95-4.95 1.414 1.414L5.828 5H13a8 8 0 1 1 0 16H4v-2h9a6 6 0 1 0 0-12H5.828z" }, null, -1 /* HOISTED */);
-const _hoisted_4$1 = [
+const _hoisted_3$7 = /*#__PURE__*/createElementVNode("path", { d: "M18.172 7H11a6 6 0 1 0 0 12h9v2h-9a8 8 0 1 1 0-16h7.172l-2.536-2.536L17.05 1.05 22 6l-4.95 4.95-1.414-1.414L18.172 7z" }, null, -1 /* HOISTED */);
+const _hoisted_4 = [
   _hoisted_2$8,
   _hoisted_3$7
 ];
 
 function render$9(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$a, [..._hoisted_4$1]))
+  return (openBlock(), createElementBlock("svg", _hoisted_1$a, [..._hoisted_4]))
 }
 
 const script$a = {};
 
 
 script$a.render = render$9;
-script$a.__file = "src/icons/arrow-go-back-line.vue";
+script$a.__file = "src/icons/arrow-go-forward-line.vue";
 
 const _hoisted_1$9 = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -25699,25 +25725,20 @@ const _hoisted_1$9 = {
   width: "24",
   height: "24"
 };
-const _hoisted_2$7 = /*#__PURE__*/createElementVNode("path", {
-  fill: "none",
-  d: "M0 0h24v24H0z"
-}, null, -1 /* HOISTED */);
-const _hoisted_3$6 = /*#__PURE__*/createElementVNode("path", { d: "M18.172 7H11a6 6 0 1 0 0 12h9v2h-9a8 8 0 1 1 0-16h7.172l-2.536-2.536L17.05 1.05 22 6l-4.95 4.95-1.414-1.414L18.172 7z" }, null, -1 /* HOISTED */);
-const _hoisted_4 = [
-  _hoisted_2$7,
-  _hoisted_3$6
+const _hoisted_2$7 = /*#__PURE__*/createElementVNode("path", { d: "M13 20H11V13H4V20H2V4H4V11H11V4H13V20ZM21.0005 8V20H19.0005L19 10.204L17 10.74V8.67L19.5005 8H21.0005Z" }, null, -1 /* HOISTED */);
+const _hoisted_3$6 = [
+  _hoisted_2$7
 ];
 
 function render$8(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$9, [..._hoisted_4]))
+  return (openBlock(), createElementBlock("svg", _hoisted_1$9, [..._hoisted_3$6]))
 }
 
 const script$9 = {};
 
 
 script$9.render = render$8;
-script$9.__file = "src/icons/arrow-go-forward-line.vue";
+script$9.__file = "src/icons/h1.vue";
 
 const _hoisted_1$8 = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -25725,7 +25746,7 @@ const _hoisted_1$8 = {
   width: "24",
   height: "24"
 };
-const _hoisted_2$6 = /*#__PURE__*/createElementVNode("path", { d: "M13 20H11V13H4V20H2V4H4V11H11V4H13V20ZM21.0005 8V20H19.0005L19 10.204L17 10.74V8.67L19.5005 8H21.0005Z" }, null, -1 /* HOISTED */);
+const _hoisted_2$6 = /*#__PURE__*/createElementVNode("path", { d: "M4 4V11H11V4H13V20H11V13H4V20H2V4H4ZM18.5 8C20.5711 8 22.25 9.67893 22.25 11.75C22.25 12.6074 21.9623 13.3976 21.4781 14.0292L21.3302 14.2102L18.0343 18H22V20H15L14.9993 18.444L19.8207 12.8981C20.0881 12.5908 20.25 12.1893 20.25 11.75C20.25 10.7835 19.4665 10 18.5 10C17.5818 10 16.8288 10.7071 16.7558 11.6065L16.75 11.75H14.75C14.75 9.67893 16.4289 8 18.5 8Z" }, null, -1 /* HOISTED */);
 const _hoisted_3$5 = [
   _hoisted_2$6
 ];
@@ -25738,7 +25759,7 @@ const script$8 = {};
 
 
 script$8.render = render$7;
-script$8.__file = "src/icons/h1.vue";
+script$8.__file = "src/icons/h2.vue";
 
 const _hoisted_1$7 = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -25746,7 +25767,7 @@ const _hoisted_1$7 = {
   width: "24",
   height: "24"
 };
-const _hoisted_2$5 = /*#__PURE__*/createElementVNode("path", { d: "M4 4V11H11V4H13V20H11V13H4V20H2V4H4ZM18.5 8C20.5711 8 22.25 9.67893 22.25 11.75C22.25 12.6074 21.9623 13.3976 21.4781 14.0292L21.3302 14.2102L18.0343 18H22V20H15L14.9993 18.444L19.8207 12.8981C20.0881 12.5908 20.25 12.1893 20.25 11.75C20.25 10.7835 19.4665 10 18.5 10C17.5818 10 16.8288 10.7071 16.7558 11.6065L16.75 11.75H14.75C14.75 9.67893 16.4289 8 18.5 8Z" }, null, -1 /* HOISTED */);
+const _hoisted_2$5 = /*#__PURE__*/createElementVNode("path", { d: "M3 4H21V6H3V4ZM3 19H17V21H3V19ZM3 14H21V16H3V14ZM3 9H17V11H3V9Z" }, null, -1 /* HOISTED */);
 const _hoisted_3$4 = [
   _hoisted_2$5
 ];
@@ -25759,7 +25780,7 @@ const script$7 = {};
 
 
 script$7.render = render$6;
-script$7.__file = "src/icons/h2.vue";
+script$7.__file = "src/icons/align-left.vue";
 
 const _hoisted_1$6 = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -25767,7 +25788,7 @@ const _hoisted_1$6 = {
   width: "24",
   height: "24"
 };
-const _hoisted_2$4 = /*#__PURE__*/createElementVNode("path", { d: "M3 4H21V6H3V4ZM3 19H17V21H3V19ZM3 14H21V16H3V14ZM3 9H17V11H3V9Z" }, null, -1 /* HOISTED */);
+const _hoisted_2$4 = /*#__PURE__*/createElementVNode("path", { d: "M3 4H21V6H3V4ZM5 19H19V21H5V19ZM3 14H21V16H3V14ZM5 9H19V11H5V9Z" }, null, -1 /* HOISTED */);
 const _hoisted_3$3 = [
   _hoisted_2$4
 ];
@@ -25780,7 +25801,7 @@ const script$6 = {};
 
 
 script$6.render = render$5;
-script$6.__file = "src/icons/align-left.vue";
+script$6.__file = "src/icons/align-center.vue";
 
 const _hoisted_1$5 = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -25788,7 +25809,7 @@ const _hoisted_1$5 = {
   width: "24",
   height: "24"
 };
-const _hoisted_2$3 = /*#__PURE__*/createElementVNode("path", { d: "M3 4H21V6H3V4ZM5 19H19V21H5V19ZM3 14H21V16H3V14ZM5 9H19V11H5V9Z" }, null, -1 /* HOISTED */);
+const _hoisted_2$3 = /*#__PURE__*/createElementVNode("path", { d: "M3 4H21V6H3V4ZM3 19H21V21H3V19ZM3 14H21V16H3V14ZM3 9H21V11H3V9Z" }, null, -1 /* HOISTED */);
 const _hoisted_3$2 = [
   _hoisted_2$3
 ];
@@ -25801,15 +25822,26 @@ const script$5 = {};
 
 
 script$5.render = render$4;
-script$5.__file = "src/icons/align-center.vue";
+script$5.__file = "src/icons/align-justify.vue";
 
 const _hoisted_1$4 = {
   xmlns: "http://www.w3.org/2000/svg",
-  viewBox: "0 0 24 24",
-  width: "24",
-  height: "24"
+  "xmlns:xlink": "http://www.w3.org/1999/xlink",
+  version: "1.1",
+  x: "0px",
+  y: "0px",
+  viewBox: "0 0 100 125",
+  "enable-background": "new 0 0 100 100",
+  "xml:space": "preserve"
 };
-const _hoisted_2$2 = /*#__PURE__*/createElementVNode("path", { d: "M3 4H21V6H3V4ZM3 19H21V21H3V19ZM3 14H21V16H3V14ZM3 9H21V11H3V9Z" }, null, -1 /* HOISTED */);
+const _hoisted_2$2 = /*#__PURE__*/createElementVNode("g", null, [
+  /*#__PURE__*/createElementVNode("g", null, [
+    /*#__PURE__*/createElementVNode("path", { d: "M57.148,22.971c-0.313,1.93-0.482,3.925-0.51,5.985l-1.717,6.533l-0.392,0.392h-0.825l-0.43-0.352    c-0.131-3.338-0.273-5.294-0.43-5.868c-0.314-1.043-1.148-1.656-2.504-1.839c-0.521-0.079-2.975-0.118-7.355-0.118h-5.242    c-0.053,0.913-0.078,4.539-0.078,10.876v22.222c0,6.207,0.17,10.25,0.509,12.126c0.13,0.757,0.573,1.239,1.329,1.448    c0.393,0.105,1.918,0.235,4.578,0.392l0.391,0.391v2.621l-0.391,0.391c-2.582-0.156-6.599-0.234-12.049-0.234    c-5.582,0-9.599,0.078-12.051,0.234l-0.352-0.352v-2.66l0.392-0.391c2.66-0.156,4.186-0.287,4.577-0.392    c0.756-0.208,1.2-0.691,1.33-1.448c0.339-1.877,0.508-5.92,0.508-12.126V38.581c0-6.442-0.039-10.067-0.117-10.876h-5.594    c-4.668,0-7.395,0.144-8.176,0.431c-0.418,0.157-0.705,0.352-0.861,0.587c-0.235,0.417-0.431,1.251-0.588,2.503    c-0.182,1.383-0.299,2.804-0.352,4.264l-0.391,0.392H9.566l-0.43-0.392l-1.75-6.689c-0.027-1.878-0.184-3.821-0.471-5.83    l0.353-0.391c1.54,0.261,7.146,0.391,16.821,0.391h15.845c8.921,0,14.527-0.13,16.823-0.391L57.148,22.971z" })
+  ]),
+  /*#__PURE__*/createElementVNode("g", null, [
+    /*#__PURE__*/createElementVNode("path", { d: "M92.645,42.602c-0.201,1.244-0.311,2.529-0.328,3.857l-1.107,4.21l-0.251,0.252h-0.532l-0.277-0.227    c-0.083-2.151-0.176-3.412-0.277-3.781c-0.201-0.673-0.738-1.067-1.613-1.185c-0.335-0.051-1.916-0.076-4.738-0.076h-3.379    c-0.033,0.588-0.051,2.924-0.051,7.008v14.318c0,4,0.11,6.604,0.328,7.814c0.084,0.487,0.37,0.798,0.857,0.933    c0.252,0.067,1.235,0.151,2.949,0.252l0.252,0.252v1.689l-0.252,0.252c-1.664-0.101-4.252-0.151-7.764-0.151    c-3.596,0-6.185,0.05-7.764,0.151l-0.229-0.227V76.23l0.254-0.252c1.713-0.101,2.696-0.185,2.948-0.252    c0.487-0.134,0.774-0.445,0.857-0.933c0.218-1.21,0.327-3.815,0.327-7.814V52.661c0-4.151-0.024-6.487-0.075-7.008h-3.604    c-3.008,0-4.765,0.092-5.27,0.277c-0.268,0.101-0.453,0.227-0.555,0.378c-0.15,0.269-0.276,0.807-0.378,1.613    c-0.117,0.892-0.192,1.808-0.227,2.748l-0.251,0.252h-0.512l-0.277-0.252l-1.127-4.311c-0.018-1.21-0.118-2.462-0.303-3.756    l0.227-0.252c0.992,0.168,4.605,0.252,10.84,0.252h10.209c5.748,0,9.361-0.084,10.84-0.252L92.645,42.602z" })
+  ])
+], -1 /* HOISTED */);
 const _hoisted_3$1 = [
   _hoisted_2$2
 ];
@@ -25822,26 +25854,15 @@ const script$4 = {};
 
 
 script$4.render = render$3;
-script$4.__file = "src/icons/align-justify.vue";
+script$4.__file = "src/icons/small-caps.vue";
 
 const _hoisted_1$3 = {
   xmlns: "http://www.w3.org/2000/svg",
-  "xmlns:xlink": "http://www.w3.org/1999/xlink",
-  version: "1.1",
-  x: "0px",
-  y: "0px",
-  viewBox: "0 0 100 125",
-  "enable-background": "new 0 0 100 100",
-  "xml:space": "preserve"
+  viewBox: "0 0 24 24",
+  width: "24",
+  height: "24"
 };
-const _hoisted_2$1 = /*#__PURE__*/createElementVNode("g", null, [
-  /*#__PURE__*/createElementVNode("g", null, [
-    /*#__PURE__*/createElementVNode("path", { d: "M57.148,22.971c-0.313,1.93-0.482,3.925-0.51,5.985l-1.717,6.533l-0.392,0.392h-0.825l-0.43-0.352    c-0.131-3.338-0.273-5.294-0.43-5.868c-0.314-1.043-1.148-1.656-2.504-1.839c-0.521-0.079-2.975-0.118-7.355-0.118h-5.242    c-0.053,0.913-0.078,4.539-0.078,10.876v22.222c0,6.207,0.17,10.25,0.509,12.126c0.13,0.757,0.573,1.239,1.329,1.448    c0.393,0.105,1.918,0.235,4.578,0.392l0.391,0.391v2.621l-0.391,0.391c-2.582-0.156-6.599-0.234-12.049-0.234    c-5.582,0-9.599,0.078-12.051,0.234l-0.352-0.352v-2.66l0.392-0.391c2.66-0.156,4.186-0.287,4.577-0.392    c0.756-0.208,1.2-0.691,1.33-1.448c0.339-1.877,0.508-5.92,0.508-12.126V38.581c0-6.442-0.039-10.067-0.117-10.876h-5.594    c-4.668,0-7.395,0.144-8.176,0.431c-0.418,0.157-0.705,0.352-0.861,0.587c-0.235,0.417-0.431,1.251-0.588,2.503    c-0.182,1.383-0.299,2.804-0.352,4.264l-0.391,0.392H9.566l-0.43-0.392l-1.75-6.689c-0.027-1.878-0.184-3.821-0.471-5.83    l0.353-0.391c1.54,0.261,7.146,0.391,16.821,0.391h15.845c8.921,0,14.527-0.13,16.823-0.391L57.148,22.971z" })
-  ]),
-  /*#__PURE__*/createElementVNode("g", null, [
-    /*#__PURE__*/createElementVNode("path", { d: "M92.645,42.602c-0.201,1.244-0.311,2.529-0.328,3.857l-1.107,4.21l-0.251,0.252h-0.532l-0.277-0.227    c-0.083-2.151-0.176-3.412-0.277-3.781c-0.201-0.673-0.738-1.067-1.613-1.185c-0.335-0.051-1.916-0.076-4.738-0.076h-3.379    c-0.033,0.588-0.051,2.924-0.051,7.008v14.318c0,4,0.11,6.604,0.328,7.814c0.084,0.487,0.37,0.798,0.857,0.933    c0.252,0.067,1.235,0.151,2.949,0.252l0.252,0.252v1.689l-0.252,0.252c-1.664-0.101-4.252-0.151-7.764-0.151    c-3.596,0-6.185,0.05-7.764,0.151l-0.229-0.227V76.23l0.254-0.252c1.713-0.101,2.696-0.185,2.948-0.252    c0.487-0.134,0.774-0.445,0.857-0.933c0.218-1.21,0.327-3.815,0.327-7.814V52.661c0-4.151-0.024-6.487-0.075-7.008h-3.604    c-3.008,0-4.765,0.092-5.27,0.277c-0.268,0.101-0.453,0.227-0.555,0.378c-0.15,0.269-0.276,0.807-0.378,1.613    c-0.117,0.892-0.192,1.808-0.227,2.748l-0.251,0.252h-0.512l-0.277-0.252l-1.127-4.311c-0.018-1.21-0.118-2.462-0.303-3.756    l0.227-0.252c0.992,0.168,4.605,0.252,10.84,0.252h10.209c5.748,0,9.361-0.084,10.84-0.252L92.645,42.602z" })
-  ])
-], -1 /* HOISTED */);
+const _hoisted_2$1 = /*#__PURE__*/createElementVNode("path", { d: "M8 4h13v2H8V4zM4.5 6.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 6.9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM8 11h13v2H8v-2zm0 7h13v2H8v-2z" }, null, -1 /* HOISTED */);
 const _hoisted_3 = [
   _hoisted_2$1
 ];
@@ -25854,7 +25875,7 @@ const script$3 = {};
 
 
 script$3.render = render$2;
-script$3.__file = "src/icons/small-caps.vue";
+script$3.__file = "src/icons/list-unordered.vue";
 
 const _hoisted_1$2 = { class: "w-full rounded-t-lg bg-white inline-flex flex-row flex-wrap items-center space-x-2 px-2" };
 
@@ -25898,21 +25919,22 @@ script$1.__file = "src/editor/components/ToolbarButton.vue";
 var script = {
   components: {
     EditorContent,
-    BoldIcon: script$h,
-    ItalicIcon: script$g,
-    BlockquoteIcon: script$f,
-    FootnoteIcon: script$e,
-    H1Icon: script$8,
-    H2Icon: script$7,
-    ClearFormattingIcon: script$d,
-    LinkIcon: script$c,
-    ParagraphIcon: script$b,
-    UndoIcon: script$a,
-    RedoIcon: script$9,
-    AlignLeftIcon: script$6,
-    AlignCenterIcon: script$5,
-    AlignJustifyIcon: script$4,
-    SmallCapsIcon: script$3,
+    BoldIcon: script$i,
+    ItalicIcon: script$h,
+    BlockquoteIcon: script$g,
+    FootnoteIcon: script$f,
+    H1Icon: script$9,
+    H2Icon: script$8,
+    ClearFormattingIcon: script$e,
+    LinkIcon: script$d,
+    ParagraphIcon: script$c,
+    UndoIcon: script$b,
+    RedoIcon: script$a,
+    AlignLeftIcon: script$7,
+    AlignCenterIcon: script$6,
+    AlignJustifyIcon: script$5,
+    SmallCapsIcon: script$4,
+    BulletListIcon: script$3,
     Toolbar: script$2,
     ToolbarButton: script$1,
   },
@@ -25997,6 +26019,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
   const _component_AlignLeftIcon = resolveComponent("AlignLeftIcon");
   const _component_AlignCenterIcon = resolveComponent("AlignCenterIcon");
   const _component_AlignJustifyIcon = resolveComponent("AlignJustifyIcon");
+  const _component_BulletListIcon = resolveComponent("BulletListIcon");
   const _component_UndoIcon = resolveComponent("UndoIcon");
   const _component_RedoIcon = resolveComponent("RedoIcon");
   const _component_Toolbar = resolveComponent("Toolbar");
@@ -26116,7 +26139,17 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           _: 1 /* STABLE */
         }, 8 /* PROPS */, ["label", "isActive"]),
         createVNode(_component_ToolbarButton, {
-          onClick: _cache[11] || (_cache[11] = $event => ($setup.editor.chain().focus().toggleSmallCaps().run())),
+          onClick: _cache[11] || (_cache[11] = $event => ($setup.editor.commands.toggleBulletList())),
+          label: _ctx.bulletList,
+          isActive: $setup.isActive('bulletList')
+        }, {
+          default: withCtx(() => [
+            createVNode(_component_BulletListIcon)
+          ]),
+          _: 1 /* STABLE */
+        }, 8 /* PROPS */, ["label", "isActive"]),
+        createVNode(_component_ToolbarButton, {
+          onClick: _cache[12] || (_cache[12] = $event => ($setup.editor.chain().focus().toggleSmallCaps().run())),
           label: _ctx.redo,
           isActive: $setup.isActive('textStyle', { fontVariant: 'small-caps' })
         }, {
@@ -26126,7 +26159,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           _: 1 /* STABLE */
         }, 8 /* PROPS */, ["label", "isActive"]),
         createVNode(_component_ToolbarButton, {
-          onClick: _cache[12] || (_cache[12] = $event => ($setup.editor.chain().focus().undo().run())),
+          onClick: _cache[13] || (_cache[13] = $event => ($setup.editor.chain().focus().undo().run())),
           label: _ctx.undo
         }, {
           default: withCtx(() => [
@@ -26135,7 +26168,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           _: 1 /* STABLE */
         }, 8 /* PROPS */, ["label"]),
         createVNode(_component_ToolbarButton, {
-          onClick: _cache[13] || (_cache[13] = $event => ($setup.editor.chain().focus().redo().run())),
+          onClick: _cache[14] || (_cache[14] = $event => ($setup.editor.chain().focus().redo().run())),
           label: _ctx.redo
         }, {
           default: withCtx(() => [
@@ -26153,7 +26186,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
   ]))
 }
 
-var css = "\n.ProseMirror {\n  font-size: large;\n  counter-reset: footnote;\n  padding: 10px;\n}\n.ProseMirror footnote {\n  display: inline-block;\n  position: relative;\n  cursor: pointer;\n}\n.ProseMirror footnote::after {\n  content: counter(footnote);\n  vertical-align: super;\n  font-size: 75%;\n  counter-increment: footnote;\n}\n.ProseMirror-hideselection .footnote-tooltip *::-moz-selection {\n  background-color: transparent;\n}\n.ProseMirror-hideselection .footnote-tooltip *::selection {\n  background-color: transparent;\n}\n.ProseMirror-hideselection .footnote-tooltip *::-moz-selection {\n  background-color: transparent;\n}\n\n/* Make prosemirror fixed size and content scrollable */\n.ProseMirror {\n  max-height: 400px;\n  overflow: auto;\n}\n.footnote-tooltip {\n  color: #333;\n  cursor: auto;\n  position: absolute;\n  left: -30px;\n  top: calc(100% + 10px);\n  background: silver;\n  padding: 3px;\n  border-radius: 2px;\n  width: 500px;\n}\n.footnote-tooltip::before {\n  border: 5px solid silver;\n  border-top-width: 0px;\n  border-left-color: transparent;\n  border-right-color: transparent;\n  position: absolute;\n  top: -5px;\n  left: 27px;\n  content: \" \";\n  height: 0;\n  width: 0;\n}\n.ProseMirror button {\n  border: none;\n  background: none;\n  cursor: pointer;\n  outline: none;\n  padding: 0;\n  margin: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  border-radius: 4px;\n  transition: background-color 0.2s;\n}\n.ProseMirror button.active {\n  background-color: #aaa;\n}\n.ProseMirror blockquote {\n  border-left: 2px solid #aaa;\n  margin-left: 0;\n  margin-right: 0;\n  padding-left: 10px;\n  color: #aaa;\n  font-style: italic;\n}\n.ProseMirror h3 {\n  font-size: 1.5em;\n  font-weight: bold;\n}\n.ProseMirror h2 {\n  font-size: 1.25em;\n  font-weight: bold;\n}\n.ProseMirror p {\n  margin: 15px 0;\n}\n.ProseMirror h3 {\n  margin: 30px 0;\n  font-size: 1.1em;\n  font-weight: bold;\n}\n.ProseMirror h4 {\n  margin: 20px 0;\n  font-size: 1em;\n  font-weight: bold;\n}\n.ProseMirror a {\n  color: #007aff;\n  text-decoration: none;\n}\n.footnote-toolbar {\n  margin-left: 1rem;\n  margin-top: 2rem;\n}\n.footnote-toolbar .button {\n  margin-right: 0.5rem;\n  border-width: 1px;\n}\n";
+var css = "\n.ProseMirror {\n  font-size: large;\n  counter-reset: footnote;\n  padding: 10px;\n}\n.ProseMirror footnote {\n  display: inline-block;\n  position: relative;\n  cursor: pointer;\n}\n.ProseMirror footnote::after {\n  content: counter(footnote);\n  vertical-align: super;\n  font-size: 75%;\n  counter-increment: footnote;\n}\n.ProseMirror-hideselection .footnote-tooltip *::-moz-selection {\n  background-color: transparent;\n}\n.ProseMirror-hideselection .footnote-tooltip *::selection {\n  background-color: transparent;\n}\n.ProseMirror-hideselection .footnote-tooltip *::-moz-selection {\n  background-color: transparent;\n}\n\n/* Make prosemirror fixed size and content scrollable */\n.ProseMirror {\n  max-height: 400px;\n  overflow: auto;\n}\n.footnote-tooltip {\n  color: #333;\n  cursor: auto;\n  position: absolute;\n  left: -30px;\n  top: calc(100% + 10px);\n  background: silver;\n  padding: 3px;\n  border-radius: 2px;\n  width: 500px;\n}\n.footnote-tooltip::before {\n  border: 5px solid silver;\n  border-top-width: 0px;\n  border-left-color: transparent;\n  border-right-color: transparent;\n  position: absolute;\n  top: -5px;\n  left: 27px;\n  content: \" \";\n  height: 0;\n  width: 0;\n}\n.ProseMirror button {\n  border: none;\n  background: none;\n  cursor: pointer;\n  outline: none;\n  padding: 0;\n  margin: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  border-radius: 4px;\n  transition: background-color 0.2s;\n}\n.ProseMirror button.active {\n  background-color: #aaa;\n}\n.ProseMirror blockquote {\n  border-left: 2px solid #aaa;\n  margin-left: 0;\n  margin-right: 0;\n  padding-left: 10px;\n  color: #aaa;\n  font-style: italic;\n}\n.ProseMirror h3 {\n  font-size: 1.5em;\n  font-weight: bold;\n}\n.ProseMirror h2 {\n  font-size: 1.25em;\n  font-weight: bold;\n}\n.ProseMirror p {\n  margin: 15px 0;\n}\n.ProseMirror h3 {\n  margin: 30px 0;\n  font-size: 1.1em;\n  font-weight: bold;\n}\n.ProseMirror h4 {\n  margin: 20px 0;\n  font-size: 1em;\n  font-weight: bold;\n}\n.ProseMirror a {\n  color: #007aff;\n  text-decoration: none;\n}\n.footnote-toolbar {\n  margin-left: 1rem;\n  margin-top: 2rem;\n}\n.footnote-toolbar .button {\n  margin-right: 0.5rem;\n  border-width: 1px;\n}\n.content .ProseMirror ul {\n  list-style-type: disc ;\n  margin: 0;\n  padding-left: 1em ;\n}\n";
 n(css,{});
 
 script.render = render;
