@@ -30853,6 +30853,57 @@ const TextStyle = Mark.create({
     },
 });
 
+const TextAlign = Extension.create({
+    name: 'textAlign',
+    addOptions() {
+        return {
+            types: [],
+            alignments: ['left', 'center', 'right', 'justify'],
+            defaultAlignment: 'left',
+        };
+    },
+    addGlobalAttributes() {
+        return [
+            {
+                types: this.options.types,
+                attributes: {
+                    textAlign: {
+                        default: this.options.defaultAlignment,
+                        parseHTML: element => element.style.textAlign || this.options.defaultAlignment,
+                        renderHTML: attributes => {
+                            if (attributes.textAlign === this.options.defaultAlignment) {
+                                return {};
+                            }
+                            return { style: `text-align: ${attributes.textAlign}` };
+                        },
+                    },
+                },
+            },
+        ];
+    },
+    addCommands() {
+        return {
+            setTextAlign: (alignment) => ({ commands }) => {
+                if (!this.options.alignments.includes(alignment)) {
+                    return false;
+                }
+                return this.options.types.every(type => commands.updateAttributes(type, { textAlign: alignment }));
+            },
+            unsetTextAlign: () => ({ commands }) => {
+                return this.options.types.every(type => commands.resetAttributes(type, 'textAlign'));
+            },
+        };
+    },
+    addKeyboardShortcuts() {
+        return {
+            'Mod-Shift-l': () => this.editor.commands.setTextAlign('left'),
+            'Mod-Shift-e': () => this.editor.commands.setTextAlign('center'),
+            'Mod-Shift-r': () => this.editor.commands.setTextAlign('right'),
+            'Mod-Shift-j': () => this.editor.commands.setTextAlign('justify'),
+        };
+    },
+});
+
 var IDX=256, HEX=[], SIZE=256, BUFFER;
 while (IDX--) HEX[IDX] = (IDX + 256).toString(16).substring(1);
 
@@ -30868,7 +30919,7 @@ function uid(len) {
 }
 
 const FontVariant = Extension.create({
-  name: "font-variant",
+  name: "fontVariant",
   addOptions() {
     return {
       types: ['textStyle']
@@ -30920,6 +30971,12 @@ const FontVariant = Extension.create({
   }
 });
 
+const createButton = (parent, textContent, dataTypeButton) => {
+  const button = parent.appendChild(document.createElement("button"));
+  button.attributes["data-type"] = dataTypeButton;
+  button.textContent = textContent;
+  return button;
+};
 const FootnoteView = function ({
   node,
   editor: outerEditor,
@@ -30931,32 +30988,57 @@ const FootnoteView = function ({
   const open = function () {
     const tooltip = dom.appendChild(document.createElement("div"));
     tooltip.className = "footnote-tooltip";
-    tooltip.appendChild(document.createElement("button"));
-    tooltip.lastChild.textContent = "italic";
-    tooltip.lastChild.addEventListener("click", () => {
-      editor.chain().focus().toggleItalic().run();
-    });
-    tooltip.appendChild(document.createElement("button"));
-    tooltip.lastChild.textContent = "smallcaps";
-    tooltip.lastChild.addEventListener("click", () => {
-      // if (editor.isActive("fontVariant", { fontVariant: "small-caps" })) {
-      //   editor.chain().focus().unsetFontVariant().run();
-      // } else {
-      editor.chain().focus().toggleSmallCaps().run();
-      // }
-    });
+    const toolbar = tooltip.appendChild(document.createElement("div"));
+    toolbar.className = "footnote-toolbar";
+    const italicButton = createButton(toolbar, "i", "italic");
+    const smallCapsButton = createButton(toolbar, "A", "smallcaps");
     editor = new Editor({
       element: tooltip,
       extensions: [StarterKit.configure({
         gapcursor: false,
         dropcursor: false
-      }), FontVariant, TextStyle],
+      }), FontVariant, TextStyle, TextAlign],
       onCreate: function ({
         editor
       }) {
         editor.commands.setContent(node.content.toJSON());
+      },
+      onSelectionUpdate: function ({
+        editor
+      }) {
+        setButtonActive(italicButton, "italic");
+        setButtonActive(smallCapsButton, "textStyle");
       }
     });
+    const setButtonActive = (button, mark, option) => {
+      if (editor.isActive(mark)) {
+        button.classList.add("active");
+      } else {
+        button.classList.remove("active");
+      }
+    };
+    italicButton.addEventListener("click", () => {
+      editor.chain().focus().toggleItalic().run();
+      setButtonActive(italicButton, "italic");
+    });
+    smallCapsButton.addEventListener("click", () => {
+      editor.chain().focus().toggleSmallCaps().run();
+      setButtonActive(smallCapsButton, "textStyle");
+    });
+
+    // tooltip.lastChild.addEventListener("click", () => {
+    //   editor.chain().focus().toggleItalic().run();
+    // });
+    // tooltip.appendChild(document.createElement("button"));
+    // tooltip.lastChild.textContent = "smallcaps";
+    // tooltip.lastChild.addEventListener("click", () => {
+    //   // if (editor.isActive("fontVariant", { fontVariant: "small-caps" })) {
+    //   //   editor.chain().focus().unsetFontVariant().run();
+    //   // } else {
+    //   editor.chain().focus().toggleSmallCaps().run();
+    //   // }
+    // });
+
     innerView = editor.view;
   };
   const setContent = editor => {
@@ -31013,6 +31095,7 @@ const FootnoteView = function ({
   };
 };
 
+console.log("loaded");
 const footnoteNode = Node$1.create({
   name: "footnote",
   group: "inline",
@@ -33068,57 +33151,6 @@ const Link = Mark.create({
             }));
         }
         return plugins;
-    },
-});
-
-const TextAlign = Extension.create({
-    name: 'textAlign',
-    addOptions() {
-        return {
-            types: [],
-            alignments: ['left', 'center', 'right', 'justify'],
-            defaultAlignment: 'left',
-        };
-    },
-    addGlobalAttributes() {
-        return [
-            {
-                types: this.options.types,
-                attributes: {
-                    textAlign: {
-                        default: this.options.defaultAlignment,
-                        parseHTML: element => element.style.textAlign || this.options.defaultAlignment,
-                        renderHTML: attributes => {
-                            if (attributes.textAlign === this.options.defaultAlignment) {
-                                return {};
-                            }
-                            return { style: `text-align: ${attributes.textAlign}` };
-                        },
-                    },
-                },
-            },
-        ];
-    },
-    addCommands() {
-        return {
-            setTextAlign: (alignment) => ({ commands }) => {
-                if (!this.options.alignments.includes(alignment)) {
-                    return false;
-                }
-                return this.options.types.every(type => commands.updateAttributes(type, { textAlign: alignment }));
-            },
-            unsetTextAlign: () => ({ commands }) => {
-                return this.options.types.every(type => commands.resetAttributes(type, 'textAlign'));
-            },
-        };
-    },
-    addKeyboardShortcuts() {
-        return {
-            'Mod-Shift-l': () => this.editor.commands.setTextAlign('left'),
-            'Mod-Shift-e': () => this.editor.commands.setTextAlign('center'),
-            'Mod-Shift-r': () => this.editor.commands.setTextAlign('right'),
-            'Mod-Shift-j': () => this.editor.commands.setTextAlign('justify'),
-        };
     },
 });
 

@@ -77,6 +77,19 @@ function getFootnotesContentFromHtml(html) {
   // TODO : handle two footnotes with id footnote-1250-1
   $("div").each(function (i, elem) {
     try {
+      // remove a tag that are like [1]
+      $(elem)
+        .find("a")
+        .each(function (i, elem) {
+          if (
+            $(elem)
+              .text()
+              .match(/^\[\d+\]$/)
+          ) {
+            // remove tag but keep content as text
+            $(elem).replaceWith($(elem).text());
+          }
+        });
       if ($(elem).attr("id")) {
         const footnote = {
           hmtl: html,

@@ -1,49 +1,85 @@
 <template>
   <div class="rounded-lg border border-white">
     <Toolbar>
-      <ToolbarButton @click="editor.chain().focus().toggleBold().run()" :label="bold" :isActive="isActive('bold')">
+      <ToolbarButton
+        @click="editor.chain().focus().toggleBold().run()"
+        :label="bold"
+        :isActive="isActive('bold')"
+      >
         <BoldIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.chain().focus().toggleItalic().run()" :label="italic" :isActive="isActive('italic')">
+      <ToolbarButton
+        @click="editor.chain().focus().toggleItalic().run()"
+        :label="italic"
+        :isActive="isActive('italic')"
+      >
         <ItalicIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.chain().focus().toggleBlockquote().run()" :label="blockquote"
-        :isActive="isActive('blockquote')">
+      <ToolbarButton
+        @click="editor.chain().focus().toggleBlockquote().run()"
+        :label="blockquote"
+        :isActive="isActive('blockquote')"
+      >
         <BlockquoteIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.chain().focus().toggleHeading({ level: 1 }).run()" :label="h1"
-        :isActive="isActive('heading', { level: 1 })">
+      <ToolbarButton
+        @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
+        :label="h1"
+        :isActive="isActive('heading', { level: 1 })"
+      >
         <H1Icon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.chain().focus().toggleHeading({ level: 2 }).run()" :label="h2"
-        :isActive="isActive('heading', { level: 2 })">
+      <ToolbarButton
+        @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
+        :label="h2"
+        :isActive="isActive('heading', { level: 2 })"
+      >
         <H2Icon />
       </ToolbarButton>
-      <ToolbarButton @click="
-        editor.chain().focus().insertContent({ type: 'footnote' }).run()
-        " :label="footnote" :isActive="isActive('footnote')">
+      <ToolbarButton
+        @click="
+          editor.chain().focus().insertContent({ type: 'footnote' }).run()
+        "
+        :label="footnote"
+        :isActive="isActive('footnote')"
+      >
         <FootnoteIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.chain().focus().unsetAllMarks().run()" :label="clearFormatting">
+      <ToolbarButton
+        @click="editor.chain().focus().unsetAllMarks().run()"
+        :label="clearFormatting"
+      >
         <ClearFormattingIcon />
       </ToolbarButton>
       <ToolbarButton @click="setLink()" :label="link">
         <LinkIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.commands.setTextAlign('left')" :label="alignLeft"
-        :isActive="isActive({ textAlign: 'left' })">
+      <ToolbarButton
+        @click="editor.commands.setTextAlign('left')"
+        :label="alignLeft"
+        :isActive="isActive({ textAlign: 'left' })"
+      >
         <AlignLeftIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.commands.setTextAlign('center')" :label="alignCenter"
-        :isActive="isActive({ textAlign: 'center' })">
+      <ToolbarButton
+        @click="editor.commands.setTextAlign('center')"
+        :label="alignCenter"
+        :isActive="isActive({ textAlign: 'center' })"
+      >
         <AlignCenterIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.commands.setTextAlign('justify')" :label="alignJustify"
-        :isActive="isActive({ textAlign: 'justify' })">
+      <ToolbarButton
+        @click="editor.commands.setTextAlign('justify')"
+        :label="alignJustify"
+        :isActive="isActive({ textAlign: 'justify' })"
+      >
         <AlignJustifyIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.chain().focus().toggleSmallCaps().run()" :label="redo"
-        :isActive="isActive('textStyle', { fontVariant: 'small-caps' })">
+      <ToolbarButton
+        @click="editor.chain().focus().toggleSmallCaps().run()"
+        :label="redo"
+        :isActive="isActive('textStyle', { fontVariant: 'small-caps' })"
+      >
         <span class="small-caps bold">A</span>
       </ToolbarButton>
       <ToolbarButton @click="editor.chain().focus().undo().run()" :label="undo">
@@ -200,6 +236,12 @@ export default {
   background-color: transparent;
 }
 
+/* Make prosemirror fixed size and content scrollable */
+.ProseMirror {
+  max-height: 400px;
+  overflow: auto;
+}
+
 .footnote-tooltip {
   color: #333;
   cursor: auto;
@@ -283,5 +325,13 @@ export default {
 .ProseMirror a {
   color: #007aff;
   text-decoration: none;
+}
+
+.footnote-toolbar {
+  @apply ml-4 mt-8;
+}
+
+.footnote-toolbar .button {
+  @apply mr-2 border;
 }
 </style>

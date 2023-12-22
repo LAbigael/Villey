@@ -62,6 +62,6 @@
 		"@tiptap/vue-3": "^2.1.12",
 		"cheerio": "^1.0.0-rc.12",
 		"htmlparser2": "^9.0.0",
-		"tiptap-extension-footnote": "^1.4.1"
+		"tiptap-extension-footnote": "^1.4.2"
 	}
 }
