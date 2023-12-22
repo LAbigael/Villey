@@ -22,8 +22,8 @@ import Download from "./Download.astro";
   <div class="main-content px-3 relative flex lg:flex-row flex-col-reverse">
     <div id="sidebar" class="sidebar sidebar-1 flex flex-col">
       <div class="sidebar__inner sidebar__inner-1 mx-3">
-        {article.type === "article" && <Chapters article={article} /> }
-        {article.type === "recension" && <OtherRecensions article={article} /> }
+        {article.type === "article" && <Chapters article={article} />}
+        {article.type === "recension" && <OtherRecensions article={article} />}
       </div>
     </div>
     <div class="article_content" set:html={article.content} />
@@ -54,13 +54,39 @@ import Download from "./Download.astro";
     topSpacing: 20,
     bottomSpacing: 20,
   });
-  // add class to first letter of first paragraph
+  // add class lettrine to first letter of first paragraph that is a letter
+  const firstParagraph = document.querySelector(
+    ".article_content",
+  ).getElementsByTagName("p")[0];
+  console.log(firstParagraph);
+
+  // extract first letter and wrap it in span and also apostrophe if there is one
+  let firstLetter = firstParagraph.innerHTML[0];
+  // append apostrophe if there is one after first letter
+  if (firstParagraph.innerHTML[1] === "'") {
+    firstLetter += "'";
+    firstParagraph.innerHTML = firstParagraph.innerHTML.slice(2);
+  }
+
+  firstParagraph.innerHTML = `<span class="lettrine">${firstLetter}</span>${firstParagraph.innerHTML.slice(
+    1,
+  )}`;
+
 </script>
 
 <style is:global>
   .article_content {
     @apply text-lg text-justify w-full lg:w-2/4  mx-auto leading-normal mt-8;
     counter-reset: footnote;
+  }
+  .lettrine {
+    /* @apply float-left font-bold text-5xl mr-2; */
+    position: relative;
+    float: left;
+    font-size: 55px;
+    line-height: 1;
+    font-weight: bold;
+    margin-right: 9px;
   }
 
   @media (max-width: 1024px) {
@@ -92,7 +118,7 @@ import Download from "./Download.astro";
   /* .article_content p:first-child { */
   /* } */
   blockquote {
-    @apply  border-gray-400 pl-6 my-4;
+    @apply italic pl-6 my-4;
   }
 
   .footnote-link {
@@ -122,10 +148,12 @@ import Download from "./Download.astro";
     padding: 0;
   }
   h3 {
-    @apply text-2xl font-bold mt-6 mb-2; 
+    @apply text-2xl font-bold mt-6 mb-2;
   }
   h4 {
-    @apply text-xl font-semibold mt-4 mb-2; 
-
+    @apply text-xl font-semibold mt-4 mb-2;
+  }
+  p {
+    @apply my-4;
   }
 </style>
