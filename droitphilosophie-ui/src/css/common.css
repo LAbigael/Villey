@@ -21,3 +21,13 @@
 .article_author {
   @apply text-lg font-semibold my-1;
 }
+.btn {
+  background-color: rgba(var(--accent-light));
+  color: rgba(var(--accent-dark));
+  border-color: rgba(var(--accent-dark));
+}
+.btn:hover {
+  background-color: rgba(var(--accent-dark));
+  color: rgba(var(--accent-light));
+  border-color: rgba(var(--accent-light));
+}

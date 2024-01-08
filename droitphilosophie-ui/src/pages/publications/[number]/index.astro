@@ -41,7 +41,7 @@ const { volume, volumes } = Astro.props;
 ---
 
 <Layout title="Droit & Philosophie.">
-  <main class="font-light max-w-screen-xl flex flex-row">
+  <div class="font-light max-w-screen-xl flex flex-row pb-10">
     <div class="mx-8 my-8 w-1/4 h-auto">
       <span class="sidebar_title flex w-full !m-0">Toutes les publications</span
       >
@@ -57,14 +57,14 @@ const { volume, volumes } = Astro.props;
         }
       </ul>
     </div>
-    <div class="w-3/4 flex flex-col">
+    <div class="w-3/4 flex flex-col mb-10">
       <h3 class="page_title">Dernier volume paru</h3>
       <VolumeRelease volume={volume} />
     </div>
-  </main>
+  </div>
   <style>
     main {
-      margin: auto;
+      margin-bottom: 10rem;
     }
   </style>
 </Layout>
