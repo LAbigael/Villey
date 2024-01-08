@@ -17,7 +17,7 @@
     --background: 209, 217, 225; /* light light grey */
     --background-light: rgb(241 245 249);
     --text-color: #101010;
-    --text-color-light: #e1e1e1;
+    --text-color-light: #e8e8e8;
     --accent-gradient: linear-gradient(
       45deg,
       rgb(var(--accent)),
@@ -52,6 +52,10 @@ body {
 
 a:hover {
   text-decoration: underline;
+}
+a {
+  color: rgba(var(--accent-dark));
+  text-decoration: none;
 }
 h3 {
   font-weight: 600;
