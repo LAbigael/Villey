@@ -8,7 +8,13 @@ import { Debug } from "astro:components";
 const directus = await getDirectusClient();
 const memoires = await directus.request(
   readItems("Articles", {
-    fields: ["slug", "title", "number", "published_at", "authors.author_id.fullname"],
+    fields: [
+      "slug",
+      "title",
+      "number",
+      "published_at",
+      "authors.author_id.fullname",
+    ],
     sort: ["-id"],
     filter: {
       _and: [
@@ -33,17 +39,33 @@ const memoires = await directus.request(
 <Layout title="Droit & Philosophie.">
   <div class="max-w-screen-lg m-auto">
     <h2 class="page_title">Mémoires en ligne</h2>
-    <div>A partir de septembre 2021, la revue <em>Droit & Philosophie</em> entend publier en ligne des mémoires de recherche. </div>
+    <div>
+      A partir de septembre 2021, la revue <em>Droit & Philosophie</em> entend
+      publier en ligne des mémoires de recherche.
+    </div>
+    <h3 class="mt-10 chapter_title">Mémoires de recherches</h3>
     {
       memoires.map((memoire) => (
         <li class="m-4">
-          <span class="font-semibold">{memoire.authors.map((author) => author.author_id.fullname).join(", ")}</span>, {" "}
-          <a class="underline italic underline-offset-2" href={`/articles/${memoire.slug}`}>«{memoire.title}»</a>, (mis en
-          ligne le {new Date(memoire.published_at).toLocaleString("fr-FR", {
+          <span class="font-semibold">
+            {memoire.authors
+              .map((author) => author.author_id.fullname)
+              .join(", ")}
+          </span>
+          ,{" "}
+          <a
+            class="underline italic underline-offset-2"
+            href={`/articles/${memoire.slug}`}
+          >
+            «{memoire.title}»
+          </a>
+          , (mis en ligne le{" "}
+          {new Date(memoire.published_at).toLocaleString("fr-FR", {
             year: "numeric",
             month: "long",
             day: "numeric",
-          })})
+          })}
+          )
         </li>
       ))
     }

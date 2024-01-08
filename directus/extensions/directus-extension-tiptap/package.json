@@ -21,6 +21,11 @@
 				"type": "hook",
 				"name": "prosemirror-to-html",
 				"source": "src/prosemirror-to-html/index.js"
+			},
+			{
+				"type": "hook",
+				"name": "add-authors-to-volumes",
+				"source": "src/add-authors-to-volumes/index.js"
 			}
 		]
 	},
