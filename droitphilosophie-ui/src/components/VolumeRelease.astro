@@ -5,21 +5,21 @@ import { getImagePath } from "../utils/get-directus-client.js";
 
 <div>
   <h2>{volume.title}</h2>
-  <div class="flex">
+  <div class="flex flex-col lg:flex-row">
     <img
       src={getImagePath(volume.cover)}
       alt=""
-      class="float-left h-auto w-64"
+      class="float-left lg:float-none m-auto h-fit w-64"
     />
     <div class="information_list">
       <span set:html={volume.subtitle} />
       <span>Éditeur : {volume.publisher}</span>
       <span>Date de publication : {volume.released_on}</span>
       <span>Prix : {volume.price} €</span>
-      <a href={volume.link} class="btn btn-primary">Acheter</a>
+      <a href={volume.link} class="mt-2 btn btn-primary">Acheter</a>
     </div>
   </div>
-  <div set:html={volume.abstract} class="my-16" />
+  <div set:html={volume.abstract} class="my-16 text-justify" />
   <h2 class="page_title">Sommaire</h2>
   <div set:html={volume.table_of_content} />
 </div>
@@ -31,8 +31,7 @@ import { getImagePath } from "../utils/get-directus-client.js";
     margin-bottom: 1rem;
   }
   .information_list {
-    margin-left: 1rem;
-    @apply text-lg ml-4 flex flex-col;
+    @apply text-lg lg:ml-4 flex flex-col;
   }
   .information_list span {
     @apply my-2;
