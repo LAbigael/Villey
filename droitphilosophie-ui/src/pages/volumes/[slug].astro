@@ -42,16 +42,18 @@ const { volume } = Astro.props;
 ---
 
 <Layout title="Droit & Philosophie.">
-<div class="m-auto max-w-screen-xl flex flex-row ">
-      <div class="sidebar">
-        <h1 class="sidebar_title">Les autres numéros</h1>
+  <div class="m-auto max-w-screen-xl flex flex-row">
+    <div class="sidebar">
+      <h1 class="sidebar_title">Les autres numéros</h1>
+      <div class="sidebar_list">
         <OtherVolumes volume={volume} />
       </div>
-      <Volume volume={volume} />
     </div>
-    <style>
-      main {
-        margin: auto;
-      }
-    </style>
+    <Volume volume={volume} />
+  </div>
+  <style>
+    main {
+      margin: auto;
+    }
+  </style>
 </Layout>

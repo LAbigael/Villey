@@ -20,7 +20,7 @@ let volumes = await directus.request(
 volumes && (volumes = volumes.filter((v) => v.slug !== volume.slug));
 ---
 
-<div class="sidebar_list">
+<div class="">
   {
     volumes &&
       volumes.map((volume) => (
