@@ -27,7 +27,7 @@ authors = authors.filter((author) => author.articles.length > 0);
 ---
 
 <Layout title="Droit & Philosophie.">
-  <main class="font-light flex flex-row max-w-screen-xl">
+  <div class="font-light flex flex-row max-w-screen-xl">
     <div class="sidebar">
       <span class="sidebar_title">Tous les auteurs</span>
       <ul class="sidebar_list">
@@ -41,14 +41,14 @@ authors = authors.filter((author) => author.articles.length > 0);
       </ul>
     </div>
 
-    <div class="w-3/4">
+    <div class="m-2">
       <h3 class="page_title">Auteurs de la revue</h3>
       {
         authors.map((author) => (
           <div id={author.id} class="mb-8 author_section">
             <h4 class="text-2xl italic font-bold">{author.fullname}</h4>
             <div class="text-lg my-6" set:html={author.bio} />
-            <span class="pr-4 my-4 font-semibold text-xl">
+            <span class="my-4 font-semibold text-xl">
               Ses articles pour Droit & Philosophie :{" "}
             </span>
             <ul class="ml-6 list-disc list-inside">
@@ -73,12 +73,7 @@ authors = authors.filter((author) => author.articles.length > 0);
         ))
       }
     </div>
-    <style>
-      main {
-        margin: auto;
-      }
-    </style>
-  </main>
+  </div>
 </Layout>
 
 <style>
