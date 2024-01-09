@@ -10,8 +10,8 @@ import Download from "./Download.astro";
 
 <article class="article">
   <div class="article_topWrapper">
-    <h1 class="mx-10 my-2 page_title">{article.title}</h1>
-    <div class="mx-10 my-2">
+    <h1 class="lg:mx-10 mx-2 my-2 page_title">{article.title}</h1>
+    <div class="lg:mx-10 my-2">
       {
         article.authors.map(({ author_id: author }) => (
           <div class="article_author">{author.fullname}</div>
@@ -19,16 +19,16 @@ import Download from "./Download.astro";
       }
     </div>
   </div>
-  <div class="main-content px-3 relative flex lg:flex-row flex-col-reverse">
-    <div id="sidebar" class="sidebar sidebar-1 flex flex-col">
+  <div class="main-content mx-2 relative flex lg:flex-row flex-col-reverse">
+    <div id="sidebar" class="w-1/4 sidebar-1 flex flex-col">
       <div class="sidebar__inner sidebar__inner-1 mx-3">
         {article.type === "article" && <Chapters article={article} />}
         {article.type === "recension" && <OtherRecensions article={article} />}
       </div>
     </div>
     <div class="article_content" set:html={article.content} />
-    <div id="sidebar-2" class="sidebar sidebar-2 flex flex-col">
-      <div class="sidebar__inner sidebar__inner-2 mx-3">
+    <div id="sidebar-2" class="w-full lg:w-1/4 lg:mx-3 sidebar-2 flex flex-col">
+      <div class="sidebar__inner sidebar__inner-2">
         <FontSize />
         <Download />
         <TableOfContent />
@@ -39,7 +39,6 @@ import Download from "./Download.astro";
 </article>
 
 <script type="text/javascript" src="/js/sticky-sidebar.js"></script>
-
 <script>
   new StickySidebar(`.sidebar-2`, {
     containerSelector: ".main-content",
@@ -54,52 +53,16 @@ import Download from "./Download.astro";
     topSpacing: 20,
     bottomSpacing: 20,
   });
-
-  // add class lettrine to first letter of first paragraph that is a letter
-  // loop through all direct children of article_content and find first paragraph that is not empty
-  let firstParagraph;
-
-  for (
-    let i = 0;
-    i < document.querySelector(".article_content").children.length;
-    i++
-  ) {
-    if (
-      document.querySelector(".article_content").children[i].tagName === "P"
-    ) {
-      if (
-        document.querySelector(".article_content").children[i].innerHTML
-          .length > 0
-      ) {
-        firstParagraph = document.querySelector(".article_content").children[i];
-        let firstLetter = firstParagraph.innerHTML[0];
-        // if is a new line, then continue to next paragraph
-        if (firstLetter === "&") {
-          continue;
-        }
-        break;
-      }
-    }
-  }
-
-  // extract first letter and wrap it in span and also apostrophe if there is one
-  let firstLetter = firstParagraph.innerHTML[0];
-  // append apostrophe if there is one after first letter
-  if (firstParagraph.innerHTML[1] === "'") {
-    firstLetter += "'";
-    firstParagraph.innerHTML = firstParagraph.innerHTML.slice(2);
-  }
-
-  firstParagraph.innerHTML = `<span class="lettrine">${firstLetter}</span>${firstParagraph.innerHTML.slice(
-    1,
-  )}`;
 </script>
+
+<script type="text/javascript" src="/js/add-lettrine.js"></script>
 
 <style is:global>
   .article_content {
-    @apply text-lg text-justify w-full lg:w-2/4  mx-auto leading-normal mt-8;
+    @apply text-lg text-justify w-full lg:w-2/4 mx-auto leading-normal mt-2 lg:mt-8;
     counter-reset: footnote;
   }
+
   .lettrine {
     /* @apply float-left font-bold text-5xl mr-2; */
     position: relative;
@@ -129,24 +92,8 @@ import Download from "./Download.astro";
     will-change: position, transform;
   }
 
-  /* .article_content p:first-child::first-letter { */
-  /*   float: left; */
-  /*   font-size: 55px; */
-  /*   line-height: 1; */
-  /*   font-weight: bold; */
-  /*   margin-right: 9px; */
-  /*   /1* Add any other styles you want to apply to the first letter *1/ */
-  /* } */
-  /* .article_content p:first-child { */
-  /* } */
   blockquote {
     @apply italic pl-6 my-4;
-  }
-
-  .footnote-link {
-    /* font-size: 1px;
-    letter-spacing: -1px; */
-    /* color: transparent; */
   }
 
   a.footnote-link::after {
@@ -175,23 +122,7 @@ import Download from "./Download.astro";
   h4 {
     @apply text-xl font-semibold mt-4 mb-2;
   }
-  p {
+  .article_content p {
     @apply my-4;
-  }
-  table {
-    @apply w-full;
-  }
-  table td {
-    @apply border border-gray-300;
-  }
-  table th {
-    @apply border border-gray-300;
-  }
-  table tr {
-    @apply border border-gray-300;
-  }
-  table td,
-  table th {
-    @apply p-2;
   }
 </style>

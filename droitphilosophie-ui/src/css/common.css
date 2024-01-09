@@ -9,12 +9,12 @@
 }
 
 .sidebar {
-  @apply hidden lg:block m-6 w-1/4 ;
+  @apply hidden lg:block m-6 w-1/4;
   border-color: rgba(var(--accent-light));
 }
 
 .sidebar_list {
-  @apply border list-disc p-4 list-inside
+  @apply border list-disc p-4 list-inside;
 }
 
 .sidebar_title {
@@ -30,13 +30,36 @@
 .article_author {
   @apply text-lg font-semibold my-1;
 }
+
 .btn {
   background-color: rgba(var(--accent-light));
   color: rgba(var(--accent-dark));
   border-color: rgba(var(--accent-dark));
 }
+
 .btn:hover {
   background-color: rgba(var(--accent-dark));
   color: rgba(var(--accent-light));
   border-color: rgba(var(--accent-light));
+}
+
+table {
+  @apply w-full;
+}
+
+table td {
+  @apply border border-gray-300;
+}
+
+table th {
+  @apply border border-gray-300;
+}
+
+table tr {
+  @apply border border-gray-300;
+}
+
+table td,
+table th {
+  @apply p-2;
 }
