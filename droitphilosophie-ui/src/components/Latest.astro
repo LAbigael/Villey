@@ -1,6 +1,10 @@
 ---
 import { Image } from "astro:assets";
-import cover from "../images/cover.jpg";
+import { readItems } from "@directus/sdk";
+import {
+  getImagePath,
+  getDirectusClient,
+} from "../utils/get-directus-client.js";
 
 interface Props {
   titre: string;
@@ -9,41 +13,54 @@ interface Props {
   published_at: string;
 }
 
-const { titre, numero, slug, published_at, coordinators, cover_image } =
-  Astro.props;
+const directus = await getDirectusClient();
+const volumes = await directus.request(
+  readItems("VolumeReleases", {
+    fields: [
+      "title",
+      "number",
+      "released_on",
+      "link",
+      "publisher",
+      "cover",
+    ],
+    sort: ["-id"],
+    limit: 1,
+    filter: {
+      site_id: {
+        _eq: "1",
+      },
+    },
+  }),
+);
+const { link, publisher, cover, title, coordinators, number, released_on } =
+  volumes[0];
 ---
 
 <div class="flex sm:inline-block w-fit sm:w-72">
-  <a href="/">
+  <a href={link}>
     <div class="w-fit relative hover:brightness-110">
       <Image
-        src={cover}
+        src={getImagePath(cover)}
         alt="La courverture du dernier numéro de droit et philosophie"
         height="250"
+        width="200"
       />
       <div
         class="text-2xl sm:text-4xl font-semibold absolute -right-8 -top-6 rounded-full border-2 border-slate-50 pt-0.5 sm:pb-3 pb-2 px-3 numero-overlay"
       >
-        {numero}
+        {number}
       </div>
     </div>
   </a>
   <div class="mt-3 sm:ml-0 ml-4 max-sm:w-3/4 max-sm:text-end">
-    <h5>Dernier Numéro</h5>
-    <div>Numéro : {numero}</div>
-    <div class="accent1"><a href={`/volumes/${slug}`}> {titre}</a></div>
-    <div>{published_at}</div>
+    <h5>Dernier Volume paru</h5>
+    <div>Numéro : {number}</div>
+    <div class="accent1"><a href={`/publications/${number}`}> {title}</a></div>
+    <div>Éditeur : {publisher}</div>
+    <div>{released_on}</div>
     <div>
-      Coordoné par : <span>
-        {
-          coordinators.map((el, index) => (
-            <span>
-              {" "}
-              {index != 0 && ", "} {el}{" "}
-            </span>
-          ))
-        }
-      </span>
+      {coordinators}
     </div>
   </div>
 </div>
