@@ -24,6 +24,10 @@ const { mobile } = Astro.props;
     footnoteList.appendChild(footnoteListItem);
 
     footnote.addEventListener("click", function (e) {
+      // is sidebar-2 is hidden, show It
+      if (footnoteList.classList.contains("hidden")) {
+        footnoteList.classList.remove("hidden");
+      }
       e.preventDefault();
       const previouslySelectedFootnote =
         document.querySelector(".footnote.show");
@@ -35,6 +39,8 @@ const { mobile } = Astro.props;
     });
   });
 </script>
+<script type="text/Javascript" src="/js/footnotes-swipe.js"></script>
+
 <style is:global>
   .footnote {
     @apply p-2;

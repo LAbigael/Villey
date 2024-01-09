@@ -1,9 +1,12 @@
 <button class="download_button">Télécharger en PDF</button>
 
-<style>
+<style is:global>
+  #sidebar-2.is-affixed .download_button {
+    @apply hidden
+  }
   .download_button {
     background-color: rgba(var(--accent-light));
     color: rgba(var(--accent-dark));
-    @apply mt-4 border-0 px-4 py-2 text-lg;
+    @apply mt-4 border-0 px-4 py-2 text-lg ;
   }
 </style>

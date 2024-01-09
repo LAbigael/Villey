@@ -9,7 +9,7 @@ import { getImagePath } from "../utils/get-directus-client.js";
     <img
       src={getImagePath(volume.cover)}
       alt=""
-      class="float-left lg:float-none m-auto h-fit w-64"
+      class="lg:float-left float-none lg:m-2 m-auto h-fit w-64"
     />
     <div class="information_list">
       <span set:html={volume.subtitle} />
