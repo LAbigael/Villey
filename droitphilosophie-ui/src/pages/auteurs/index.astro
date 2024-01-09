@@ -28,9 +28,9 @@ authors = authors.filter((author) => author.articles.length > 0);
 
 <Layout title="Droit & Philosophie.">
   <main class="font-light flex flex-row max-w-screen-xl">
-    <div class="mx-8 my-8 w-1/4 h-auto">
-      <span class="sidebar_title  flex w-full !m-0 ">Tous les auteurs</span>
-      <ul class="border list-disc p-4 list-inside">
+    <div class="sidebar">
+      <span class="sidebar_title">Tous les auteurs</span>
+      <ul class="sidebar_list">
         {
           authors.map((author) => (
             <li>

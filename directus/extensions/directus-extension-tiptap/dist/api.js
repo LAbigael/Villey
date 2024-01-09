@@ -35883,6 +35883,7 @@ var e0 = ({ filter }) => {
   transformItemsFieldFromToHTML(filter, "VolumeReleases.items.read", "abstract");
   transformItemsFieldFromToHTML(filter, "VolumeReleases.items.read", "subtitle");
   transformItemsFieldFromToHTML(filter, "VolumeReleases.items.read", "table_of_content");
+  transformItemsFieldFromToHTML(filter, "ContributionCalls.items.read", "content");
 };
 
 function transformItemsFieldFromToHTML(filter, collection, field) {

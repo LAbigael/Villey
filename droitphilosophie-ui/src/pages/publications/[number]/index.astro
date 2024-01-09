@@ -5,7 +5,6 @@ import VolumeRelease from "../../../components/VolumeRelease.astro";
 import { getDirectusClient } from "../../../utils/get-directus-client";
 import { readItems } from "@directus/sdk";
 
-
 export async function getStaticPaths() {
   const directus = await getDirectusClient();
   const volumes = await directus.request(
@@ -41,11 +40,11 @@ const { volume, volumes } = Astro.props;
 ---
 
 <Layout title="Droit & Philosophie.">
-  <div class="font-light max-w-screen-xl flex flex-row pb-10">
-    <div class="mx-8 my-8 w-1/4 h-auto">
-      <span class="sidebar_title flex w-full !m-0">Toutes les publications</span
+  <div class="font-light max-w-screen-xl m-auto flex flex-row pb-10">
+    <div class="sidebar">
+      <span class="sidebar_title ">Toutes les publications</span
       >
-      <ul class="border list-disc p-4 list-inside">
+      <ul class="sidebar_list">
         {
           volumes
             .filter((v) => v.number !== volume.number)

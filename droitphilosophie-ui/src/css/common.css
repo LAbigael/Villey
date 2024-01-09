@@ -8,8 +8,17 @@
   border-color: rgba(var(--secondary));
 }
 
+.sidebar {
+  @apply hidden lg:block m-6 w-1/4 ;
+  border-color: rgba(var(--accent-light));
+}
+
+.sidebar_list {
+  @apply border list-disc p-4 list-inside
+}
+
 .sidebar_title {
-  @apply m-3 text-2xl p-4 text-center;
+  @apply text-2xl p-4 text-center w-full flex justify-center;
   background-color: rgba(var(--accent-light));
   color: rgba(var(--accent-dark));
 }
