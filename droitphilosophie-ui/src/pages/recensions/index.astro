@@ -35,7 +35,7 @@ const lastRecension = recensions.shift();
 ---
 
 <Layout title="Droit & Philosophie.">
-  <main class="font-light max-w-screen-lg">
+  <div class="max-w-screen-lg m-2">
     <h3 class="page_title">Dernière recension parue</h3>
     <span class="article_author">
       {lastRecension.authors.map((a) => a.author_id.fullname).join(", ")} :
@@ -58,10 +58,5 @@ const lastRecension = recensions.shift();
         ))
       }
     </ul>
-    <style>
-      main {
-        margin: auto;
-      }
-    </style>
-  </main>
+  </div>
 </Layout>
