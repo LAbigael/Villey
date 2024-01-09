@@ -1,13 +1,14 @@
 ---
 import Card from "./Card.astro";
 
-const { article } = Astro.props;
+const {  volume } = Astro.props;
 ---
 
 <div >
   <Card
-    href={`/articles/${article.slug}`}
-    title={article.title}
-    body={article}
+    href={`/volumes/${volume.slug}`}
+    title={volume.title}
+    coordinators={volume.coordinators}
+    date={volume.published_at}
   />
 </div>

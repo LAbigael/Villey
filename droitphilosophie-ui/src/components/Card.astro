@@ -1,21 +1,32 @@
 ---
 interface Props {
   title: string;
-  body: Array;
   href: string;
+  coordinators: string;
+  date: string;
 }
 
-const { href, title, body } = Astro.props;
+const { date, coordinators, href, title } = Astro.props;
 ---
 
-<li class="link-card border-2">
+<li class="link-card border-2 relative">
   <a href={href}>
     <h2>
       {title}
     </h2>
-    <p>
-      {body.authors.map((au) => <div> {au.author_id.fullname}</div>)}
+    <p>{coordinators}</p>
+    <p class="absolute bottom-0 right-0 p-4">
+      Publié le {
+        new Date(date).toLocaleString("fr-FR", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      }
     </p>
+    <!-- <p> -->
+    <!--   {body.authors.map((au) => <div> {au.author_id.fullname}</div>)} -->
+    <!-- </p> -->
   </a>
 </li>
 

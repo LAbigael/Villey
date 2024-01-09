@@ -1,5 +1,4 @@
 ---
-import { Image } from "astro:assets";
 import villey from "../../images/villey.jpg";
 ---
 
@@ -38,19 +37,17 @@ import villey from "../../images/villey.jpg";
           effet.
         </div>
 
-      
-          <button
-            type="button"
-            class="font-light text-slate-700 hover:text-white border border-slate-700 hover:bg-slate-800 focus:ring-4 focus:outline-none focus:ring-slate-300 rounded text-md px-7 py-1.5 text-center me-2 mt-2 dark:border-slate-500 dark:text-slate-500 dark:hover:text-white dark:hover:bg-slate-500 dark:focus:ring-slate-800"
-            >Contribuer à la revue</button
-          >
-       
-          <button
-            type="button"
-            class="font-light text-slate-700 hover:text-white border border-slate-700 hover:bg-slate-800 focus:ring-4 focus:outline-none focus:ring-slate-300 rounded text-md px-7 py-1.5 text-center me-2 mt-2 dark:border-slate-500 dark:text-slate-500 dark:hover:text-white dark:hover:bg-slate-500 dark:focus:ring-slate-800"
-            >Contact</button
-          >
-     
+        <button
+          type="button"
+          class="font-light text-slate-700 hover:text-white border border-slate-700 hover:bg-slate-800 focus:ring-4 focus:outline-none focus:ring-slate-300 rounded text-md px-7 py-1.5 text-center me-2 mt-2 dark:border-slate-500 dark:text-slate-500 dark:hover:text-white dark:hover:bg-slate-500 dark:focus:ring-slate-800"
+          >Contribuer à la revue</button
+        >
+
+        <button
+          type="button"
+          class="font-light text-slate-700 hover:text-white border border-slate-700 hover:bg-slate-800 focus:ring-4 focus:outline-none focus:ring-slate-300 rounded text-md px-7 py-1.5 text-center me-2 mt-2 dark:border-slate-500 dark:text-slate-500 dark:hover:text-white dark:hover:bg-slate-500 dark:focus:ring-slate-800"
+          >Contact</button
+        >
       </div>
       <div
         class="col-span-2 sm:col-span-1 flex justify-between md:inline-block max-sm:pr-10 max-sm:pl-2"
@@ -66,8 +63,8 @@ import villey from "../../images/villey.jpg";
 
         <div class="md:flex max-md:w-32 pt-3">
           <div>
-            <Image
-              src={villey}
+            <img
+              src={villey.src}
               alt="Institut Villey"
               width="200"
               height="200"

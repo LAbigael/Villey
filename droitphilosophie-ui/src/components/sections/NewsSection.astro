@@ -4,14 +4,13 @@ import Actu from "../Actu.astro";
 import { getDirectusClient } from "../../utils/get-directus-client";
 import { readItems } from "@directus/sdk";
 
-
 const directus = await getDirectusClient();
 
-const articles = await directus.request(
-  readItems("Articles", {
-    fields: ["id","slug", "title", "authors.author_id.*"],
-    sort: ['-id'],
-    limit: 20,
+const volumes = await directus.request(
+  readItems("Volumes", {
+  fields: ["id", "slug", "title", "coordinators", "number", "published_at"],
+    sort: ["-id"],
+    limit: 4,
     filter: {
       site_id: {
         _eq: "1",
@@ -21,31 +20,30 @@ const articles = await directus.request(
 );
 ---
 
-<div class="py-4  lg:py-6">
-  <div class="md:mx-12 sm:p-5 ">
+<div class="py-4 lg:py-6">
+  <div class="md:mx-12 sm:p-5">
     <!-- text - start -->
     <div class="mb-10 md:mb-16">
       <h2 class="mb-4 text-center text-2xl font-bold md:mb-6 lg:text-3xl">
         À la une
       </h2>
-
-      <p class="mx-auto max-w-screen-md text-center text-gray-500 md:text-lg">
-        Les derniers articles publiés sur Droit & Philosophie
+      <p class="mx-auto max-w-screen-md text-center text-gray-500 mb-6 md:text-lg">
+        Les derniers numéros publiés sur Droit & Philosophie
       </p>
+
+      <div
+        class="grid gap-2 grid-cols-2 md:gap-4 "
+      >
+        {
+          volumes.map((volume) => (
+            <div class="max-md:mx-6 ">
+              {" "}
+              <Actu volume={volume} />{" "}
+            </div>
+          ))
+        }
+      </div>
     </div>
     <!-- text - end -->
-
-    <div
-      class="grid gap-2 md:grid-cols-2 md:gap-4 lg:grid-cols-2 xl:grid-cols-3 "
-    >
-      {
-        articles.map((article) => (
-          <div class="max-md:mx-6 ">
-            {" "}
-            <Actu article={article} />{" "}
-          </div>
-        ))
-      }
-    </div>
   </div>
 </div>
