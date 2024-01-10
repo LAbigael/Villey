@@ -32,11 +32,11 @@ const volumes = await directus.request(
       </p>
 
       <div
-        class="grid gap-2 grid-cols-2 md:gap-4 "
+        class="flex flex-wrap max-w-screen-lg mx-auto justify-center"
       >
         {
           volumes.map((volume) => (
-            <div class="max-md:mx-6 ">
+          <div class="w-full lg:w-1/2 p-2">
               {" "}
               <Actu volume={volume} />{" "}
             </div>
