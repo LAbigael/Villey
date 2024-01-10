@@ -1,5 +1,6 @@
 ---
 import Logo from "./icons/Logo.astro";
+import ornement from "../images/ornementHaut.png"
 ---
 
 <div class="head1">
@@ -8,22 +9,23 @@ import Logo from "./icons/Logo.astro";
       >Droit Philosophie <Logo />
     </span>
   </h1>
+  <img class="absolute top-0 right-0" height="10" width="200" src={ornement.src} alt="ornement">
 </div>
 
 <style>
   .head1 {
+    @apply relative flex justify-center items-center;
     background-color: rgba(var(--accent));
+    min-height: 8rem;
   }
 
   h1 {
-    @apply text-4xl lg:text-5xl;
+    @apply text-4xl lg:text-5xl ;
     position: relative;
     /* font-weight: 700; */
     line-height: 1;
     text-align: center;
     color: rgba(var(--background));
     z-index: 2;
-    padding-top: 0.8rem;
-    padding-bottom: 2.5rem;
   }
 </style>
