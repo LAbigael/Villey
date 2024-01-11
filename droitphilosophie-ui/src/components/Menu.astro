@@ -35,7 +35,9 @@ import LogoNavBar from "./icons/LogoNavBar.astro";
           <li>
             <a href="/auteurs">Auteurs</a>
             <ul class="p-2">
-              <li><a href="/appels-contributions">Appels à contributions</a></li>
+              <li>
+                <a href="/appels-contributions">Appels à contributions</a>
+              </li>
               <li><a href="/auteurs">Liste des auteurs</a></li>
             </ul>
           </li>
@@ -53,8 +55,8 @@ import LogoNavBar from "./icons/LogoNavBar.astro";
       <ul class="menu menu-horizontal px-1">
         <li tabindex="0">
           <details>
-            <summary>La revue</summary>
-            <ul class="p-1 rounded-none sub">
+            <summary class="text-inherit hover:text-inherit">La revue</summary>
+            <ul class="p-1 rounded-none sub z-20">
               <li><a>Présentation</a></li>
               <li><a>Editeurs</a></li>
               <li><a>Contact</a></li>
@@ -68,9 +70,11 @@ import LogoNavBar from "./icons/LogoNavBar.astro";
         <li><a href="/memoires">Mémoires</a></li>
         <li tabindex="0">
           <details>
-            <summary>Auteurs</summary>
-            <ul class="p-1 rounded-none sub">
-              <li><a href="/appels-contributions">Appels à contributions</a></li>
+            <summary class="text-inherit hover:text-inherit">Auteurs</summary>
+            <ul class="p-1 rounded-none sub z-20">
+              <li>
+                <a href="/appels-contributions">Appels à contributions</a>
+              </li>
               <li><a href="/auteurs">Liste des auteurs</a></li>
             </ul>
           </details>
@@ -89,11 +93,15 @@ import LogoNavBar from "./icons/LogoNavBar.astro";
 
 <style>
   .menu {
-    background-color: rgba(var(--accent-light));
-    /* height: 40px; */
-    color: rgba(var(--accent-dark));
+    @apply bg-accent-light dark:bg-accent-dark text-accent-dark dark:text-accent-light;
+  }
+  .menu a {
+    @apply text-accent-dark dark:text-accent-light;
   }
   .sub {
     background-color: rgba(var(--accent-light));
+  }
+  .summary {
+    @apply hover:text-accent-dark hover:dark:text-accent-light;
   }
 </style>

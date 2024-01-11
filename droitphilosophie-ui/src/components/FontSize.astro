@@ -16,10 +16,10 @@
     document.querySelector(".article_content").style.fontSize = "1em";
   });
   medium_font.addEventListener("click", () => {
-    document.querySelector(".article_content").style.fontSize = "1.5em";
+    document.querySelector(".article_content").style.fontSize = "1.25em";
   });
   big_font.addEventListener("click", () => {
-    document.querySelector(".article_content").style.fontSize = "2em";
+    document.querySelector(".article_content").style.fontSize = "1.5em";
   });
 </script>
 
@@ -31,13 +31,13 @@
     @apply lg:flex hidden ;
   }
   .small_font {
-    font-size: 0.8rem;
-  }
-  .medium_font {
     font-size: 1rem;
   }
+  .medium_font {
+    font-size: 1.25rem;
+  }
   .big_font {
-    font-size: 1.2rem;
+    font-size: 1.5rem;
   }
 
   .font_size_button {

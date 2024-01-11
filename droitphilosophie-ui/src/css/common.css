@@ -18,9 +18,10 @@
 }
 
 .sidebar_title {
-  @apply text-2xl p-4 text-center w-full flex justify-center;
-  background-color: rgba(var(--accent-light));
-  color: rgba(var(--accent-dark));
+  @apply text-2xl p-4 text-center w-full flex justify-center bg-accent-light text-accent-dark;
+}
+.sidebar_title a {
+  @apply text-inherit;
 }
 
 .article_title {

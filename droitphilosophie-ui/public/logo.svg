@@ -3,7 +3,9 @@
 <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
 	 viewBox="0 0 127.7 96.6" style="enable-background:new 0 0 127.7 96.6;" xml:space="preserve">
 <style type="text/css">
-	.st0{fill:#1C75BC;}
+	.st0{
+    @apply fill-black dark:fill-white;
+    }
 	.st1{fill:#A29677;}
 </style>
 <path class="st1" d="M44.3,7.4c0,0,7.5-4.2,27.4-4.2c15.4,0,25.8,10.5,30.4,21.3c5.3,12.5,0,32.3-4.4,39.7c-4.5,7.4-10.9,14-17,17.7

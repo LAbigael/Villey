@@ -8,10 +8,10 @@ import OtherRecensions from "./OtherRecensions.astro";
 import Download from "./Download.astro";
 ---
 
-<article class="article">
+<article class="article max-w-screen-2xl mx-auto px-2">
   <div class="article_topWrapper">
-    <h1 class="lg:mx-10 mx-2 my-2 page_title">{article.title}</h1>
-    <div class="lg:mx-10 my-2">
+    <h1 class="my-2 page_title">{article.title}</h1>
+    <div class="my-2">
       {
         article.authors.map(({ author_id: author }) => (
           <div class="article_author">{author.fullname}</div>
@@ -19,9 +19,9 @@ import Download from "./Download.astro";
       }
     </div>
   </div>
-  <div class="main-content mx-2 relative flex lg:flex-row flex-col-reverse">
+  <div class="main-content relative flex lg:flex-row flex-col-reverse">
     <div id="sidebar" class="w-1/4 sidebar-1 flex flex-col">
-      <div class="sidebar__inner sidebar__inner-1 mx-3">
+      <div class="sidebar__inner sidebar__inner-1">
         {article.type === "article" && <Chapters article={article} />}
         {article.type === "recension" && <OtherRecensions article={article} />}
       </div>
@@ -59,7 +59,7 @@ import Download from "./Download.astro";
 
 <style is:global>
   .article_content {
-    @apply text-lg text-justify w-full lg:w-2/4 mx-auto leading-normal mt-2 lg:mt-8;
+    @apply text-lg text-justify w-full lg:w-2/4 mx-auto leading-normal mt-2 px-2;
     counter-reset: footnote;
   }
 
@@ -106,7 +106,6 @@ import Download from "./Download.astro";
     letter-spacing: normal;
     display: inline-block;
     vertical-align: super;
-    font-size: 75%;
     color: skyblue;
   }
 
