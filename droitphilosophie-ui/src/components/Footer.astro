@@ -5,36 +5,30 @@ const currentYear = new Date().getFullYear();
 ---
 
 <footer class="footer">
-  <div class="flex my-4 flex-col lg:flex-row justify-center items-center">
+  <div class="flex my-4 flex-wrap justify-center items-center">
     <a href="" class="logo" target="_blank" rel="noreferrer noopener">
       Accueil
     </a>
-    <span class="text-white">|</span>
     <a href="" class="logo" target="_blank" rel="noreferrer noopener">
       L'équipe
     </a>
-    <span class="text-white">|</span>
     <a href="" class="logo" target="_blank" rel="noreferrer noopener">
       Présentation
     </a>
-    <span class="text-white">|</span>
     <a href="" class="logo" target="_blank" rel="noreferrer noopener">
       Tous les numéros
     </a>
-    <span class="text-white">|</span>
     <a href="" class="logo" target="_blank" rel="noreferrer noopener">
       Tous les volumes papier
     </a>
-    <span class="text-white">|</span>
     <a href="" class="logo" target="_blank" rel="noreferrer noopener">
       Acheter un volume
     </a>
-    <span class="text-white">|</span>
     <a href="" class="logo" target="_blank" rel="noreferrer noopener">
       Contact
     </a>
   </div>
-  <div class="flex flex-row items-center mb-4">
+  <div class="flex flex-row text-color-light items-center mb-4">
     Made with ❤️ by RubidiumWeb ({currentYear}) <GithubIcon />
   </div>
 </footer>
@@ -45,7 +39,7 @@ const currentYear = new Date().getFullYear();
     background-color: rgba(var(--accent));
   }
   .footer a {
-    @apply m-1;
+    @apply m-1 text-lg text-color-light;
     list-style: none;
   }
 </style>

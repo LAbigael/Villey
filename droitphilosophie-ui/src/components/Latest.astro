@@ -6,13 +6,6 @@ import {
   getDirectusClient,
 } from "../utils/get-directus-client.js";
 
-interface Props {
-  titre: string;
-  numero: string;
-  slug: string;
-  published_at: string;
-}
-
 const directus = await getDirectusClient();
 const volumes = await directus.request(
   readItems("VolumeReleases", {
@@ -67,7 +60,6 @@ const { link, publisher, cover, title, coordinators, number, released_on } =
 
 <style>
   .numero-overlay {
-    color: rgba(var(--accent));
-    background-color: rgba(var(--secondary));
+    @apply text-accent bg-secondary;
   }
 </style>

@@ -63,3 +63,7 @@ table td,
 table th {
   @apply p-2;
 }
+
+button {
+  @apply font-light text-accent-dark hover:text-color-light border border-accent-dark hover:bg-accent focus:ring-4 focus:outline-none focus:ring-accent rounded  px-7 py-1.5 text-center me-2 mt-2 dark:border-color-light dark:text-color-light dark:hover:text-color dark:hover:bg-accent dark:focus:ring-accent-dark;
+}

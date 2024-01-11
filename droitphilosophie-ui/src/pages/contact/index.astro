@@ -1,0 +1,30 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout title="Contact">
+  <div class="max-w-screen-lg m-2 lg:m-auto">
+    <h2 class="page_title">Contact</h2>
+    <span
+      >Pour toute question relative à la revue, veuillez adresser votre message
+      à l'adresse : <a href="mailto:droitphilosophie@gmail.com"
+        >droitphilosophie@gmail.com</a
+      >, ou remplir le formulaire ci-dessous.</span
+    >
+    <form class="contact-form" action="contact" method="post">
+      <input type="text" name="name" placeholder="Votre nom" />
+      <input type="email" name="email" placeholder="Votre email" />
+      <textarea name="message" placeholder="Votre message"></textarea>
+      <input type="submit" value="Send" />
+    </form>
+  </div>
+</Layout>
+<style>
+  input,
+  textarea {
+    @apply input font-light rounded-sm bg-slate-200 w-5/6 lg:w-4/6 h-10 my-2;
+  }
+  .contact-form {
+    @apply flex flex-col items-center justify-center mt-8;
+  }
+</style>

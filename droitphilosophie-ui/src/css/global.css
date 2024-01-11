@@ -15,6 +15,8 @@
     --accent-dark: 83, 97, 110; /* dark blue grey */
     --secondary: 213, 185, 133; /* orange */
     --background: 209, 217, 225; /* light light grey */
+    --background-alt: #e0e3eb;
+    --background-alt-dark: #252d3a;
     --background-light: rgb(241 245 249);
     --text-color: #101010;
     --text-color-light: #e8e8e8;
@@ -32,11 +34,12 @@
 
     /* font-family: Lato,  sans-serif; */
     color: var(--text-color);
+
   }
 }
 
 body {
-  @apply text-lg;
+  @apply text-lg bg-background-light dark:bg-background-dark text-color dark:text-color-light;
 }
 
 .accent1 {
@@ -54,7 +57,7 @@ a:hover {
   text-decoration: underline;
 }
 a {
-  color: rgba(var(--accent-dark));
+  @apply text-accent dark:text-accent-light;
   text-decoration: none;
 }
 h3 {

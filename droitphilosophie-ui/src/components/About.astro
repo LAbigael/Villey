@@ -2,9 +2,9 @@
 
 ---
 
-<div class="aboutbox flex flex-col justify-end pb-10 ">
+<div class="aboutbox flex flex-col justify-end pb-10">
   <div class="abouttext py-2 md:px-4 sm:px-3 pl-6">
-    <h3 class="  font-normal uppercase">La Revue</h3>
+    <h3 class="font-normal uppercase">La Revue</h3>
     <p>
       <em> Droit & Philosophie</em> est la revue française consacrée à l'étude
       critique des liens entre droit, philosophie, théorie et culture
@@ -14,24 +14,23 @@
       garanties par un comité de lecture et une procédure d'évaluation
       systématique en double aveugle.
     </p>
-    <div  class="pt-5"> 
+    <div class="pt-5">
       <a href="/">En savoir plus [...]</a>
     </div>
-   
   </div>
 </div>
 
 <style>
-  .abouttext {
-    background-color: rgba(var(--accent));
-    /* background-image: var(--accent-gradient); */
-    color: var(--text-color-light);
-    font-weight: 200;
+  .aboutbox h3 {
+    @apply text-secondary dark:text-secondary-dark;
   }
-  .abouttext h3{
-    /* color: rgba(var(--secondary)); */
+  .abouttext {
+    @apply bg-accent text-color-light dark:text-color dark:bg-accent-light font-light;
+  }
+  .abouttext a {
+    @apply text-accent-light dark:text-accent;
   }
   .aboutbox {
-    background-color: rgba(var(--accent-light));
+    @apply bg-accent-light dark:bg-accent;
   }
 </style>
