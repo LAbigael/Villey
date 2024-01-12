@@ -1,6 +1,6 @@
 ---
 import LogoNavBar from "./icons/LogoNavBar.astro";
-import search from "../images/search.svg";
+import Search from "./Search.astro";
 ---
 
 <div class="menu font-sans">
@@ -83,14 +83,7 @@ import search from "../images/search.svg";
       </ul>
     </div>
     <div class="navbar-end">
-      <div class="input font-light rounded-sm bg-background-light  items-center w-64 h-10 flex flex-row relative">
-        <input
-          type="text"
-          placeholder="Recherche..."
-          class="bg-inherit w-6/8 h-full  rounded-sm font-light text-sm"
-        />
-        <img src={search.src} class="absolute right-0 opacity-50 mx-2" width="25" height="auto" />
-      </div>
+      <Search client:idle/>
     </div>
   </div>
 </div>
