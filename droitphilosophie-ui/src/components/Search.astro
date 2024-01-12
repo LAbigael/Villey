@@ -29,7 +29,7 @@ import search from "../images/search.svg";
       <input
         type="text"
         id="search"
-        class="bg-inherit w-full h-full rounded-sm font-light text-sm flex flex-row items-center justify-start pl-2"
+        class="bg-inherit w-full h-full rounded-sm font-light text-sm flex flex-row items-center justify-start lg:pl-2"
         placeholder="Rechercher un article ou un volume..."
       />
     </form>
@@ -78,8 +78,6 @@ import search from "../images/search.svg";
   // imports
   import Fuse from "fuse.js";
 
-  const my_modal_2 = document.getElementById("my_modal_2");
-  my_modal_2.showModal();
   let SEARCH_DATA;
   let FUSE_INSTANCE;
   const FUSE_OPTIONS = {
