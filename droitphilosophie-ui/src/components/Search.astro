@@ -62,8 +62,8 @@ import search from "../images/search.svg";
   #search-results li a span {
     @apply grow;
   }
-   .type-icon {
-     @apply font-bold text-xs rounded-full text-background-dark dark:text-background-light px-2 py-1 group-hover:text-background-light group-hover:dark:text-background-dark;
+  .type-icon {
+    @apply font-bold text-xs rounded-full text-background-dark dark:text-background-light px-2 py-1 group-hover:text-background-light group-hover:dark:text-background-dark;
   }
   #search-results li a svg {
     min-width: 20px;
@@ -71,6 +71,9 @@ import search from "../images/search.svg";
   }
   #info {
     @apply w-full flex justify-end text-xs text-gray-500 items-center;
+  }
+  .section-title {
+    @apply text-sm opacity-50 ml-2;
   }
 </style>
 
@@ -89,6 +92,7 @@ import search from "../images/search.svg";
         name: "title",
         weight: 1,
       },
+      { name: "section", weight: 0.5 },
     ],
   };
 
@@ -103,10 +107,15 @@ import search from "../images/search.svg";
 				}
 				</style></svg>`;
   const BACKSPACE_ICON = `<svg class="DocSearch-Hit-Select-Icon" width="20" height="20" viewBox="0 0 20 20"><g stroke="currentColor" fill="none" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3v4c0 2-2 4-4 4H2"></path><path d="M8 17l-6-6 6-6"></path></g></svg>`;
-  const TYPE_ICON = (type) => {
+
+  const typeIcon = (type) => {
     return `<span class="type-icon">${
       type === "volume" ? "V" : type === "article" ? "A" : ""
     }</span>`;
+  };
+
+  const sectionTitle = (section = "") => {
+    return `<span class="section-title">${ section }</span>`;
   };
 
   // selectors
@@ -119,11 +128,11 @@ import search from "../images/search.svg";
   function generateSearchList(results) {
     return results
       .map((r) => {
-        const { title, slug, type } = r.item;
+      const { title, slug, type , section} = r.item;
         return `<li class="group">
-          <a href="/${type}s/${slug}/"><span>${TYPE_ICON(
+          <a href="/${type}s/${slug}/"><span>${typeIcon(
             type,
-          )}${title}</span>${BACKSPACE_ICON}</a>
+            )}${title}${sectionTitle(section)}</span>${BACKSPACE_ICON}</a>
 							</li>`;
       })
       .join("");
@@ -159,7 +168,7 @@ import search from "../images/search.svg";
     if (searchResult.length > 0) {
       resultsList.innerHTML = generateSearchList(searchResult);
       info.innerHTML =
-        TYPE_ICON("article") + "Article, " + TYPE_ICON("volume")+ "Volume";
+        typeIcon("article") + "Article, " + typeIcon("volume") + "Volume";
     } else {
       if (search.length > 0) {
         resultsList.innerHTML = generateNoResults();

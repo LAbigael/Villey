@@ -17,7 +17,7 @@ async function getData() {
   );
   const articles = await directus.request(
     readItems("Articles", {
-      fields: ["slug", "title", ],
+      fields: ["slug", "title", "section_id.title"],
       filter: {
         site_id: {
           _eq: "1",
@@ -35,7 +35,7 @@ async function getData() {
     ...articles.map((article) => ({
       slug: article.slug,
       title: article.title,
-      // content: article.content,
+      section: article.section_id?.title,
       type: "article",
     })),
   ];
