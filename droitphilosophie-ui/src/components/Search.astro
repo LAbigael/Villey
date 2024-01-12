@@ -20,32 +20,30 @@ import search from "../images/search.svg";
 </button>
 <dialog id="my_modal_2" class="modal">
   <div class="modal-box">
-    <div
+    <form
       class="input font-light rounded-sm bg-background-light items-center w-full h-10 flex flex-row relative"
+      autocomplete="off"
+      onsubmit="event.preventDefault();"
     >
-      <img
-        src={search.src}
-        class="opacity-50 mx-1"
-        width="25"
-        height="auto"
-      />
+      <img src={search.src} class="opacity-50 mx-1" width="25" height="auto" />
       <input
         type="text"
         id="search"
         class="bg-inherit w-full h-full rounded-sm font-light text-sm flex flex-row items-center justify-start pl-2"
-        placeholder="Rechercher..."
+        placeholder="Rechercher un article ou un volume..."
       />
-    </div>
+    </form>
 
     <div class="text-sm text-gray-500" id="searchReadout"></div>
     <ul id="search-results"></ul>
+    <div id="info"></div>
   </div>
   <form method="dialog" class="modal-backdrop">
     <button>close</button>
   </form>
 </dialog>
 
-<style>
+<style is:global>
   .modal-backdrop button {
     @apply border-none hover:bg-opacity-0 focus:outline-none focus:ring-0;
   }
@@ -53,10 +51,26 @@ import search from "../images/search.svg";
     @apply border-none hover:bg-background-light text-color;
   }
   .modal-box {
-    @apply bg-background-light dark:bg-background-dark rounded-sm p-4 w-1/2 max-w-none flex flex-col items-center;
+    @apply !bg-background-light dark:bg-background-dark rounded-sm p-4 w-1/2 max-w-none flex flex-col items-center;
   }
   #search-results {
-    @apply h-96 overflow-y-scroll w-full;
+    @apply h-96 overflow-y-scroll w-full my-4;
+  }
+  #search-results li a {
+    @apply flex py-4 flex-row justify-between items-center w-full hover:bg-background-dark dark:hover:bg-background-light hover:text-background-light dark:hover:text-background-dark rounded-sm mr-2;
+  }
+  #search-results li a span {
+    @apply grow;
+  }
+   .type-icon {
+     @apply font-bold text-xs rounded-full text-background-dark dark:text-background-light px-2 py-1 group-hover:text-background-light group-hover:dark:text-background-dark;
+  }
+  #search-results li a svg {
+    min-width: 20px;
+    @apply text-background-light dark:text-background-dark;
+  }
+  #info {
+    @apply w-full flex justify-end text-xs text-gray-500 items-center;
   }
 </style>
 
@@ -90,19 +104,28 @@ import search from "../images/search.svg";
 					}
 				}
 				</style></svg>`;
+  const BACKSPACE_ICON = `<svg class="DocSearch-Hit-Select-Icon" width="20" height="20" viewBox="0 0 20 20"><g stroke="currentColor" fill="none" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3v4c0 2-2 4-4 4H2"></path><path d="M8 17l-6-6 6-6"></path></g></svg>`;
+  const TYPE_ICON = (type) => {
+    return `<span class="type-icon">${
+      type === "volume" ? "V" : type === "article" ? "A" : ""
+    }</span>`;
+  };
 
   // selectors
   const search = document.querySelector("#search");
   const resultsList = document.querySelector("#search-results");
+  const info = document.querySelector("#info");
 
   // functions
 
   function generateSearchList(results) {
     return results
       .map((r) => {
-        const { title, slug } = r.item;
-        return `<li>
-								<a href="/blog/${slug}/">${title}</a>
+        const { title, slug, type } = r.item;
+        return `<li class="group">
+          <a href="/${type}s/${slug}/"><span>${TYPE_ICON(
+            type,
+          )}${title}</span>${BACKSPACE_ICON}</a>
 							</li>`;
       })
       .join("");
@@ -115,13 +138,13 @@ import search from "../images/search.svg";
   }
 
   async function fetchSearchResults(search: string) {
-    if (search.length === 0) return;
+    // if (search.length === 0) return;
     resultsList.innerHTML = SPINNER;
     if (!SEARCH_DATA) {
       try {
         const res = await fetch("/search.json");
         if (!res.ok) {
-          throw new Error("Something went wrong…please try again");
+          throw new Error("Une erreur est survenue");
         }
         const data = await res.json();
         SEARCH_DATA = data;
@@ -134,10 +157,21 @@ import search from "../images/search.svg";
     }
     if (!FUSE_INSTANCE) return;
     const searchResult = FUSE_INSTANCE.search(search);
-    resultsList.innerHTML =
-      searchResult.length > 0
-        ? generateSearchList(searchResult)
-        : generateNoResults();
+
+    if (searchResult.length > 0) {
+      resultsList.innerHTML = generateSearchList(searchResult);
+      info.innerHTML =
+        TYPE_ICON("article") + "Article, " + TYPE_ICON("volume")+ "Volume";
+    } else {
+      if (search.length > 0) {
+        resultsList.innerHTML = generateNoResults();
+
+        info.innerHTML = "";
+      } else {
+        resultsList.innerHTML = "";
+        info.innerHTML = "";
+      }
+    }
   }
 
   search.addEventListener("input", (e) => {

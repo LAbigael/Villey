@@ -4,10 +4,10 @@ import { readItems } from "@directus/sdk";
 
 const directus = await getDirectusClient(true);
 
-async function getPosts() {
+async function getData() {
   const volumes = await directus.request(
     readItems("Volumes", {
-      fields: ["slug", "title", "number"],
+      fields: ["slug", "title"],
       filter: {
         site_id: {
           _eq: "1",
@@ -15,17 +15,34 @@ async function getPosts() {
       },
     }),
   );
-  // return posts;
-  return volumes.map((volume) => ({
-    slug: volume.slug,
-    title: volume.title,
-    number: volume.number,
-    date: volume.published_at,
-  }));
+  const articles = await directus.request(
+    readItems("Articles", {
+      fields: ["slug", "title", ],
+      filter: {
+        site_id: {
+          _eq: "1",
+        },
+      },
+    }),
+  );
+  
+  return [
+    ...volumes.map((volume) => ({
+      slug: volume.slug,
+      title: volume.title,
+      type: "volume",
+    })),
+    ...articles.map((article) => ({
+      slug: article.slug,
+      title: article.title,
+      // content: article.content,
+      type: "article",
+    })),
+  ];
 }
 
-export async function get({ }) {
-  return new Response(JSON.stringify(await getPosts()), {
+export async function GET({ }) {
+  return new Response(JSON.stringify(await getData()), {
     status: 200,
     headers: {
       "Content-Type": "application/json",

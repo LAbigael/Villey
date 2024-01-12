@@ -98,6 +98,7 @@ ul {
 
 ::-webkit-scrollbar-track {
   @apply bg-background dark:bg-background-dark;
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb {
