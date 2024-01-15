@@ -1,0 +1,81 @@
+---
+import villey from "../../images/villey.jpg";
+---
+
+<div class="py-6 sm:py-8 lg:py-12">
+  <div class="sm:mx-12 p-5">
+    <div
+      class="grid gap-2 sm:grid-cols-1 md:gap-4 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5"
+    >
+      <div class="pl-2 h-fit col-span-2 mb-10 lg:mb-0">
+        <div class="bg-slate-700 mr-10 py-10 flex">
+          <h3 class="text-accent-light text-4xl px-4 my-auto font-light">
+            Inscrivez-vous à notre liste de diffusion
+          </h3>
+        </div>
+        <div class="mr-10 py-2">
+          Inscription gratuite pour suivre l'actualité des derniers numéros.
+        </div>
+        <div>
+          <button type="button" class="">S'inscrire</button>
+        </div>
+      </div>
+      <div class="borderR pl-2 lg:px-8 col-span-2 mb-10 lg:mb-0">
+        <h3 class="text-2xl font-semibold pb-2 text-secondary">
+          Soumettez vos contributions
+        </h3>
+        <div class="text-md text-justify mb-2">
+          La revue Droit & Philosophie publie chaque année un volume numérique
+          puis imprimé aux éditions Dalloz, ainsi que des contenus inédits tout
+          au long de l'année (articles, traductions, recensions, mémoires,
+          etc.). <br />
+           Pour plus d'informations sur notre revue, veuillez consulter la page
+          "À propos". Pour toute proposition de publication ou demande
+          d'information, vous pouvez utiliser la rubrique "Contact" prévue à cet
+          effet.
+        </div>
+        <button type="button" class=" mr-2">Contribuer à la revue</button>
+        <button type="button" class="">Contact</button>
+      </div>
+      <div
+        class="col-span-2 sm:col-span-1 flex justify-between md:inline-block max-sm:pr-10 max-sm:pl-2 mb-10 lg:mb-0"
+      >
+        <div class="max-sm:min-w-fit">
+          <h3 class="text-2xl font-semibold pb-2 text-secondary">
+            Informations
+          </h3>
+          <div class="text-md text-justify">
+            <div>Droit & Philosophie</div>
+            <div>Institut Michel Villey</div>
+            <div>1, rue d'Ulm. 75005 PARIS</div>
+          </div>
+        </div>
+
+        <div class="flex lg:block lg:m-0 ml-2 max-md:w-40 h-full">
+            <img
+              src={villey.src}
+              alt="Institut Villey"
+              width="200"
+              height="200"
+              class="mt-auto lg:mt-0"
+            />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @media (min-width: 640px) {
+    .max-sm:min-w-fit {
+      min-width: 200px;
+    }
+    .borderR {
+      border-right: 1px solid #cfd5e4;
+      margin-right: 15px;
+
+      border-left: 1px solid #cfd5e4;
+      margin-left: -25px;
+    }
+  }
+</style>

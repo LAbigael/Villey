@@ -1,0 +1,67 @@
+.chapter_title {
+  @apply text-2xl p-1 my-2 italic text-secondary font-semibold;
+}
+
+.page_title {
+  @apply text-4xl p-1 my-4 border-b border-secondary;
+}
+
+.sidebar {
+  @apply hidden lg:block m-6 w-1/4 border-accent-light;
+}
+
+.sidebar_list {
+  @apply border list-disc p-4 list-inside;
+}
+
+.sidebar_title {
+  @apply text-2xl p-4 text-center w-full flex justify-center bg-accent-light text-accent-dark;
+}
+.sidebar_title a {
+  @apply text-inherit;
+}
+
+.article_title {
+  @apply text-xl my-1 italic;
+}
+
+.article_author {
+  @apply text-lg font-semibold my-1;
+}
+
+.btn {
+  background-color: rgba(var(--accent-light));
+  color: rgba(var(--accent-dark));
+  border-color: rgba(var(--accent-dark));
+}
+
+.btn:hover {
+  background-color: rgba(var(--accent-dark));
+  color: rgba(var(--accent-light));
+  border-color: rgba(var(--accent-light));
+}
+
+table {
+  @apply w-full;
+}
+
+table td {
+  @apply border border-gray-300;
+}
+
+table th {
+  @apply border border-gray-300;
+}
+
+table tr {
+  @apply border border-gray-300;
+}
+
+table td,
+table th {
+  @apply p-2;
+}
+
+button {
+  @apply font-light text-accent-dark hover:text-color-light border border-accent-dark hover:bg-accent focus:ring-2 focus:outline-none focus:ring-accent rounded  px-7 py-1.5 text-center dark:border-color-light dark:text-color-light dark:hover:text-color dark:hover:bg-accent dark:focus:ring-accent-dark;
+}

@@ -48,6 +48,19 @@ services:
       - directus
     networks:
       - directus-net
+  juspoliticum-ui:
+    build: juspoliticum-ui
+    image: juspoliticum-ui
+    restart: "no"
+    volumes:
+      - ./juspoliticum-ui/:/app
+      - ./juspoliticum-ui/node_modules:/app/node_modules
+    ports:
+      - "4322:4322"
+    depends_on:
+      - directus
+    networks:
+      - directus-net
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin

@@ -1,0 +1,48 @@
+---
+import ornement from "../images/ornementHaut.png";
+import logo from "../images/droit-philosophie.png";
+import LogoNavBar from "./icons/LogoNavBar.astro";
+import headerLeft from "../images/header-left.png";
+import headerRight from "../images/header-right.png";
+import ThemeToggle from "./ThemeToggle.astro";
+---
+
+<div class="head1">
+  <img
+    class=" hidden lg:block"
+    height="200"
+    width="auto"
+    src={headerLeft.src}
+    alt="Logo droit philosophie"
+  />
+  <ThemeToggle />
+  <img
+    class="absolute top-0 right-0 z-10"
+    height="200"
+    width="auto"
+    src={headerRight.src}
+    alt="ornement"
+  />
+</div>
+
+<script src="/js/change-theme.js" type="text/javascript"></script>
+
+<style>
+  .head1 {
+    @apply relative flex justify-center items-center bg-accent;
+    min-height: 8rem;
+  }
+  .head1 img {
+    @apply max-h-full;
+  }
+
+  h1 {
+    @apply text-4xl lg:text-5xl;
+    position: relative;
+    /* font-weight: 700; */
+    line-height: 1;
+    text-align: center;
+    color: rgba(var(--background));
+    z-index: 2;
+  }
+</style>

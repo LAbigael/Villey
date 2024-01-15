@@ -1,0 +1,75 @@
+---
+import LogoNavBar from "./icons/LogoNavBar.astro";
+import Search from "./Search.astro";
+---
+
+<div class="menu font-sans">
+  <div class="navbar">
+    <div class="navbar-start">
+      <div class="dropdown">
+        <label tabindex="0" class="lg:hidden">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-7 w-7"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h8m-8 6h16"></path></svg
+          >
+        </label>
+        <ul
+          tabindex="0"
+          class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 w-52"
+        >
+          <li><a href="/about">Présentation</a></li>
+          <li>
+            <a href="/volumes/">Numéros en ligne</a>
+          </li>
+          <li><a href="/recensions">Recensions</a></li>
+          <li><a href="/publications">Volumes papier</a></li>
+          <li><a href="/hors-series">Hors-série</a></li>
+          <li><a href="/memoires">Mémoires</a></li>
+          <li>
+            <a href="/auteurs">Auteurs</a>
+            <ul class="p-2">
+              <li>
+                <a href="/appels-contributions">Appels à contributions</a>
+              </li>
+              <li><a href="/auteurs">Liste des auteurs</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+      <div class="flex">
+        <a class="ml-6 hover:bg-inherit hover:scale-105" href="/">
+          <div class="w-16 lg:inline-block hidden">
+            <LogoNavBar />
+          </div>
+        </a>
+      </div>
+    </div>
+    <div class="navbar-center hidden lg:flex">
+      <ul class="menu menu-horizontal px-1">
+        <li><a href="/about">Présentation de la revue</a></li>
+        <li><a href="/volumes">Numéros</a></li>
+        <li><a href="/actualites">Actualités</a></li>
+        <li><a href="/auteurs">Auteurs</a></li>
+        <li><a href="/themes">themes</a></li>
+        <li><a href="/proposer-articles">Proposer un article</a></li>
+      </ul>
+    </div>
+    <div class="navbar-end">
+      <Search />
+    </div>
+  </div>
+</div>
+
+<style>
+  .menu {
+    @apply bg-accent-dark dark:bg-accent-dark text-accent-light dark:text-accent-light;
+  }
+</style>

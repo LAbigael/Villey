@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Linux Libertine";
+  src: url("/fonts/Linux Libertine.woff") format("woff");
+}
+
+@layer base {
+  html {
+    --accent: 43, 67, 89;
+    /* darkblue */
+    --accent-light: 165, 181, 197;
+    /* light blue grey */
+    --accent-dark: 83, 97, 110;
+    /* dark blue grey */
+    --secondary: 213, 185, 133;
+    /* orange */
+    --background: 209, 217, 225;
+    /* light light grey */
+    --background-alt: #e0e3eb;
+    --background-alt-dark: #252d3a;
+    --background-light: rgb(241 245 249);
+    --text-color: #101010;
+    --text-color-light: #e8e8e8;
+    --accent-gradient: linear-gradient(45deg,
+        rgb(var(--accent)),
+        rgb(var(--accent-light)) 30%,
+        white 60%);
+
+    /* font-family:  serif; */
+    /* font-family: "Linux Libertine";  */
+    font-family: "Cormorant Variable", serif;
+    /* font-family: "Montserrat Variable",  sans-serif; */
+
+    /* font-family: Lato,  sans-serif; */
+    color: var(--text-color);
+  }
+}
+
+body {
+  @apply text-lg bg-background-light dark:bg-background-dark text-color dark:text-color-light;
+}
+
+.accent1 {
+  font-size: 1.1rem;
+  font-weight: 500;
+  line-height: 1.3rem;
+  text-decoration: underline;
+}
+
+.accent1 a:hover {
+  text-decoration-color: rgba(var(--accent-light));
+  color: rgba(var(--accent-dark));
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+a {
+  @apply text-accent dark:text-accent-light;
+  text-decoration: none;
+}
+
+h3 {
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+h4 {
+  font-weight: 500;
+  font-size: 1.25rem;
+}
+
+h5 {
+  font-weight: 500;
+  font-size: 1.0625rem;
+}
+
+ul {
+  list-style: disc;
+  list-style-position: inside;
+}
+
+.text-gradient {
+  background-image: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 400%;
+  background-position: 0%;
+}
+/* custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-background dark:bg-background-dark;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-background-light dark:bg-background-alt-dark;
+  border-radius: 8px;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-accent dark:bg-accent-light;
+}
