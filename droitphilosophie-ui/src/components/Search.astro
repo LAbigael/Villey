@@ -7,16 +7,18 @@ import search from "../images/search.svg";
   class="input font-light rounded-sm bg-background-light items-center w-64 h-10 flex flex-row relative"
   onclick="my_modal_2.showModal()"
 >
+  <img src={search.src} width="25" height="auto" class="opacity-60"/>
   <span
     class="bg-inherit w-6/8 h-full rounded-sm font-light text-sm flex flex-row items-center justify-start pl-2"
     >Rechercher...</span
   >
-  <img
-    src={search.src}
-    class="absolute right-0 opacity-50 mx-2"
-    width="25"
-    height="auto"
-  />
+  <svg class="absolute right-0 opacity-80 mx-2 w-5" viewBox="0 0 24 24"
+    ><path
+      d="M17 2H7a5 5 0 0 0-5 5v10a5 5 0 0 0 5 5h10a5 5 0 0 0 5-5V7a5 5 0 0 0-5-5Zm3 15a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10Z"
+    ></path><path
+      d="M15.293 6.707a1 1 0 1 1 1.414 1.414l-8.485 8.486a1 1 0 0 1-1.414-1.415l8.485-8.485Z"
+    ></path></svg
+  >
 </button>
 <dialog id="my_modal_2" class="modal">
   <div class="modal-box">
@@ -115,7 +117,7 @@ import search from "../images/search.svg";
   };
 
   const sectionTitle = (section = "") => {
-    return `<span class="section-title">${ section }</span>`;
+    return `<span class="section-title">${section}</span>`;
   };
 
   // selectors
@@ -128,11 +130,11 @@ import search from "../images/search.svg";
   function generateSearchList(results) {
     return results
       .map((r) => {
-      const { title, slug, type , section} = r.item;
+        const { title, slug, type, section } = r.item;
         return `<li class="group">
           <a href="/${type}s/${slug}/"><span>${typeIcon(
             type,
-            )}${title}${sectionTitle(section)}</span>${BACKSPACE_ICON}</a>
+          )}${title}${sectionTitle(section)}</span>${BACKSPACE_ICON}</a>
 							</li>`;
       })
       .join("");

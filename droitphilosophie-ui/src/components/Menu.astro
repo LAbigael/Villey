@@ -25,7 +25,7 @@ import Search from "./Search.astro";
           tabindex="0"
           class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 w-52"
         >
-          <li><a>Présentation</a></li>
+        <li><a href="/about">Présentation</a></li>
           <li>
             <a href="/volumes/">Numéros en ligne</a>
           </li>
@@ -58,9 +58,8 @@ import Search from "./Search.astro";
           <details>
             <summary class="text-inherit hover:text-inherit">La revue</summary>
             <ul class="p-1 rounded-none sub z-20">
-              <li><a>Présentation</a></li>
-              <li><a>Editeurs</a></li>
-              <li><a>Contact</a></li>
+              <li><a href="/about">Présentation</a></li>
+              <li><a href="/contact">Contact</a></li>
             </ul>
           </details>
         </li>
@@ -96,6 +95,7 @@ import Search from "./Search.astro";
     @apply text-accent-dark dark:text-accent-light;
   }
   .sub {
+    @apply bg-accent-light dark:bg-accent-dark text-accent-dark dark:text-accent-light;
     background-color: rgba(var(--accent-light));
   }
   .summary {
