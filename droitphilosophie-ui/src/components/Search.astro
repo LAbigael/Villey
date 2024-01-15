@@ -4,21 +4,30 @@ import search from "../images/search.svg";
 
 <button
   id="search-button"
-  class="input font-light rounded-sm bg-background-light items-center w-64 h-10 flex flex-row relative"
+  class="input font-light rounded-sm  w-64 h-10 "
   onclick="my_modal_2.showModal()"
 >
-  <img src={search.src} width="25" height="auto" class="opacity-60"/>
-  <span
-    class="bg-inherit w-6/8 h-full rounded-sm font-light text-sm flex flex-row items-center justify-start pl-2"
-    >Rechercher...</span
-  >
-  <svg class="absolute right-0 opacity-80 mx-2 w-5" viewBox="0 0 24 24"
-    ><path
-      d="M17 2H7a5 5 0 0 0-5 5v10a5 5 0 0 0 5 5h10a5 5 0 0 0 5-5V7a5 5 0 0 0-5-5Zm3 15a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10Z"
-    ></path><path
-      d="M15.293 6.707a1 1 0 1 1 1.414 1.414l-8.485 8.486a1 1 0 0 1-1.414-1.415l8.485-8.485Z"
-    ></path></svg
-  >
+  <div class="flex flex-row relative items-center w-full opacity-60 hover:opacity-100">
+    <svg viewBox="0 0 24 24" x="0px" y="0px" class="w-6 fill-current"
+      ><path
+        class="cls-1"
+        d="m21.53,20.47l-4.694-4.694c1.194-1.431,1.914-3.27,1.914-5.275,0-4.549-3.701-8.25-8.25-8.25S2.25,5.951,2.25,10.5s3.701,8.25,8.25,8.25c2.005,0,3.844-.72,5.275-1.914l4.694,4.694c.146.146.338.22.53.22s.384-.073.53-.22c.293-.293.293-.768,0-1.061ZM3.75,10.5c0-3.722,3.028-6.75,6.75-6.75s6.75,3.028,6.75,6.75c0,1.858-.755,3.544-1.975,4.766-.002.002-.004.002-.006.004s-.002.004-.004.006c-1.222,1.219-2.907,1.975-4.766,1.975-3.722,0-6.75-3.028-6.75-6.75Z"
+      ></path></svg
+    >
+    <span
+      class="bg-inherit w-6/8 h-full rounded-sm font-light text-sm flex flex-row items-center justify-start pl-2"
+      >Rechercher...</span
+    >
+    <svg
+      class="absolute right-0 mx-2 w-5 stroke-inherit fill-current"
+      viewBox="0 0 24 24"
+      ><path
+        d="M17 2H7a5 5 0 0 0-5 5v10a5 5 0 0 0 5 5h10a5 5 0 0 0 5-5V7a5 5 0 0 0-5-5Zm3 15a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10Z"
+      ></path><path
+        d="M15.293 6.707a1 1 0 1 1 1.414 1.414l-8.485 8.486a1 1 0 0 1-1.414-1.415l8.485-8.485Z"
+      ></path></svg
+    >
+  </div>
 </button>
 <dialog id="my_modal_2" class="modal">
   <div class="modal-box">
@@ -50,7 +59,7 @@ import search from "../images/search.svg";
     @apply border-none hover:bg-opacity-0 focus:outline-none focus:ring-0;
   }
   #search-button {
-    @apply border-none hover:bg-background-light text-color;
+    @apply border border-opacity-10 hover:border-color  hover:dark:border-color-light  text-color bg-background-light dark:bg-background-dark dark:text-color-light focus:outline-none focus:ring-0 px-2;
   }
   .modal-box {
     @apply !bg-background-light dark:bg-background-dark rounded-sm p-4 w-1/2 max-w-none flex flex-col items-center;
