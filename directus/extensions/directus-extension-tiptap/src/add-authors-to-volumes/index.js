@@ -22,8 +22,6 @@ export default ({ filter }) => {
             }, [])
         );
       }, []);
-      item.coordinator = authors[0];
-      authors.shift();
       item.authors = authors;
       return item;
     });

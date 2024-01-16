@@ -16,42 +16,100 @@ export default ({ filter }) => {
   filter("Articles.items.read", (items) => {
     return items.map((item) => {
       if (!item.article_contents) return item;
-      const lastArticleContent =
-        item.article_contents[item.article_contents.length - 1];
 
-      if (lastArticleContent.content_bis) {
-        let articleJSONContent = lastArticleContent.content_bis;
-        item.content = generateHTMLFromJSON(articleJSONContent);
-        delete item.article_contents;
-      }
+      item = setLatestContentFromContentVersions(item);
 
       if (!item.content) return item;
-      const dom = htmlparser2.parseDocument(item.content);
-      htmlparser2.DomUtils.getElements({ tag_name: "footnote" }, dom).forEach(
-        (el) => {
-          const id = el.attribs.uid;
-          const content = el.children.map((child) => render(child)).join("");
-          el.name = "a";
-          el.attribs = {
-            class: "footnote-link",
-            "data-footnote-id": `#footnote-${id}`,
-            href: "#nowhere",
-            "data-footnote-content": content,
-          };
-          el.children = [];
-        }
-      );
-      item.content = render(dom);
+
+      item.content = generateLinkFromFootnoteTags(item);
+
+      item = transformAbstractsToHTML(item);
 
       return item;
     });
   });
+  filter("Volumes.items.read", (items) => {
+    return items.map((item) => {
+      console.log(item);
+      if (item.sections) {
+        item.sections = item.sections.map((section) => {
+          if (section.articles) {
+            section.articles = section.articles.map((article) => {
+              return transformAbstractsToHTML(article);
+            });
+          }
+          return section;
+        });
+      }
+      return item;
+    });
+  })
+
   transformItemsFieldFromToHTML(filter, "Authors.items.read", "bio");
-  transformItemsFieldFromToHTML(filter, "VolumeReleases.items.read", "abstract");
-  transformItemsFieldFromToHTML(filter, "VolumeReleases.items.read", "subtitle");
-  transformItemsFieldFromToHTML(filter, "VolumeReleases.items.read", "table_of_content");
-  transformItemsFieldFromToHTML(filter, "ContributionCalls.items.read", "content");
+  transformItemsFieldFromToHTML(
+    filter,
+    "VolumeReleases.items.read",
+    "abstract"
+  );
+  transformItemsFieldFromToHTML(
+    filter,
+    "VolumeReleases.items.read",
+    "subtitle"
+  );
+  transformItemsFieldFromToHTML(
+    filter,
+    "VolumeReleases.items.read",
+    "table_of_content"
+  );
+  transformItemsFieldFromToHTML(
+    filter,
+    "ContributionCalls.items.read",
+    "content"
+  );
+  transformItemsFieldFromToHTML(filter, "Abstract.items.read", "content");
 };
+
+function setLatestContentFromContentVersions(item) {
+  const lastArticleContent =
+    item.article_contents[item.article_contents.length - 1];
+
+  if (lastArticleContent.content_bis) {
+    let articleJSONContent = lastArticleContent.content_bis;
+    delete item.article_contents;
+    item.content = generateHTMLFromJSON(articleJSONContent);
+  }
+  return item;
+}
+
+function generateLinkFromFootnoteTags(item) {
+  const dom = htmlparser2.parseDocument(item.content);
+  htmlparser2.DomUtils.getElements({ tag_name: "footnote" }, dom).forEach(
+    (el) => {
+      const id = el.attribs.uid;
+      const content = el.children.map((child) => render(child)).join("");
+      el.name = "a";
+      el.attribs = {
+        class: "footnote-link",
+        "data-footnote-id": `#footnote-${id}`,
+        href: "#nowhere",
+        "data-footnote-content": content,
+      };
+      el.children = [];
+    }
+  );
+  return render(dom);
+}
+
+function transformAbstractsToHTML(item) {
+  const abstracts = item.abstracts;
+  for (const abstract of abstracts) {
+    if (abstract.content_bis) {
+      abstract.content = generateHTMLFromJSON(abstract.content_bis);
+      delete abstract.content_bis;
+    }
+  }
+  return item;
+}
 
 function transformItemsFieldFromToHTML(filter, collection, field) {
   filter(collection, (items) => {
