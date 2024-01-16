@@ -7,18 +7,21 @@ export default {
       sans: ["Open Sans Variable", "ui-sans-serif"],
     },
     extend: {
+      transitionProperty: {
+        "max-height": "maxHeight",
+      },
       colors: {
         accent: "#8a7b6f",
         "accent-light": "#af9d8f",
         "accent-dark": "#413125",
         secondary: "#d5b985",
-        "secondary-light": "#f7e9d0",
-        "secondary-dark":"#a58e6a",
-        background: "#d1d9e1",
-        "background-alt": "#e0e3eb",
-        "background-alt-dark": "#252d3a",
-        "background-light": "#f1f5f9",
-        "background-dark": "#1a202c",
+        "secondary-light": "#dcd8d4",
+        "secondary-dark": "#a58e6a",
+        background: "#f5f4f3",
+        "background-alt": "#ebeae9",
+        "background-alt-dark": "#524134",
+        "background-light": "#f5f4f3",
+        "background-dark": "#413125",
         color: "#101010",
         "color-light": "#e8e8e8",
         "accent-gradient-dark":

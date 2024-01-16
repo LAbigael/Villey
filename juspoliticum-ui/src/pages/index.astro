@@ -3,32 +3,31 @@ import Layout from "../layouts/Layout.astro";
 import AboutSection from "../components/sections/AboutSection.astro";
 import NewsSection from "../components/sections/NewsSection.astro";
 import SubmitSection from "../components/sections/SubmitSection.astro";
-
 ---
 
-<Layout title="Droit & Philosophie.">
-    <div class="aboutsection">
-      <AboutSection />
-      <div class="newssection">
-        <NewsSection />
-      </div>
-      <div class="submitsection">
-        <SubmitSection />
-      </div>
-    </div>
-
-    <style>
-      main {
-        margin: auto;
-      }
-      .aboutsection {
-        @apply bg-background-light dark:bg-background-dark 
-      }
-      .newssection {
-        @apply bg-background-alt dark:bg-background-alt-dark; 
-      }
-      .submitsection{
-        @apply bg-background-light dark:bg-background-dark;
-      }
-    </style>
+<Layout title="Juspoliticum">
+  <div class="aboutsection">
+    <AboutSection />
+  </div>
+  <div class="newssection">
+    <NewsSection />
+  </div>
+  <div class="submitsection">
+    <SubmitSection />
+  </div>
 </Layout>
+
+<style>
+  main {
+    margin: auto;
+  }
+  .aboutsection {
+    @apply bg-background-light dark:bg-background-dark flex justify-center;
+  }
+  .newssection {
+    @apply bg-background-alt dark:bg-background-alt-dark;
+  }
+  .submitsection {
+    @apply bg-background-light dark:bg-background-dark;
+  }
+</style>

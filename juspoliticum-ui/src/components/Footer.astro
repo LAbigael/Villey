@@ -18,16 +18,30 @@ const currentYear = new Date().getFullYear();
     <a href="/volumes" class="logo" target="_blank" rel="noreferrer noopener">
       Tous les numéros
     </a>
-    <a href="/publications" class="logo" target="_blank" rel="noreferrer noopener">
+    <a
+      href="/publications"
+      class="logo"
+      target="_blank"
+      rel="noreferrer noopener"
+    >
       Tous les volumes papier
     </a>
-    <a href="/abonnement" class="logo" target="_blank" rel="noreferrer noopener">
+    <a
+      href="/abonnement"
+      class="logo"
+      target="_blank"
+      rel="noreferrer noopener"
+    >
       Acheter un volume
     </a>
     <a href="/contact" class="logo" target="_blank" rel="noreferrer noopener">
       Contact
     </a>
   </div>
+  <div class="flex flex-row text-color-light items-center ">
+    © 2015 www.juspoliticum.com / Revue internationale de droit politique
+  </div>
+
   <div class="flex flex-row text-color-light items-center mb-4">
     Made with ❤️ by RubidiumWeb ({currentYear}) <GithubIcon />
   </div>
@@ -35,8 +49,7 @@ const currentYear = new Date().getFullYear();
 
 <style>
   .footer {
-    @apply flex flex-col justify-around items-center;
-    background-color: rgba(var(--accent));
+    @apply flex flex-col justify-around items-center bg-accent;
   }
   .footer a {
     @apply m-1 text-lg text-color-light;

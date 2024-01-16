@@ -2,30 +2,54 @@
 const { volume } = Astro.props;
 ---
 
-<article class="volume">
-  <div class="volume_topWrapper">
-    <h1 class="page_title">{volume.title}</h1>
+<article class="flex flex-col items-center">
+  <div class="flex flex-row items-center">
+    <span class="num">{volume.number}</span><h1 class="page_title">
+      {volume.title}
+    </h1>
+    <span class="date">
+      ({
+        new Date(volume.published_at).toLocaleString("fr-FR", {
+          year: "numeric",
+          month: "long",
+        })
+      })
+    </span>
   </div>
   <div class="main-content relative flex flex-row">
     <div class="volume_content">
       {
-        volume.sections.map((section, i) => (
+        volume.sections?.map((section, i) => (
           <>
             <h2 class="chapter_title" id={section.id}>
               {section.title}
             </h2>
             <ul>
-              {section.articles.map((article) => (
-              <li class="">
-                    <span class="mr-1 ">
-                      {article.authors
-                        .map((a) => a.author_id.fullname)
-                        .join(", ")}{" "}
-                      :
-                    </span>
-                    <span class="article_title ">
-                      <a href={`/articles/${article.slug}`}>{article.title}</a>
-                    </span>
+              {section?.articles.map((article) => (
+                <li class="">
+                  <span class="mr-1">
+                    {article.authors
+                      .map((a) => a?.author_id?.fullname)
+                      .join(", ")}{" "}
+                    :
+                  </span>
+                  <span class="article_title jp_link cursor-pointer">
+                    {article.title}
+                  </span>
+                  <div>
+                    <a href={`/articles/${article.slug}`} class="jp_summary">
+                      <>
+                        {article.abstracts
+                          .filter((a) => a.language == "en")
+                          .map((a) => (
+                            <span
+                              class={`${a.language}`}
+                              set:html={a.content}
+                            />
+                          ))}
+                      </>
+                    </a>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -36,8 +60,58 @@ const { volume } = Astro.props;
     </div>
   </div>
 </article>
+<script>
+  // add listenner to all links with class jp_link
+  // add selected property on click
+  // if selected, show the following element with class .jp_summary, hide all others
+
+  truncateSummaries();
+  hideAllSummaries();
+
+  const links = document.querySelectorAll(".jp_link");
+  links.forEach((link) => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      hideAllSummaries();
+      const summariesToShow =
+        link.parentElement.querySelectorAll(".jp_summary");
+
+      summariesToShow.forEach((summary) => {
+        summary.classList.add("full");
+      });
+    });
+  });
+
+  function truncateSummaries() {
+    const summaries = document.querySelectorAll(".jp_summary");
+    summaries.forEach((summary) => {
+      const content = summary.innerText;
+      const truncatedContent = content.substring(0, 300) + "... <strong>>> Voir l'article</strong>";
+      summary.innerHTML = truncatedContent;
+    });
+  }
+
+  function hideAllSummaries() {
+    const summaries = document.querySelectorAll(".jp_summary");
+    summaries.forEach((summary) => {
+      summary.classList.remove("full");
+    });
+  }
+</script>
 
 <style>
+  .jp_summary {
+    display: block;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.5s cubic-bezier(0, 1, 0, 1);
+  }
+
+  .jp_summary.full {
+    max-height: 1000px;
+    transition: max-height 1s ease-in-out;
+  }
+
   .volume_content {
     @apply mx-4 text-lg text-left w-full max-w-3xl mb-20  leading-normal mt-4;
   }
@@ -45,7 +119,6 @@ const { volume } = Astro.props;
   .authors {
     @apply mr-2;
   }
-
 
   .article_title {
     @apply text-lg font-semibold;
@@ -55,5 +128,11 @@ const { volume } = Astro.props;
     font-weight: 700;
     margin: 0;
     padding: 0;
+  }
+  .num {
+    @apply px-2 py-1 bg-secondary-light before:content-['N°'] before:mr-2 text-accent-dark;
+  }
+  .date {
+    @apply text-accent-light;
   }
 </style>
