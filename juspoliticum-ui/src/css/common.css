@@ -1,9 +1,13 @@
 .chapter_title {
-  @apply text-2xl p-1 my-2 italic text-secondary font-semibold;
+  @apply text-2xl p-1 my-2 italic text-secondary-alt font-semibold;
+}
+
+.line {
+  @apply grow ml-3 text-accent bg-black rounded-full my-8;
 }
 
 .page_title {
-  @apply text-4xl text-accent-dark p-1 my-4;
+  @apply text-3xl text-secondary-alt  my-4;
 }
 
 .sidebar {
@@ -17,6 +21,7 @@
 .sidebar_title {
   @apply text-2xl p-4 text-center w-full flex justify-center bg-accent-light text-accent-dark;
 }
+
 .sidebar_title a {
   @apply text-inherit;
 }
@@ -27,6 +32,14 @@
 
 .article_author {
   @apply text-lg font-semibold my-1;
+}
+
+.num {
+  @apply px-2 py-1 bg-secondary-light before:content-['N°'] before:mr-2 text-accent-dark;
+}
+
+.date {
+  @apply text-accent-light;
 }
 
 .btn {
@@ -63,5 +76,5 @@ table th {
 }
 
 button {
-  @apply font-light text-accent-dark hover:text-color-light border border-accent-dark hover:bg-accent focus:ring-2 focus:outline-none focus:ring-accent rounded  px-7 py-1.5 text-center dark:border-color-light dark:text-color-light dark:hover:text-color dark:hover:bg-accent dark:focus:ring-accent-dark;
+  @apply font-light text-accent-dark hover:text-color-light border border-accent-dark hover:bg-accent focus:ring-2 focus:outline-none focus:ring-accent rounded px-7 py-1.5 text-center dark:border-color-light dark:text-color-light dark:hover:text-color dark:hover:bg-accent dark:focus:ring-accent-dark;
 }

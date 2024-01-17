@@ -35935,6 +35935,7 @@ function generateLinkFromFootnoteTags(item) {
 
 function transformAbstractsToHTML(item) {
   const abstracts = item.abstracts;
+  if (!abstracts) return item;
   for (const abstract of abstracts) {
     if (abstract.content_bis) {
       abstract.content = generateHTMLFromJSON(abstract.content_bis);

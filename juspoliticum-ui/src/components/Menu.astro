@@ -1,6 +1,8 @@
 ---
 import LogoNavBar from "./icons/LogoNavBar.astro";
+import Logo from "../images/juspoliticum.png";
 import Search from "./Search.astro";
+import LanguageToggle from "./LanguageToggle.astro";
 ---
 
 <div class="menu font-sans">
@@ -47,9 +49,14 @@ import Search from "./Search.astro";
       <div class="flex">
         <a class="ml-6 hover:bg-inherit hover:scale-105" href="/">
           <div class="w-16 lg:inline-block hidden">
-            <LogoNavBar />
+            <img
+              src={Logo.src}
+              alt="Logo de la revue Jus Politicum"
+              class="h-auto w-30"
+            />
           </div>
         </a>
+        <!-- <LanguageToggle /> -->
       </div>
     </div>
     <div class="navbar-center hidden lg:flex">
@@ -58,7 +65,7 @@ import Search from "./Search.astro";
         <li><a href="/volumes">Numéros</a></li>
         <li><a href="/actualites">Actualités</a></li>
         <li><a href="/auteurs">Auteurs</a></li>
-        <li><a href="/themes">themes</a></li>
+        <li><a href="/themes">Themes</a></li>
         <li><a href="/proposer-articles">Proposer un article</a></li>
       </ul>
     </div>

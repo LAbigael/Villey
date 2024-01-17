@@ -2,20 +2,22 @@
 interface Props {
   title: string;
   href: string;
-  coordinators: string;
+  number: string;
   date: string;
 }
 
-const { date, coordinators, href, title } = Astro.props;
+const { date, number, href, title } = Astro.props;
 ---
 
 <li class="group link-card relative">
   <a href={href}>
-    <h2>
-      {title}
-    </h2>
-    <p class="group-hover:text-white">{coordinators}</p>
-    <p class="group-hover:text-white absolute bottom-0 right-0 p-4">
+    <div class="flex items-center">
+      <span class="num mr-2 group-hover:text-white group-hover:bg-secondary-dark">{number}</span>
+      <h2>
+        {title}
+      </h2>
+    </div>
+    <p class="group-hover:text-white absolute bottom-0 right-0 p-4 text-accent-light font-bold">
       Publié en {
         new Date(date).toLocaleString("fr-FR", {
           year: "numeric",
