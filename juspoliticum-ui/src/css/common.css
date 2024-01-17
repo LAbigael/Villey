@@ -35,7 +35,7 @@
 }
 
 .num {
-  @apply px-2 py-1 bg-secondary-light before:content-['N°'] before:mr-2 text-accent-dark;
+  @apply px-2 py-1 bg-secondary-light before:content-['N°'] text-accent-dark;
 }
 
 .date {
