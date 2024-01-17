@@ -1,0 +1,46 @@
+---
+import Fr from "./Fr.astro";
+import En from "./En.astro";
+import Ge from "./Ge.astro";
+---
+
+<div class="flex flex-row mr-4">
+  <button class="lang_button" onclick="toggleLang('fr')">
+    <Fr />
+  </button>
+  <button class="lang_button" onclick="toggleLang('en')">
+    <En />
+  </button>
+  <button class="lang_button" onclick="toggleLang('ge')">
+    <Ge />
+  </button>
+</div>
+
+<script>
+  function toggleLang(lang) {
+    return () => {
+      // hide all elements with class ge or en
+      // show all elements with class fr
+
+      document.querySelectorAll(".ge").forEach((el) => {
+        el.classList.add("hidden");
+      });
+      document.querySelectorAll(".en").forEach((el) => {
+        el.classList.add("hidden");
+      });
+      document.querySelectorAll(".fr").forEach((el) => {
+        el.classList.add("hidden");
+      });
+      document.querySelectorAll(`.${lang}`).forEach((el) => {
+        el.classList.remove("hidden");
+      });
+
+    };
+  }
+</script>
+
+<style>
+  .lang_button {
+    @apply px-2 cursor-pointer border-none bg-transparent;
+  }
+</style>
