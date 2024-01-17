@@ -1,0 +1,118 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import PageLayout from "../../layouts/PageLayout.astro";
+import { getDirectusClient } from "../../utils/get-directus-client.js";
+import { readItems } from "@directus/sdk";
+
+const directus = await getDirectusClient();
+let authors = await directus.request(
+  readItems("Authors", {
+    fields: ["id", "fullname", "bio", "slug"],
+    sort: ["fullname"],
+    limit: 1000,
+    filter: {
+      site_id: {
+        _eq: "2",
+      },
+    },
+  }),
+);
+
+---
+<Layout title="Auteurs">
+  <PageLayout title="Auteurs">
+    <div id="alphabet-buttons">
+      <button id="A" class="filter_button">A</button>
+      <button id="B" class="filter_button">B</button>
+      <button id="C" class="filter_button">C</button>
+      <button id="D" class="filter_button">D</button>
+      <button id="E" class="filter_button">E</button>
+      <button id="F" class="filter_button">F</button>
+      <button id="G" class="filter_button">G</button>
+      <button id="H" class="filter_button">H</button>
+      <button id="I" class="filter_button">I</button>
+      <button id="J" class="filter_button">J</button>
+      <button id="K" class="filter_button">K</button>
+      <button id="L" class="filter_button">L</button>
+      <button id="M" class="filter_button">M</button>
+      <button id="N" class="filter_button">N</button>
+      <button id="O" class="filter_button">O</button>
+      <button id="P" class="filter_button">P</button>
+      <button id="Q" class="filter_button">Q</button>
+      <button id="R" class="filter_button">R</button>
+      <button id="S" class="filter_button">S</button>
+      <button id="T" class="filter_button">T</button>
+      <button id="U" class="filter_button">U</button>
+      <button id="V" class="filter_button">V</button>
+      <button id="W" class="filter_button">W</button>
+      <button id="X" class="filter_button">X</button>
+      <button id="Y" class="filter_button">Y</button>
+      <button id="Z" class="filter_button">Z</button>
+    </div>
+    <ul class="author_list">
+      {
+        authors.map((author) => (
+          <li class="author" style="display: none;">
+            <a href={`/auteurs/${author.slug}`}>{author.fullname}</a>
+          </li>
+        ))
+      }
+    </ul>
+  </PageLayout>
+</Layout>
+<style>
+  #alphabet-buttons {
+    @apply flex flex-wrap justify-center mb-4;
+  }
+  #alphabet-buttons button {
+    @apply bg-background-alt hover:bg-background-alt-dark px-0 rounded-none w-8;
+  }
+  #alphabet-buttons button:disabled {
+    @apply opacity-50;
+  }
+  .author_list {
+    @apply flex flex-wrap justify-start list-disc p-0;
+  }
+  .author_list li {
+    @apply w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5;
+  }
+  .author {
+    @apply mb-4;
+  }
+</style>
+
+<script type="text/javascript">
+  document.querySelectorAll(".filter_button").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      filterAuthors(event.target.id);
+    });
+  });
+  const filterAuthors = (letter) => {
+    const authors = document.querySelectorAll(".author");
+    authors.forEach((author) => {
+      console.log(author.innerText[0]);
+      if (author.innerText[0] === letter) {
+        author.style.display = "block";
+      } else {
+        author.style.display = "none";
+      }
+    });
+  };
+  const disableButtonsIfNoAuthor = () => {
+    const buttons = document.querySelectorAll(".filter_button");
+    buttons.forEach((button) => {
+      const letter = button.id;
+      const authors = document.querySelectorAll(".author");
+      let hasAuthor = false;
+      authors.forEach((author) => {
+        if (author.innerText[0] === letter) {
+          hasAuthor = true;
+        }
+      });
+      if (!hasAuthor) {
+        button.disabled = true;
+      }
+    });
+  };
+  disableButtonsIfNoAuthor();
+</script>
