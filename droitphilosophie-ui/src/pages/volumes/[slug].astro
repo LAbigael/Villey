@@ -19,7 +19,17 @@ export async function getStaticPaths() {
           sections: [
             "title",
             {
-              articles: ["title", "slug", { authors: ["author_id.fullname"] }],
+              articles: [
+                "title",
+                "slug",
+                {
+                  authors: [
+                    "author_id.fullname",
+                    "author_id.firstname",
+                    "author_id.lastname",
+                  ],
+                },
+              ],
             },
           ],
         },

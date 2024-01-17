@@ -2,7 +2,6 @@
 import Layout from "../../layouts/Layout.astro";
 import PageLayout from "../../layouts/PageLayout.astro";
 import ArticleTitle from "../../components/ArticleTitle.astro";
-import { Debug } from "astro:components";
 
 import { getDirectusClient } from "../../utils/get-directus-client";
 import { readItems } from "@directus/sdk";
@@ -52,6 +51,6 @@ const { author } = Astro.props;
         ))
       }
     </ul>
-<script src="/js/dynamic-article-list.js" type:"text/javascript"></script>
+    <script src="/js/dynamic-article-list.js" type:"text javascript"></script>
   </PageLayout>
 </Layout>

@@ -9,6 +9,8 @@ let authors = await directus.request(
     fields: [
       "id",
       "fullname",
+      "firstname",
+      "lastname",
       "bio",
       "articles.article_id.title",
       "articles.article_id.slug",

@@ -35877,6 +35877,16 @@ var e0 = ({ filter }) => {
       return item;
     });
   });
+  filter("Authors.items.read", (items) => {
+    return items.map((item) => {
+      if (item.articles) {
+        item.articles = item.articles.map(({ article_id }) => {
+          return { article_id: transformAbstractsToHTML(article_id) };
+        });
+      }
+      return item;
+    });
+  });
 
   transformItemsFieldFromToHTML(filter, "Authors.items.read", "bio");
   transformItemsFieldFromToHTML(
