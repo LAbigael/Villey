@@ -105,7 +105,6 @@ export const getThemesWithArticles = async () => {
   return directus.request(
     readItems("Themes", {
       fields: [
-
         "id",
         "slug",
         "name",
@@ -127,3 +126,35 @@ export const getThemesWithArticles = async () => {
     }),
   );
 };
+
+export const getArticleBySlug = async (slug) => {
+  const articles = await directus.request(
+    readItems("Articles", {
+      fields: [
+        "id",
+        "position",
+        "type",
+        "slug",
+        "title",
+        "subtitle",
+        "authors.author_id.*",
+        "article_contents.content_bis",
+        "section_id.volume_id", // Quentin
+      ],
+      sort: ["-id"],
+      filter: {
+        _and: [
+          {
+            site_id: {
+              _eq: "2",
+            },
+            slug: {
+              _eq: slug
+            },
+          },
+        ],
+      },
+    }),
+  );
+  return articles[0]
+}

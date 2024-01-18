@@ -1,0 +1,49 @@
+<div tabindex="0" id="toc" class="collapse lg:collapse-open">
+  <div class="text-xl font-semibold text-center collapse-title">Sommaire</div>
+  <ul class="collapse-content table_of_content_list"></ul>
+</div>
+
+<script>
+  // for each h3, and h4 within, add a list item to the table of content
+  // Add id to headings dynamically
+  var toc = document.querySelector(".table_of_content_list");
+  var headings = document.querySelectorAll("h3, h4");
+  if (headings.length === 0) {
+    document.querySelector("#toc").style.display = "none";
+  }
+
+  // Loop through all heading
+  for (var i = 0; i < headings.length; i++) {
+    var heading = headings[i];
+    var headingText = heading.textContent;
+    var headingLevel = heading.tagName.slice(-1);
+    var headingId = headingText.replace(/\s+/g, "-").toLowerCase();
+    heading.setAttribute("id", headingId);
+    var listItem = document.createElement("li");
+    listItem.innerHTML = `<a class="heading_level_${headingLevel}" href="#${headingId}">${headingText}</a>`;
+    toc.appendChild(listItem);
+  }
+</script>
+
+<style is:global>
+  #toc {
+    @apply p-1 lg:p-2 my-3 mt-4 border-y border-color dark:border-color-light rounded-none ;
+  }
+  #toc li {
+    list-style-type: none;
+  }
+  #toc li a.heading_level_3 {
+    font-size: 1.1rem;
+    font-weight: 500;
+    text-decoration: none;
+  }
+  #toc li a.heading_level_4 {
+    font-size: 1rem;
+    font-weight: 400;
+    text-decoration: none;
+    padding-left: 5px;
+  }
+  .is-affixed #toc {
+    @apply lg:block hidden;
+  }
+</style>

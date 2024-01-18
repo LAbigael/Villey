@@ -1,44 +1,20 @@
 ---
 export const prerender = false;
+import { Debug } from "astro:components";
 
 import Layout from "../../layouts/Layout.astro";
+import PageLayout from "../../layouts/PageLayout.astro";
 import Article from "../../components/Article.astro";
 
 import { getDirectusClient } from "../../utils/get-directus-client";
 import { readItems, readItem } from "@directus/sdk";
+import { getArticleBySlug } from "../../utils/requests";
 
 const { slug } = Astro.params;
 
 const directus = await getDirectusClient();
-const articles = await directus.request(
-  readItems("Articles", {
-    fields: [
-      "id",
-      "position",
-      "type",
-      "slug",
-      "title",
-      "subtitle",
-      "authors.author_id.*",
-      "article_contents.content_bis",
-      "section_id.volume_id", // Quentin
-    ],
-    sort: ["-id"],
-    filter: {
-      _and: [
-        {
-          site_id: {
-            _eq: "1",
-          },
-          slug: {
-            _eq: slug,
-          },
-        },
-      ],
-    },
-  }),
-);
-let article = articles[0];
+
+let article = await getArticleBySlug(slug);
 
 let sections = [];
 let volume = null;
@@ -64,9 +40,11 @@ article = {
   sections,
   volume,
 };
-import { Debug } from "astro:components";
 ---
 
 <Layout title="Droit & Philosophie.">
-  <Article article={article} />
+  <PageLayout title={article.title} className="max-w-screen-xl">
+    <Article article={article} />
+
+  </PageLayout>
 </Layout>

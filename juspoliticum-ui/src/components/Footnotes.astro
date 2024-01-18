@@ -1,0 +1,52 @@
+---
+const { mobile } = Astro.props;
+---
+
+<div class="footnote-list"></div>
+
+<script>
+  // get all footnotes in the document and add them to the footnote list, hide the footnotes
+  // When clicking on a footnote link, show the footnote
+
+  const footnotes = document.querySelectorAll(".footnote-link");
+  const footnoteList = document.querySelector(".footnote-list");
+
+  footnotes.forEach(function (footnote) {
+    const footnoteId = footnote.getAttribute("data-footnote-id");
+    const footnoteContent = footnote.getAttribute("data-footnote-content");
+
+    const footnoteListItem = document.createElement("div");
+    // hide
+    footnoteListItem.classList.add("footnote");
+    footnoteListItem.setAttribute("id", footnoteId.replace("#", ""));
+    footnoteListItem.innerHTML = footnoteContent;
+
+    footnoteList.appendChild(footnoteListItem);
+
+    footnote.addEventListener("click", function (e) {
+      // is sidebar-2 is hidden, show It
+      if (footnoteList.classList.contains("hidden")) {
+        footnoteList.classList.remove("hidden");
+      }
+      e.preventDefault();
+      const previouslySelectedFootnote =
+        document.querySelector(".footnote.show");
+      if (previouslySelectedFootnote)
+        previouslySelectedFootnote.classList.remove("show");
+      const footnoteId = this.getAttribute("data-footnote-id");
+      const footnote = document.querySelector(footnoteId);
+      footnote.classList.toggle("show");
+    });
+  });
+</script>
+<script type="text/Javascript" src="/js/footnotes-swipe.js"></script>
+
+<style is:global>
+  .footnote {
+    @apply p-2;
+    display: none;
+  }
+  .footnote.show {
+    display: block;
+  }
+</style>

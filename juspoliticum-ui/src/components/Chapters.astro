@@ -1,0 +1,39 @@
+---
+import Link from "./icons/Link.astro";
+const { article } = Astro.props;
+---
+
+<div class="lg:block hidden">
+  <h1 class="sidebar_title">
+    <a href={`/volumes/${article.volume.slug}`}>{article.volume.title}</a>
+  </h1>
+  {
+    article.sections.map((section) => (
+      <div>
+        <h2>{section.title}</h2>
+        <ul>
+          {section.articles.map((article) => (
+            <li>
+              <a href={`/articles/${article.slug}`}>{article.title}</a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))
+  }
+</div>
+
+<style>
+  h2 {
+    @apply text-2xl mt-4 text-secondary-alt;
+  }
+  ul {
+    @apply list-disc my-2;
+  }
+  li {
+    @apply text-lg mb-2 ml-4;
+  }
+  li a:hover {
+    @apply text-accent-dark
+  }
+</style>
