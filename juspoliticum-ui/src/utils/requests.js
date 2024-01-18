@@ -60,6 +60,31 @@ export const getAuthors = async () => {
     }),
   );
 };
+export const getAuthorsWithArticles = async () => {
+  return directus.request(
+    readItems("Authors", {
+      fields: [
+        "id",
+        "slug",
+        "fullname",
+        "articles.article_id.title",
+        "articles.article_id.slug",
+        "articles.article_id.section_id.volume_id.title",
+        "articles.article_id.section_id.volume_id.slug",
+        "articles.article_id.authors.author_id.fullname",
+        "articles.article_id.authors.author_id.slug",
+        "articles.article_id.abstracts.*",
+      ],
+      limit: 1000,
+      sort: ["-id"],
+      filter: {
+        site_id: {
+          _eq: "2",
+        },
+      },
+    }),
+  );
+};
 
 export const getThemes = async () => {
   return directus.request(
@@ -67,6 +92,33 @@ export const getThemes = async () => {
       fields: ["id", "name", "slug"],
       sort: ["name"],
       limit: 1000,
+      filter: {
+        site_id: {
+          _eq: "2",
+        },
+      },
+    }),
+  );
+};
+
+export const getThemesWithArticles = async () => {
+  return directus.request(
+    readItems("Themes", {
+      fields: [
+
+        "id",
+        "slug",
+        "name",
+        "articles.article_id.title",
+        "articles.article_id.slug",
+        "articles.article_id.section_id.volume_id.title",
+        "articles.article_id.section_id.volume_id.slug",
+        "articles.article_id.authors.author_id.fullname",
+        "articles.article_id.authors.author_id.slug",
+        "articles.article_id.abstracts.*",
+      ],
+      limit: 1000,
+      sort: ["-id"],
       filter: {
         site_id: {
           _eq: "2",

@@ -35887,6 +35887,17 @@ var e0 = ({ filter }) => {
       return item;
     });
   });
+  filter("Themes.items.read", (items) => {
+    return items.map((item) => {
+      if (item.articles) {
+        item.articles = item.articles.map(( article ) => {
+          if (!article.article_id) return article;
+          return { article_id: transformAbstractsToHTML(article.article_id) };
+        });
+      }
+      return item;
+    });
+  });
 
   transformItemsFieldFromToHTML(filter, "Authors.items.read", "bio");
   transformItemsFieldFromToHTML(

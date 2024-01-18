@@ -3,24 +3,24 @@ import Layout from "../../layouts/Layout.astro";
 import PageLayout from "../../layouts/PageLayout.astro";
 import ArticleTitle from "../../components/ArticleTitle.astro";
 
-import { getAuthorsWithArticles } from "../../utils/requests";
+import { getThemesWithArticles } from "../../utils/requests";
 
 export async function getStaticPaths() {
-  const authors = await getAuthorsWithArticles();
-  return authors.map((author) => ({
-    params: { slug: author.slug },
-    props: { author },
+  const themes = await getThemesWithArticles();
+  return themes.map((theme) => ({
+    params: { slug: theme.slug },
+    props: { theme },
   }));
 }
 
-const { author } = Astro.props;
+const { theme } = Astro.props;
 ---
 
 <Layout title="Droit & Philosophie.">
-  <PageLayout title={`Les articles de l'auteur : ${author.fullname}`}>
+  <PageLayout title={`Les articles du thème : ${theme.name}`}>
     <ul>
       {
-        author.articles.map((article) => (
+        theme.articles.map((article) => (
           <li>
             <ArticleTitle article={article.article_id} />
           </li>
