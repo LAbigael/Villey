@@ -1,0 +1,21 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import PageLayout from "../../layouts/PageLayout.astro";
+import AlphabetList from "../../components/AlphabetList.astro";
+import { getThemes } from "../../utils/requests";
+
+let themes = await getThemes();
+
+themes = themes.map((theme) => {
+  return {
+  link: `/themes/${theme.slug}`,
+  content: theme.name,
+  };
+});
+---
+
+<Layout title="Thèmes">
+  <PageLayout title="Thèmes">
+    <AlphabetList items={themes} />
+  </PageLayout>
+</Layout>
