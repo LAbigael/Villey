@@ -1,0 +1,18 @@
+---
+const { className, volume } = Astro.props;
+---
+
+<div class="flex flex-wrap items-center">
+  <span class="num mr-2">{volume.number}</span>
+  <h2 class={`volume_title text-2xl ${className}`}>
+    <a href={`/volumes/${volume.slug}`}> {volume.title}</a>
+  </h2>
+  <span class="date">
+    ({
+      new Date(volume.published_at).toLocaleString("fr-FR", {
+        year: "numeric",
+        month: "long",
+      })
+    })
+  </span>
+</div>

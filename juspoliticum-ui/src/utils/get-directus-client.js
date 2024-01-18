@@ -11,3 +11,25 @@ export const getImagePath = (image) => {
   return `http://localhost:8055/assets/${image}`;
 };
 
+export const volumeFields = [
+  "slug",
+  "title",
+  "subtitle",
+  "number",
+  "published_at",
+  {
+    sections: [
+      "title",
+      "position",
+      {
+        articles: [
+          "title",
+          "slug",
+          { authors: ["author_id.fullname"] },
+          "subtitle",
+          { abstracts: ["language", "content_bis"] },
+        ],
+      },
+    ],
+  },
+];

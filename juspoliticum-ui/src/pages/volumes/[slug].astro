@@ -1,0 +1,49 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import PageLayout from "../../layouts/PageLayout.astro";
+import ArticleTitle from "../../components/ArticleTitle.astro";
+import VolumeTitle from "../../components/VolumeTitle.astro";
+import Volume from "../../components/Volume.astro";
+
+import { getVolumes, getVolume } from "../../utils/requests";
+import { readItems } from "@directus/sdk";
+
+export async function getStaticPaths() {
+  const volumes = await getVolumes();
+
+  return volumes.map((volume) => ({
+    params: { slug: volume.slug },
+    props: { volumes, volume },
+  }));
+}
+
+let { volume, volumes } = Astro.props;
+
+volumes = volumes.filter((v) => v.slug !== volume.slug);
+
+volume = await getVolume(volume.id);
+
+---
+
+<Layout title="Droit & Philosophie.">
+  <PageLayout title="none" className="max-w-screen-xl">
+    <div class="flex flex-row">
+      <div class="w-3/4">
+        <Volume volume={volume} />
+      </div>
+      <div class="sidebar">
+        <span class="sidebar_title"> Les autres numéros</span>
+        <ul class="sidebar_list">
+          {
+            volumes.map((volume) => (
+              <li class="sidebar_item">
+                <VolumeTitle volume={volume} className="text-base" />
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+    <script src="/js/dynamic-article-list.js" type:"text javascript"></script>
+  </PageLayout>
+</Layout>

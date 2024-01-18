@@ -1,0 +1,36 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import PageLayout from "../../layouts/PageLayout.astro";
+import Volume from "../../components/Volume.astro";
+import VolumeTitle from "../../components/VolumeTitle.astro";
+
+import { getVolumes, getVolume } from "../../utils/requests";
+
+const volumes = await getVolumes();
+
+let latestVolume = volumes.shift();
+
+latestVolume = await getVolume(latestVolume.id);
+---
+
+<Layout title="Revues">
+  <PageLayout title="Dernier numéro publié" className="max-w-screen-xl">
+    <div class="flex flex-row">
+      <div class="w-3/4">
+        <Volume volume={latestVolume} />
+      </div>
+      <div class="sidebar">
+        <span class="sidebar_title"> Les autres numéros</span>
+        <ul class="sidebar_list">
+          {
+            volumes.map((volume) => (
+              <li class="sidebar_item">
+                <VolumeTitle volume={volume} className="text-base" />
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </PageLayout>
+</Layout>

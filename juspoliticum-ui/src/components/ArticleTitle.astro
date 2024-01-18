@@ -2,7 +2,7 @@
 const { article } = Astro.props;
 ---
 
-<span class="mr-1">
+<span class="mr-1 authors">
   {article.authors.map((a) => a?.author_id?.fullname).join(", ")}{" "}
    :
 </span>
@@ -35,10 +35,10 @@ const { article } = Astro.props;
 
 
   .authors {
-    @apply mr-2;
+    @apply mr-2 font-semibold;
   }
 
   .article_title {
-    @apply text-lg font-semibold;
+    @apply text-lg ;
   }
 </style>

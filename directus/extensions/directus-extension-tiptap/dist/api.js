@@ -35863,7 +35863,6 @@ var e0 = ({ filter }) => {
   });
   filter("Volumes.items.read", (items) => {
     return items.map((item) => {
-      console.log(item);
       if (item.sections) {
         item.sections = item.sections.map((section) => {
           if (section.articles) {

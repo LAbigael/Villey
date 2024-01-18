@@ -1,5 +1,5 @@
 .chapter_title {
-  @apply text-2xl p-1 my-2 italic text-secondary-alt font-semibold;
+  @apply text-xl p-1 my-2 text-secondary-alt font-bold;
 }
 
 .line {
@@ -7,15 +7,19 @@
 }
 
 .page_title {
-  @apply text-3xl text-secondary-alt  my-4;
+  @apply text-3xl text-secondary-alt my-4;
 }
 
 .sidebar {
-  @apply hidden lg:block m-6 w-1/4 border-accent-light;
+  @apply hidden lg:block w-1/4 border-accent-light;
 }
 
 .sidebar_list {
-  @apply border list-disc p-4 list-inside;
+  @apply border list-none p-4;
+}
+
+.volume_title {
+  @apply text-accent-dark text-start;
 }
 
 .sidebar_title {
@@ -24,6 +28,10 @@
 
 .sidebar_title a {
   @apply text-inherit;
+}
+
+.sidebar_item {
+  @apply my-2;
 }
 
 .article_title {
@@ -35,11 +43,11 @@
 }
 
 .num {
-  @apply px-2 py-1 bg-secondary-light before:content-['N°'] text-accent-dark;
+  @apply w-12 py-1 bg-secondary-light before:content-['N°'] text-accent-dark text-center;
 }
 
 .date {
-  @apply text-accent-light;
+  @apply text-accent-light ml-1;
 }
 
 .btn {

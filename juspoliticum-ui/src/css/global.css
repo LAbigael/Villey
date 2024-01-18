@@ -41,7 +41,7 @@
 }
 
 body {
-  @apply text-lg bg-background-light dark:bg-background-dark text-color dark:text-color-light;
+  @apply text-base bg-background-light dark:bg-background-dark text-color dark:text-color-light;
 }
 
 .accent1 {

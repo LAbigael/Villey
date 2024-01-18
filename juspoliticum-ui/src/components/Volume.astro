@@ -1,39 +1,30 @@
 ---
 import ArticleTitle from "./ArticleTitle.astro";
+import VolumeTitle from "./VolumeTitle.astro";
 const { volume } = Astro.props;
 ---
 
-<article class="flex flex-col items-center">
-  <div class="flex flex-row items-center">
-    <span class="num mr-2">{volume.number}</span><h1 class="page_title">
-      {volume.title}
-    </h1>
-    <span class="date">
-      ({
-        new Date(volume.published_at).toLocaleString("fr-FR", {
-          year: "numeric",
-          month: "long",
-        })
-      })
-    </span>
-  </div>
+<article class="flex flex-col ">
+  <VolumeTitle volume={volume} />
   <div class="main-content relative flex flex-row">
     <div class="volume_content">
       {
-        volume.sections?.map((section, i) => (
-          <>
-            <h2 class="chapter_title" id={section.id}>
-              {section.title}
-            </h2>
-            <ul>
-              {section?.articles.map((article) => (
-                <li class="">
-                  <ArticleTitle article={article} />
-                </li>
-              ))}
-            </ul>
-          </>
-        ))
+        volume.sections
+          ?.sort((a, b) => a.position - b.position)
+          .map((section) => (
+            <>
+              <h2 class="chapter_title" id={section.id}>
+                {section.title}
+              </h2>
+              <ul>
+                {section?.articles.map((article) => (
+                  <li class="">
+                    <ArticleTitle article={article} />
+                  </li>
+                ))}
+              </ul>
+            </>
+          ))
       }
     </div>
   </div>
@@ -42,7 +33,7 @@ const { volume } = Astro.props;
 
 <style>
   .volume_content {
-    @apply mx-4 text-lg text-left w-full max-w-3xl mb-20  leading-normal mt-4;
+    @apply  text-lg text-left w-full max-w-3xl mb-20  leading-normal mt-4;
   }
   h4 {
     font-size: 1.25rem;
