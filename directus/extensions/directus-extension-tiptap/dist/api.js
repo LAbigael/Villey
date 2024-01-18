@@ -35880,8 +35880,9 @@ var e0 = ({ filter }) => {
   filter("Authors.items.read", (items) => {
     return items.map((item) => {
       if (item.articles) {
-        item.articles = item.articles.map(({ article_id }) => {
-          return { article_id: transformAbstractsToHTML(article_id) };
+        item.articles = item.articles.map(( article ) => {
+          if (!article.article_id) return article;
+          return { article_id: transformAbstractsToHTML(article.article_id) };
         });
       }
       return item;
