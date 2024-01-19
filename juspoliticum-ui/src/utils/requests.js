@@ -140,6 +140,8 @@ export const getArticleBySlug = async (slug) => {
         "authors.author_id.*",
         "article_contents.content_bis",
         "section_id.volume_id", // Quentin
+        "abstracts.*",
+        "themes.theme_id.*",
       ],
       sort: ["-id"],
       filter: {
