@@ -4,10 +4,12 @@ import search from "../images/search.svg";
 
 <button
   id="search-button"
-  class="input font-light rounded-sm  w-64 h-10 "
+  class="input font-light rounded-sm w-64 h-10"
   onclick="my_modal_2.showModal()"
 >
-  <div class="flex flex-row relative items-center w-full opacity-60 hover:opacity-100">
+  <div
+    class="flex flex-row relative items-center w-full opacity-60 hover:opacity-100"
+  >
     <svg viewBox="0 0 24 24" x="0px" y="0px" class="w-6 fill-current"
       ><path
         class="cls-1"
@@ -84,7 +86,10 @@ import search from "../images/search.svg";
     @apply w-full flex justify-end text-xs text-gray-500 items-center;
   }
   .section-title {
-    @apply text-sm opacity-50 ml-2;
+    @apply text-xs opacity-70;
+  }
+  .section-title .num {
+    @apply bg-transparent mr-2 group-hover:text-background-light group-hover:dark:text-background-dark;
   }
 </style>
 
@@ -97,13 +102,15 @@ import search from "../images/search.svg";
   const FUSE_OPTIONS = {
     includeScore: true,
     shouldSort: true,
-    threshold: 0.5,
+    threshold: 0.3,
     keys: [
       {
         name: "title",
         weight: 1,
       },
-      { name: "section", weight: 0.5 },
+      { name: "section", weight: 0.6 },
+      { name: "volume", weight: 0.5 },
+      { name: "themes", weight: 0.7 },
     ],
   };
 
@@ -120,13 +127,13 @@ import search from "../images/search.svg";
   const BACKSPACE_ICON = `<svg class="DocSearch-Hit-Select-Icon" width="20" height="20" viewBox="0 0 20 20"><g stroke="currentColor" fill="none" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3v4c0 2-2 4-4 4H2"></path><path d="M8 17l-6-6 6-6"></path></g></svg>`;
 
   const typeIcon = (type) => {
-    return `<span class="type-icon">${
-      type === "volume" ? "V" : type === "article" ? "A" : ""
-    }</span>`;
+    return `<span class="type-icon">${type
+      .substring(0, 1)
+      .toUpperCase()}</span>`;
   };
 
-  const sectionTitle = (section = "") => {
-    return `<span class="section-title">${section}</span>`;
+  const volumeTitle = (volume = "", volumeNb) => {
+  return `<span class="section-title"><span class="num">${volumeNb}</span>${volume}</span>`;
   };
 
   // selectors
@@ -135,16 +142,20 @@ import search from "../images/search.svg";
   const info = document.querySelector("#info");
 
   // functions
-
   function generateSearchList(results) {
     return results
       .map((r) => {
-        const { title, slug, type, section } = r.item;
-        return `<li class="group">
-          <a href="/${type}s/${slug}/"><span>${typeIcon(
-            type,
-          )}${title}${sectionTitle(section)}</span>${BACKSPACE_ICON}</a>
-							</li>`;
+      const { title,  slug, type, volume, volumeNb } = r.item;
+        return `
+          <li class="group">
+            <a href="/${type}s/${slug}/">
+              <div class="flex flex-col ">
+                 <div class="">${title}</div>
+                 ${volumeTitle(volume, volumeNb)}
+              </div>
+              ${BACKSPACE_ICON}
+            </a>
+					</li>`;
       })
       .join("");
   }
@@ -175,11 +186,10 @@ import search from "../images/search.svg";
     }
     if (!FUSE_INSTANCE) return;
     const searchResult = FUSE_INSTANCE.search(search);
+    console.log(searchResult);
 
     if (searchResult.length > 0) {
       resultsList.innerHTML = generateSearchList(searchResult);
-      info.innerHTML =
-        typeIcon("article") + "Article, " + typeIcon("volume") + "Volume";
     } else {
       if (search.length > 0) {
         resultsList.innerHTML = generateNoResults();
@@ -191,8 +201,25 @@ import search from "../images/search.svg";
       }
     }
   }
+  const debounce = (fn, delay) => {
+    let timeoutID;
+    return function (...args) {
+      if (timeoutID) {
+        clearTimeout(timeoutID);
+      }
+      timeoutID = setTimeout(() => {
+        fn(...args);
+      }, delay);
+    };
+  };
 
-  search.addEventListener("input", (e) => {
-    fetchSearchResults(e.target.value);
+  search.addEventListener(
+    "input",
+    debounce((e) => {
+      fetchSearchResults(e.target.value);
+    }, 300),
+  );
+  document.addEventListener("DOMContentLoaded", () => {
+    fetchSearchResults("");
   });
 </script>
