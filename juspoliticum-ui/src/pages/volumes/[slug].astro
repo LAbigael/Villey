@@ -22,10 +22,9 @@ let { volume, volumes } = Astro.props;
 volumes = volumes.filter((v) => v.slug !== volume.slug);
 
 volume = await getVolume(volume.id);
-
 ---
 
-<Layout title="Droit & Philosophie.">
+<Layout title="Juspoliticum">
   <PageLayout title="none" className="max-w-screen-xl">
     <div class="flex flex-row">
       <div class="w-3/4">
