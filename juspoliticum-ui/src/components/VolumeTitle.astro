@@ -4,8 +4,8 @@ const { className, volume } = Astro.props;
 
 <div class="flex flex-wrap items-center">
   <span class="num mr-2">{volume.number}</span>
-  <h2 class={`volume_title text-2xl ${className}`}>
-    <a href={`/volumes/${volume.slug}`}> {volume.title}</a>
+  <h2 class={`volume_title text-xl ${className}`}>
+    <a href={`/volumes/${volume.slug}`} class="color-inherit"> {volume.title}</a>
   </h2>
   <span class="date">
     ({

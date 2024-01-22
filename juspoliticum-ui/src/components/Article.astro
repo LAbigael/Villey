@@ -5,21 +5,22 @@ import TableOfContent from "./TableOfContent.astro";
 import Chapters from "./Chapters.astro";
 import Download from "./Download.astro";
 import Abstract from "./Abstract.astro";
+import VolumeTitle from "./VolumeTitle.astro";
 
 const { article } = Astro.props;
 ---
 
-<article class="article ">
+<article class="article">
   <div class="main-content relative flex lg:flex-row flex-col-reverse">
     <!-- <div id="sidebar" class="w-1/4 sidebar-1 flex flex-col"> -->
     <!-- <div class="sidebar__inner sidebar__inner-1">-->
     <!-- <Chapters article={article} />-->
     <!--</div> -->
     <!--</div> -->
-    <div
-      class="lg:w-3/4 mx-auto leading-normal mt-2 flex flex-col"
-    >
+    <div class="lg:w-3/4 mx-auto leading-normal mt-2 flex flex-col">
       <div class="article_topWrapper">
+        <div class="mb-4"><VolumeTitle volume={article.volume} /></div>
+        <h1 class="my-2 page_title !text-3xl">{article.title}</h1>
         <div class="my-2">
           {
             article.authors.map(({ author_id: author }) => (

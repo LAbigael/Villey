@@ -15,7 +15,7 @@ export default {
         "accent-light": "#af9d8f",
         "accent-dark": "#413125",
         secondary: "#d5b985",
-        "secondary-light": "#dcd8d4",
+        "secondary-light": "#d8cdc0",
         "secondary-dark": "#a58e6a",
         "secondary-alt": "#07485b",
         "background-alt": "#ebeae9",
