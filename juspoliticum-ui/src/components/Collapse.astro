@@ -1,0 +1,67 @@
+---
+const { summary } = Astro.props;
+---
+
+<details>
+  <summary>
+ <span role="term"> {summary}</span></summary>
+</details>
+<div role="definition" id="pure-css" class="content">
+  <slot />
+</div>
+
+<style>
+  details {
+    max-width: 500px;
+    overflow: hidden; /* Keep this line to prevent an odd blue outline around the element in Safari. */
+  }
+
+  summary {
+    @apply text-xl cursor-pointer font-semibold text-center text-accent-dark block;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  span {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 4rem;
+  }
+
+  span:hover {
+    cursor: pointer;
+  }
+
+  span::before {
+    content: "►";
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    margin-right: 0.5rem;
+    transition: rotate 100ms 200ms ease-out;
+  }
+
+  div.content {
+    box-sizing: border-box;
+    max-width: 500px;
+    max-height: 0;
+    overflow: hidden;
+    padding: 0 10px;
+    transition:
+      max-height 400ms ease-out,
+  }
+
+  details[open] + div.content {
+    max-height: 800px; /* Set a max-height value enough to show all the content */
+    transition:
+      max-height 300ms ease-out,
+  }
+
+  details[open] span::before {
+    rotate: 90deg;
+    transition: rotate 200ms ease-out;
+  }
+</style>

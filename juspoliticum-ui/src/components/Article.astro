@@ -20,7 +20,7 @@ const { article } = Astro.props;
     <div class="lg:w-3/4 mx-auto leading-normal mt-2 flex flex-col">
       <div class="article_topWrapper">
         <div class="mb-4"><VolumeTitle volume={article.volume} /></div>
-        <h1 class="my-2 page_title !text-3xl">{article.title}</h1>
+        <h1 class="my-2 page_title !text-2xl font-semibold">{article.title}</h1>
         <div class="my-2">
           {
             article.authors.map(({ author_id: author }) => (
@@ -44,7 +44,7 @@ const { article } = Astro.props;
       <Abstract abstracts={article.abstracts} />
       <div class="article_content" set:html={article.content} />
     </div>
-    <div id="sidebar-2" class="w-full lg:w-1/4 lg:mx-3 sidebar-2 flex flex-col">
+    <div id="sidebar-2" class="w-full lg:w-1/4 lg:mx-4 sidebar-2 flex flex-col">
       <div class="sidebar__inner sidebar__inner-2">
         <FontSize />
         <Download />
