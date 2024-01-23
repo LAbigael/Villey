@@ -1,6 +1,7 @@
 ---
 import LogoNavBar from "./icons/LogoNavBar.astro";
 import Logo from "../images/juspoliticum.png";
+import Alerte from "../images/alerte.png";
 import Search from "./Search.astro";
 import LanguageToggle from "./LanguageToggle.astro";
 ---
@@ -63,7 +64,15 @@ import LanguageToggle from "./LanguageToggle.astro";
       <ul class="menu menu-horizontal px-1">
         <li><a href="/about">Présentation de la revue</a></li>
         <li><a href="/volumes">Numéros</a></li>
-        <li><a href="/actualites">Actualités</a></li>
+        <li>
+          <a href="/actualites">
+            <img
+              src={Alerte.src}
+              alt="Alert"
+              class="h-auto w-30"
+            />
+             Actualités</a>
+        </li>
         <li><a href="/auteurs">Auteurs</a></li>
         <li><a href="/themes">Themes</a></li>
         <li><a href="/proposer-un-article">Proposer un article</a></li>
