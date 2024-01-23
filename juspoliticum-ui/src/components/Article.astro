@@ -19,7 +19,9 @@ const { article } = Astro.props;
     <!--</div> -->
     <div class="lg:w-3/4 mx-auto leading-normal mt-2 flex flex-col">
       <div class="article_topWrapper">
-        <div class="mb-4 border-b pb-4"><VolumeTitle volume={article.volume} /></div>
+        <div class="mb-4 border-b pb-4">
+          <VolumeTitle volume={article.volume} />
+        </div>
         <h1 class="my-2 page_title !text-2xl font-semibold">{article.title}</h1>
         <div class="author_list">
           {
@@ -30,16 +32,18 @@ const { article } = Astro.props;
             ))
           }
         </div>
-        <div class="text-lg my-2 flex flex-wrap">
-          <span class="mr-2">Thèmes : {" "}</span>
-          {
-            article.themes.map(({ theme_id: theme }) => (
-              <div class="article_theme">
-                <a href={`themes/${theme.slug}`}>{theme.name}</a>
-              </div>
-            ))
-          }
-        </div>
+        {
+          article.themes?.length > 0 && (
+            <div class="text-lg my-2 flex flex-wrap">
+              <span class="mr-2">Thèmes : </span>
+              {article.themes.map(({ theme_id: theme }) => (
+                <div class="article_theme">
+                  <a href={`themes/${theme.slug}`}>{theme.name}</a>
+                </div>
+              ))}
+            </div>
+          )
+        }
       </div>
       <Abstract abstracts={article.abstracts} />
       <div class="article_content" set:html={article.content} />
@@ -140,7 +144,7 @@ const { article } = Astro.props;
     }
 
     .author_list {
-      @apply flex flex-row
+      @apply flex flex-row;
     }
     .article_theme a {
       @apply text-secondary-alt text-lg;
