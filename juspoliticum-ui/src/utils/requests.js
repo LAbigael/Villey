@@ -34,6 +34,7 @@ const volumeFields = [
           { authors: ["author_id.fullname"] },
           "subtitle",
           { abstracts: ["language", "content_bis"] },
+          "published_at",
         ],
       },
     ],
@@ -151,12 +152,34 @@ export const getArticleBySlug = async (slug) => {
               _eq: "2",
             },
             slug: {
-              _eq: slug
+              _eq: slug,
             },
           },
         ],
       },
     }),
   );
-  return articles[0]
-}
+  return articles[0];
+};
+export const getNews = async () => {
+  const volumes = await directus.request(
+    readItems("Volumes", {
+      fields: volumeFields,
+      sort: ["-id"],
+      filter: {
+        _and: [
+          {
+            site_id: {
+              _eq: "2",
+            },
+            type: {
+              _eq: "NEWS",
+            },
+          },
+
+        ],
+      },
+    }),
+  );
+  return volumes;
+};

@@ -1,5 +1,11 @@
 ---
 const { article } = Astro.props;
+
+// Having a link in the abstract made the content set outside the <a/> tag
+const removeLinkFromHTML = (string) => {
+  const regex = /<a.*?>(.*?)<\/a>/g;
+  return string.replace(regex, "$1");
+};
 ---
 
 <span class="mr-1 authors">
@@ -9,15 +15,22 @@ const { article } = Astro.props;
 <span class="article_title jp_link cursor-pointer">
   {article.title}
 </span>
+{article.published_at && (
+  <span class="date">(mise en ligne le { new Date(article.published_at).toLocaleString("fr-FR", { year: "numeric", month: "long", day: "numeric" }) })</span>
+)}
+
 <div>
   <a href={`/articles/${article.slug}`} class="jp_summary">
-    <>
-      {
-        article.abstracts
-          .filter((a) => a.language == "fr")
-          .map((a) => <span class={`${a.language}`} set:html={a.content} />)
-      }
-    </>
+    {
+      article.abstracts
+        .filter((a) => a.language == "fr")
+        .map((a) => (
+          <div
+            class={`${a.language}`}
+            set:html={removeLinkFromHTML(a.content)}
+          />
+        ))
+    }
   </a>
 </div>
 <style>
@@ -33,12 +46,11 @@ const { article } = Astro.props;
     transition: max-height 1s ease-in-out;
   }
 
-
   .authors {
     @apply mr-2 font-semibold;
   }
 
   .article_title {
-    @apply text-lg ;
+    @apply text-lg;
   }
 </style>

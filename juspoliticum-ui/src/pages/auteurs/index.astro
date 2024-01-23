@@ -8,7 +8,7 @@ let authors = await getAuthors();
 
 authors = authors.map((author) => {
   return {
-  link: `/authors/${author.slug}`,
+  link: `/auteurs/${author.slug}`,
   content: `${author.lastname} ${author.firstname}`,
   };
 });
