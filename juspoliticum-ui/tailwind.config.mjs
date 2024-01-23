@@ -18,6 +18,7 @@ export default {
         "secondary-light": "#d8cdc0",
         "secondary-dark": "#a58e6a",
         "secondary-alt": "#07485b",
+        "secondary-alt-light": "#5dbce1",
         "background-alt": "#ebeae9",
         "background-alt-dark": "#524134",
         "background-light": "#f5f4f3",

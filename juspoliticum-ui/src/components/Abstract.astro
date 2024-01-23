@@ -44,23 +44,23 @@ console.log(abstracts);
   }
 </script>
 
-<style>
+<style is:global>
   .tabs input[type="radio"] {
     display: none; /* Hide radio buttons */
   }
 
   .abstract {
-    @apply bg-white text-lg;
+    @apply bg-white dark:bg-black text-lg;
   }
   .tabs input[type="radio"]:checked + label {
-    @apply bg-white;
+    @apply bg-white dark:bg-black;
   }
   .tabs label {
     @apply w-24 h-12 text-center flex items-center justify-center cursor-pointer;
     cursor: pointer;
   }
   .abstract_container {
-    @apply p-6 bg-white;
+    @apply p-6 bg-white dark:bg-black;
   }
 
   .abstract {

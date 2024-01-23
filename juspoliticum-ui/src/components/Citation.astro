@@ -1,0 +1,29 @@
+---
+const { article } = Astro.props;
+---
+
+<div class="citation">
+  <p class="text-accent-dark">Pour citer cet article :</p>
+  <p class="">
+    {
+      article.authors.map(({ author_id: author }) => (
+        <a class="mr-2" href={`auteurs/${author.slug}`}>{author.fullname}</a>
+      ))
+    }
+    <span
+      >« {article.title} »,
+      <em>Jus Politicum, n°{article.volume.number}</em>
+      <small>
+        [<a href={`/articles/${article.slug}`}
+          >https://juspoliticum.com/articles/{article.slug}</a
+        >]
+      </small>
+    </span>
+  </p>
+</div>
+
+<style>
+  .citation {
+    @apply bg-accent-light p-6;
+  }
+</style>

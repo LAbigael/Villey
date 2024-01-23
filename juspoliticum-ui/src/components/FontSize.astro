@@ -25,7 +25,7 @@
 
 <style is:global>
   .font_size_buttons {
-    @apply flex items-center my-4  border-b pb-2;
+    @apply flex items-center h-14  border-b mb-4;
   }
   .is-affixed .font_size_buttons {
     @apply lg:flex hidden ;
@@ -41,13 +41,6 @@
   }
 
   .font_size_button {
-    height: 2rem;
-    cursor: pointer;
-    color: #444;
-    padding: 1px 5px;
-    background: #e9e9e9;
-    border: 1px solid #ddd;
-    display: block;
-    float: left;
+    @apply flex items-center justify-center w-8 h-8 mr-2 rounded-full border border-gray-300 cursor-pointer;
   }
 </style>

@@ -6,6 +6,7 @@ import Chapters from "./Chapters.astro";
 import Download from "./Download.astro";
 import Abstract from "./Abstract.astro";
 import VolumeTitle from "./VolumeTitle.astro";
+import Citation from "./Citation.astro";
 
 const { article } = Astro.props;
 ---
@@ -17,9 +18,9 @@ const { article } = Astro.props;
     <!-- <Chapters article={article} />-->
     <!--</div> -->
     <!--</div> -->
-    <div class="lg:w-3/4 mx-auto leading-normal mt-2 flex flex-col">
+    <div class="lg:w-3/4 mx-auto leading-normal flex flex-col">
       <div class="article_topWrapper">
-        <div class="mb-4 border-b pb-4">
+        <div class="mb-4 border-b lg:h-14 mt-2 lg:mt-0">
           <VolumeTitle volume={article.volume} />
         </div>
         <h1 class="my-2 page_title !text-2xl font-semibold">{article.title}</h1>
@@ -47,6 +48,7 @@ const { article } = Astro.props;
       </div>
       <Abstract abstracts={article.abstracts} />
       <div class="article_content" set:html={article.content} />
+      <Citation article={article} />
     </div>
     <div id="sidebar-2" class="w-full lg:w-1/4 lg:mx-4 sidebar-2 flex flex-col">
       <div class="sidebar__inner sidebar__inner-2">
@@ -147,10 +149,10 @@ const { article } = Astro.props;
       @apply flex flex-row;
     }
     .article_theme a {
-      @apply text-secondary-alt text-lg;
+      @apply dark:text-secondary-alt-light text-secondary-alt text-lg;
     }
     .article_theme::after {
-      @apply text-secondary-alt text-base;
+      @apply dark:text-secondary-alt-light text-secondary-alt text-base;
       content: "•";
       margin: 0 0.5rem;
     }

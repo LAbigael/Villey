@@ -1,5 +1,5 @@
 ---
-import search from "../images/search.svg";
+import SearchIcon from "../images/search.astro";
 ---
 
 <button
@@ -7,15 +7,8 @@ import search from "../images/search.svg";
   class="input font-light rounded-sm w-64 h-10"
   onclick="my_modal_2.showModal()"
 >
-  <div
-    class="flex flex-row relative items-center w-full opacity-60 hover:opacity-100"
-  >
-    <svg viewBox="0 0 24 24" x="0px" y="0px" class="w-6 fill-current"
-      ><path
-        class="cls-1"
-        d="m21.53,20.47l-4.694-4.694c1.194-1.431,1.914-3.27,1.914-5.275,0-4.549-3.701-8.25-8.25-8.25S2.25,5.951,2.25,10.5s3.701,8.25,8.25,8.25c2.005,0,3.844-.72,5.275-1.914l4.694,4.694c.146.146.338.22.53.22s.384-.073.53-.22c.293-.293.293-.768,0-1.061ZM3.75,10.5c0-3.722,3.028-6.75,6.75-6.75s6.75,3.028,6.75,6.75c0,1.858-.755,3.544-1.975,4.766-.002.002-.004.002-.006.004s-.002.004-.004.006c-1.222,1.219-2.907,1.975-4.766,1.975-3.722,0-6.75-3.028-6.75-6.75Z"
-      ></path></svg
-    >
+  <div class="flex flex-row relative items-center w-full opacity-60">
+    <SearchIcon />
     <span
       class="bg-inherit w-6/8 h-full rounded-sm font-light text-sm flex flex-row items-center justify-start pl-2"
       >Rechercher...</span
@@ -34,11 +27,11 @@ import search from "../images/search.svg";
 <dialog id="my_modal_2" class="modal">
   <div class="modal-box">
     <form
-      class="input font-light rounded-sm bg-background-light items-center w-full h-10 flex flex-row relative"
+      class="input font-light rounded-sm bg-opacity-0 items-center w-full h-10 flex flex-row relative text-color dark:text-color-light opacity-60 focus-within:opacity-100"
       autocomplete="off"
       onsubmit="event.preventDefault();"
     >
-      <img src={search.src} class="opacity-50 mx-1" width="25" height="auto" />
+      <SearchIcon />
       <input
         type="text"
         id="search"
@@ -57,14 +50,14 @@ import search from "../images/search.svg";
 </dialog>
 
 <style is:global>
-  .modal-backdrop button {
-    @apply border-none hover:bg-opacity-0 focus:outline-none focus:ring-0;
+  form.modal-backdrop button {
+    @apply border-none hover:bg-opacity-0 hover:bg-black focus:outline-none focus:ring-0;
   }
   #search-button {
     @apply border border-opacity-10 hover:border-color  hover:dark:border-color-light  text-color bg-background-light dark:bg-background-dark dark:text-color-light focus:outline-none focus:ring-0 px-2;
   }
-  .modal-box {
-    @apply !bg-background-light dark:bg-background-dark rounded-sm p-4 w-1/2 max-w-none flex flex-col items-center;
+  dialog .modal-box {
+    @apply bg-background-light dark:bg-background-dark rounded-sm p-4 w-11/12  lg:w-1/2 max-w-none flex flex-col items-center;
   }
   #search-results {
     @apply h-96 overflow-y-scroll w-full my-4;
@@ -133,7 +126,7 @@ import search from "../images/search.svg";
   };
 
   const volumeTitle = (volume = "", volumeNb) => {
-  return `<span class="section-title"><span class="num">${volumeNb}</span>${volume}</span>`;
+    return `<span class="section-title mt-2"><span class="num ">${volumeNb}</span>${volume}</span>`;
   };
 
   // selectors
@@ -145,7 +138,7 @@ import search from "../images/search.svg";
   function generateSearchList(results) {
     return results
       .map((r) => {
-      const { title,  slug, type, volume, volumeNb } = r.item;
+        const { title, slug, type, volume, volumeNb } = r.item;
         return `
           <li class="group">
             <a href="/${type}s/${slug}/">

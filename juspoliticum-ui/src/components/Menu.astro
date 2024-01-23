@@ -79,8 +79,9 @@ import LanguageToggle from "./LanguageToggle.astro";
 
 <style>
   .menu {
-    @apply bg-accent-dark dark:bg-accent-dark text-accent-light dark:text-accent-light items-center;
+    @apply bg-accent-dark dark:bg-accent-dark text-color items-center;
   }
-  .menu li{
+  .menu li a {
+    @apply text-color-light;
   }
 </style>
