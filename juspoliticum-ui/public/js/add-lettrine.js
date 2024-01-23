@@ -24,8 +24,14 @@ for (
   }
 }
 
+//if begin with «, make the two first letters lettrine
 // extract first letter and wrap it in span and also apostrophe if there is one
 let firstLetter = firstParagraph.innerHTML[0];
+if (firstLetter === "«") {
+  firstLetter += firstParagraph.innerHTML[1] + firstParagraph.innerHTML[2];
+  firstParagraph.innerHTML = firstParagraph.innerHTML.slice(2);
+}
+
 // append apostrophe if there is one after first letter
 if (firstParagraph.innerHTML[1] === "'") {
   firstLetter += "'";
