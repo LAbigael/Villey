@@ -30,21 +30,17 @@ import LanguageToggle from "./LanguageToggle.astro";
         >
           <li><a href="/about">Présentation</a></li>
           <li>
-            <a href="/volumes/">Numéros en ligne</a>
+            <a href="/volumes/">Numéros</a>
           </li>
-          <li><a href="/recensions">Recensions</a></li>
-          <li><a href="/publications">Volumes papier</a></li>
-          <li><a href="/hors-series">Hors-série</a></li>
-          <li><a href="/memoires">Mémoires</a></li>
+          <li><a href="/actualites">Actualité</a></li>
+          <li><a href="/themes">Thèmes</a></li>
           <li>
             <a href="/auteurs">Auteurs</a>
-            <ul class="p-2">
-              <li>
-                <a href="/appels-contributions">Appels à contributions</a>
-              </li>
-              <li><a href="/auteurs">Liste des auteurs</a></li>
-            </ul>
           </li>
+          <li>
+            <a href="/proposer-un-article">Proposer un article</a>
+          </li>
+          <li><a href="/auteurs">Liste des auteurs</a></li>
         </ul>
       </div>
       <div class="flex">
@@ -65,13 +61,10 @@ import LanguageToggle from "./LanguageToggle.astro";
         <li><a href="/about">Présentation de la revue</a></li>
         <li><a href="/volumes">Numéros</a></li>
         <li>
-          <a href="/actualites">
-            <img
-              src={Alerte.src}
-              alt="Alert"
-              class="h-auto w-30"
-            />
-             Actualités</a>
+          <a class="flex flex-row items-center" href="/actualites">
+            <img src={Alerte.src} alt="Alert" class="h-auto w-30" />
+             Actualités</a
+          >
         </li>
         <li><a href="/auteurs">Auteurs</a></li>
         <li><a href="/themes">Themes</a></li>
@@ -86,6 +79,8 @@ import LanguageToggle from "./LanguageToggle.astro";
 
 <style>
   .menu {
-    @apply bg-accent-dark dark:bg-accent-dark text-accent-light dark:text-accent-light;
+    @apply bg-accent-dark dark:bg-accent-dark text-accent-light dark:text-accent-light items-center;
+  }
+  .menu li{
   }
 </style>
