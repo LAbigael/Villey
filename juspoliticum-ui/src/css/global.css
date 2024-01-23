@@ -41,8 +41,9 @@
 }
 
 body {
-  @apply text-base bg-background-light dark:bg-background-dark text-color dark:text-color-light;
+  @apply text-lg bg-background-light dark:bg-background-dark text-color dark:text-color-light;
 }
+
 
 .accent1 {
   font-size: 1.1rem;
@@ -61,7 +62,7 @@ a:hover {
 }
 
 a {
-  @apply text-accent dark:text-accent-light;
+  @apply text-color dark:text-color-light opacity-70;
   text-decoration: none;
 }
 

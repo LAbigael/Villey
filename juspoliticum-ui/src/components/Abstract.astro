@@ -5,7 +5,7 @@ console.log(abstracts);
 ---
 
 <div class="tabs mt-4">
-  <input type="radio" id="lang_fr" name="lang" value="fr"  checked />
+  <input type="radio" id="lang_fr" name="lang" value="fr" checked />
   <label for="lang_fr">Français</label>
 
   <input type="radio" id="lang_en" name="lang" value="en" />
@@ -28,13 +28,20 @@ console.log(abstracts);
 <script>
   // if content of abstract is empty, hide the radio button label
   const abstracts = document.querySelectorAll(".abstract");
+  let hasAbstract = false;
   abstracts.forEach((abstract) => {
     if (abstract.innerText === "") {
       const lang = abstract.id.split("_")[1];
       const label = document.querySelector(`label[for="lang_${lang}"]`);
       label.style.display = "none";
+    } else {
+      hasAbstract = true;
     }
   });
+  if (!hasAbstract) {
+    const tabs = document.querySelector(".tabs");
+    tabs.style.display = "none";
+  }
 </script>
 
 <style>
@@ -46,15 +53,15 @@ console.log(abstracts);
     @apply bg-white text-lg;
   }
   .tabs input[type="radio"]:checked + label {
-    @apply bg-white
+    @apply bg-white;
   }
   .tabs label {
-    @apply  w-24 h-12 text-center flex items-center justify-center cursor-pointer;
+    @apply w-24 h-12 text-center flex items-center justify-center cursor-pointer;
     cursor: pointer;
   }
   .abstract_container {
     @apply p-6 bg-white;
-      ; }
+  }
 
   .abstract {
     display: none;

@@ -45,7 +45,7 @@ const { items } = Astro.props;
     @apply flex flex-wrap justify-center mb-4;
   }
   #alphabet-buttons button {
-    @apply bg-background-alt hover:bg-background-alt-dark px-0 rounded-none w-8;
+    @apply bg-background-alt hover:bg-background-alt-dark px-0 rounded-none w-8 dark:bg-background-alt-dark dark:hover:bg-background-alt border border-background-alt-dark dark:border-background-alt ;
   }
   #alphabet-buttons button:disabled {
     @apply opacity-50;
@@ -54,10 +54,10 @@ const { items } = Astro.props;
     @apply flex flex-wrap justify-start list-disc p-0;
   }
   .filtered_item_list li {
-    @apply w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5;
+    @apply w-1/2 lg:w-1/3 my-2;
   }
-  .filtered_item {
-    @apply mb-4;
+  .filtered_item a {
+    @apply mb-4 text-color dark:text-color-light text-lg;
   }
 </style>
 
