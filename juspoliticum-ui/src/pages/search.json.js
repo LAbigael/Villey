@@ -67,6 +67,7 @@ async function getData() {
       section: article.section_id?.title,
       volume: article.section_id?.volume_id?.title,
       volumeNb: article.section_id?.volume_id?.number,
+      authors: article.authors?.map((author) => author.author_id.fullname),
       type: "article",
       themes: article.themes?.map((theme) => theme.theme_id.name),
     })),

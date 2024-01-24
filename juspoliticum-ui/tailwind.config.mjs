@@ -10,6 +10,9 @@ export default {
       transitionProperty: {
         "max-height": "maxHeight",
       },
+         height: {
+        '128': '32rem',
+         },
       colors: {
         accent: "#8a7b6f",
         "accent-light": "#af9d8f",

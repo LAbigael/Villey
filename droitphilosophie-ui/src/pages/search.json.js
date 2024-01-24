@@ -9,6 +9,7 @@ async function getData() {
     readItems("Volumes", {
       fields: ["slug", "title"],
       filter: {
+        limit: 10000,
         site_id: {
           _eq: "1",
         },
@@ -18,6 +19,7 @@ async function getData() {
   const articles = await directus.request(
     readItems("Articles", {
       fields: ["slug", "title", "section_id.title"],
+      limit: 10000,
       filter: {
         site_id: {
           _eq: "1",
@@ -25,7 +27,7 @@ async function getData() {
       },
     }),
   );
-  
+
   return [
     ...volumes.map((volume) => ({
       slug: volume.slug,
