@@ -118,9 +118,13 @@ const { article } = Astro.props;
       @apply italic pl-6 my-4;
     }
 
-    a.footnote-link::after {
+    a.footnote-link:not(.no-count)::after {
       counter-increment: footnote;
       content: "[" counter(footnote) "]";
+    }
+    a.footnote-link,
+    .no-count::after {
+      content: "[*]";
     }
 
     .article_content .footnote-link::after {
