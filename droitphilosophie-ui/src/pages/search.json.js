@@ -1,24 +1,21 @@
-import { getCollection } from "astro:content";
 import { getDirectusClient } from "../utils/get-directus-client";
 import { readItems } from "@directus/sdk";
 
 const directus = await getDirectusClient(true);
 
 async function getData() {
-  const volumes = await directus.request(
-    readItems("Volumes", {
-      fields: ["slug", "title"],
-      filter: {
-        limit: 10000,
-        site_id: {
-          _eq: "1",
-        },
-      },
-    }),
-  );
   const articles = await directus.request(
     readItems("Articles", {
-      fields: ["slug", "title", "section_id.title"],
+      fields: [
+        "id",
+        "slug",
+        "title",
+        "authors.author_id.fullname",
+        "section_id.volume_id.title",
+        "section_id.volume_id.number",
+        "section_id.title",
+        "themes.theme_id.name",
+      ],
       limit: 10000,
       filter: {
         site_id: {
@@ -29,16 +26,11 @@ async function getData() {
   );
 
   return [
-    ...volumes.map((volume) => ({
-      slug: volume.slug,
-      title: volume.title,
-      type: "volume",
-    })),
     ...articles.map((article) => ({
       slug: article.slug,
       title: article.title,
-      section: article.section_id?.title,
-      type: "article",
+      volumeTitle: article.section_id?.volume_id?.title,
+      authors: article.authors?.map((author) => author.author_id.fullname),
     })),
   ];
 }

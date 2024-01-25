@@ -7,6 +7,9 @@ export default {
       sans: ["Open Sans Variable", "ui-sans-serif"],
     },
     extend: {
+      height: {
+        128: "32rem",
+      },
       colors: {
         accent: "#2b4359",
         "accent-light": "#a5b5c5",

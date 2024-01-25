@@ -1,19 +1,14 @@
 ---
-import search from "../images/search.svg";
+import SearchIcon from "../images/search.astro"
 ---
 
 <button
   id="search-button"
-  class="input font-light rounded-sm  w-64 h-10 "
+  class="input font-light rounded-sm w-64 h-10"
   onclick="my_modal_2.showModal()"
 >
-  <div class="flex flex-row relative items-center w-full opacity-60 hover:opacity-100">
-    <svg viewBox="0 0 24 24" x="0px" y="0px" class="w-6 fill-current"
-      ><path
-        class="cls-1"
-        d="m21.53,20.47l-4.694-4.694c1.194-1.431,1.914-3.27,1.914-5.275,0-4.549-3.701-8.25-8.25-8.25S2.25,5.951,2.25,10.5s3.701,8.25,8.25,8.25c2.005,0,3.844-.72,5.275-1.914l4.694,4.694c.146.146.338.22.53.22s.384-.073.53-.22c.293-.293.293-.768,0-1.061ZM3.75,10.5c0-3.722,3.028-6.75,6.75-6.75s6.75,3.028,6.75,6.75c0,1.858-.755,3.544-1.975,4.766-.002.002-.004.002-.006.004s-.002.004-.004.006c-1.222,1.219-2.907,1.975-4.766,1.975-3.722,0-6.75-3.028-6.75-6.75Z"
-      ></path></svg
-    >
+  <div class="flex flex-row relative items-center w-full opacity-60">
+    <SearchIcon />
     <span
       class="bg-inherit w-6/8 h-full rounded-sm font-light text-sm flex flex-row items-center justify-start pl-2"
       >Rechercher...</span
@@ -32,11 +27,11 @@ import search from "../images/search.svg";
 <dialog id="my_modal_2" class="modal">
   <div class="modal-box">
     <form
-      class="input font-light rounded-sm bg-background-light items-center w-full h-10 flex flex-row relative"
+      class="input font-light rounded-sm bg-opacity-0 items-center w-full h-12 flex flex-row relative text-color dark:text-color-light opacity-60 focus-within:opacity-100"
       autocomplete="off"
       onsubmit="event.preventDefault();"
     >
-      <img src={search.src} class="opacity-50 mx-1" width="25" height="auto" />
+      <SearchIcon />
       <input
         type="text"
         id="search"
@@ -47,7 +42,24 @@ import search from "../images/search.svg";
 
     <div class="text-sm text-gray-500" id="searchReadout"></div>
     <ul id="search-results"></ul>
-    <div id="info"></div>
+    <div id="info">
+      <div id="no-result" class="flex flex-col items-center my-4 hidden">
+        <svg
+          width="40"
+          height="40"
+          viewBox="0 0 20 20"
+          fill="none"
+          fill-rule="evenodd"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path
+            d="M15.5 4.8c2 3 1.7 7-1 9.7h0l4.3 4.3-4.3-4.3a7.8 7.8 0 01-9.8 1m-2.2-2.2A7.8 7.8 0 0113.2 2.4M2 18L18 2"
+          ></path></svg
+        >
+        <span class="my-2">Aucun résultat trouvé</span>
+      </div>
+    </div>
   </div>
   <form method="dialog" class="modal-backdrop">
     <button>close</button>
@@ -55,23 +67,20 @@ import search from "../images/search.svg";
 </dialog>
 
 <style is:global>
-  .modal-backdrop button {
-    @apply border-none hover:bg-opacity-0 focus:outline-none focus:ring-0;
+  form.modal-backdrop button {
+    @apply border-none hover:bg-opacity-0 hover:bg-black focus:outline-none focus:ring-0;
   }
   #search-button {
     @apply border border-opacity-10 hover:border-color  hover:dark:border-color-light  text-color bg-background-light dark:bg-background-dark dark:text-color-light focus:outline-none focus:ring-0 px-2;
   }
-  .modal-box {
-    @apply !bg-background-light dark:bg-background-dark rounded-sm p-4 w-1/2 max-w-none flex flex-col items-center;
+  dialog .modal-box {
+    @apply h-128 bg-background-light dark:bg-background-dark rounded-sm p-4 w-11/12  lg:w-1/2 max-w-none flex flex-col items-center;
   }
   #search-results {
-    @apply h-96 overflow-y-scroll w-full my-4;
+    @apply overflow-y-scroll w-full my-4;
   }
   #search-results li a {
     @apply flex py-4 flex-row justify-between items-center w-full hover:bg-background-dark dark:hover:bg-background-light hover:text-background-light dark:hover:text-background-dark rounded-sm mr-2;
-  }
-  #search-results li a span {
-    @apply grow;
   }
   .type-icon {
     @apply font-bold text-xs rounded-full text-background-dark dark:text-background-light px-2 py-1 group-hover:text-background-light group-hover:dark:text-background-dark;
@@ -81,79 +90,61 @@ import search from "../images/search.svg";
     @apply text-background-light dark:text-background-dark;
   }
   #info {
-    @apply w-full flex justify-end text-xs text-gray-500 items-center;
+    @apply w-full flex justify-center text-xs text-gray-500 items-center;
   }
   .section-title {
-    @apply text-sm opacity-50 ml-2;
+    @apply text-xs opacity-70;
+  }
+  .section-title .num {
+    @apply bg-transparent mr-2 group-hover:text-background-light group-hover:dark:text-background-dark;
+  }
+  .authors-list {
+    @apply flex flex-wrap text-xs opacity-70 leading-5 text-accent-dark dark:text-accent-light group-hover:text-background-light group-hover:dark:text-background-dark;
+  }
+  .authors-list::before {
+    content: "Auteurs :";
+    @apply mr-2;
+  }
+  .themes-list {
+    @apply flex flex-wrap text-xs opacity-70 leading-5 text-accent-dark dark:text-accent-light group-hover:text-background-light group-hover:dark:text-background-dark;
+  }
+  .themes-list::before {
+    @apply mr-2;
+    content: "Thèmes :";
+  }
+  .highlighted {
+    @apply text-secondary dark:text-secondary-light font-semibold;
   }
 </style>
+
+<script src="../utils/search.js"></script>
 
 <script>
   // imports
   import Fuse from "fuse.js";
+  import { debounce, generateSearchList } from "../utils/search.js";
 
   let SEARCH_DATA;
   let FUSE_INSTANCE;
   const FUSE_OPTIONS = {
+    includeMatches: true,
     includeScore: true,
     shouldSort: true,
-    threshold: 0.5,
+    threshold: 0.2,
     keys: [
       {
         name: "title",
         weight: 1,
       },
-      { name: "section", weight: 0.5 },
+      { name: "volumeTitle", weight: 0.7 },
+      { name: "authors", weight: 0.5 },
     ],
-  };
-
-  const SPINNER = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#000000" viewBox="0 0 256 256" id="spinner"><path d="M236,128a108,108,0,0,1-216,0c0-42.52,24.73-81.34,63-98.9A12,12,0,1,1,93,50.91C63.24,64.57,44,94.83,44,128a84,84,0,0,0,168,0c0-33.17-19.24-63.43-49-77.09A12,12,0,1,1,173,29.1C211.27,46.66,236,85.48,236,128Z"></path><style>
-				#spinner {
-					animation: spin 1s linear infinite;
-				}
-				@keyframes spin {
-					100% {
-						transform: rotate(360deg);
-					}
-				}
-				</style></svg>`;
-  const BACKSPACE_ICON = `<svg class="DocSearch-Hit-Select-Icon" width="20" height="20" viewBox="0 0 20 20"><g stroke="currentColor" fill="none" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3v4c0 2-2 4-4 4H2"></path><path d="M8 17l-6-6 6-6"></path></g></svg>`;
-
-  const typeIcon = (type) => {
-    return `<span class="type-icon">${
-      type === "volume" ? "V" : type === "article" ? "A" : ""
-    }</span>`;
-  };
-
-  const sectionTitle = (section = "") => {
-    return `<span class="section-title">${section}</span>`;
   };
 
   // selectors
   const search = document.querySelector("#search");
   const resultsList = document.querySelector("#search-results");
   const info = document.querySelector("#info");
-
-  // functions
-
-  function generateSearchList(results) {
-    return results
-      .map((r) => {
-        const { title, slug, type, section } = r.item;
-        return `<li class="group">
-          <a href="/${type}s/${slug}/"><span>${typeIcon(
-            type,
-          )}${title}${sectionTitle(section)}</span>${BACKSPACE_ICON}</a>
-							</li>`;
-      })
-      .join("");
-  }
-  function generateNoResults() {
-    return `<div class="flex flex-col items-center my-4">
-              <svg width="40" height="40" viewBox="0 0 20 20" fill="none" fill-rule="evenodd" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 4.8c2 3 1.7 7-1 9.7h0l4.3 4.3-4.3-4.3a7.8 7.8 0 01-9.8 1m-2.2-2.2A7.8 7.8 0 0113.2 2.4M2 18L18 2"></path></svg>
-              <span class="my-2">Aucun résultat trouvé</span>
-            </div>`;
-  }
 
   async function fetchSearchResults(search: string) {
     // if (search.length === 0) return;
@@ -165,6 +156,7 @@ import search from "../images/search.svg";
           throw new Error("Une erreur est survenue");
         }
         const data = await res.json();
+        console.log(data);
         SEARCH_DATA = data;
       } catch (e) {
         console.error(e);
@@ -174,25 +166,40 @@ import search from "../images/search.svg";
       FUSE_INSTANCE = new Fuse(SEARCH_DATA, FUSE_OPTIONS);
     }
     if (!FUSE_INSTANCE) return;
-    const searchResult = FUSE_INSTANCE.search(search);
+    const searchResult = FUSE_INSTANCE.search(search, { limit: 20 });
 
     if (searchResult.length > 0) {
       resultsList.innerHTML = generateSearchList(searchResult);
-      info.innerHTML =
-        typeIcon("article") + "Article, " + typeIcon("volume") + "Volume";
+      
+    info.querySelector("#no-result").classList.add("hidden");
     } else {
+      resultsList.innerHTML = "";
       if (search.length > 0) {
-        resultsList.innerHTML = generateNoResults();
-
-        info.innerHTML = "";
+        info.querySelector("#no-result").classList.remove("hidden");
       } else {
-        resultsList.innerHTML = "";
-        info.innerHTML = "";
+        info.querySelector("#no-result").classList.add("hidden");
       }
     }
   }
 
-  search.addEventListener("input", (e) => {
-    fetchSearchResults(e.target.value);
+  search.addEventListener(
+    "input",
+    debounce((e) => {
+      fetchSearchResults(e.target.value);
+    }, 300),
+  );
+  document.addEventListener("DOMContentLoaded", () => {
+    fetchSearchResults("");
   });
+
+  const SPINNER = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#000000" viewBox="0 0 256 256" id="spinner"><path d="M236,128a108,108,0,0,1-216,0c0-42.52,24.73-81.34,63-98.9A12,12,0,1,1,93,50.91C63.24,64.57,44,94.83,44,128a84,84,0,0,0,168,0c0-33.17-19.24-63.43-49-77.09A12,12,0,1,1,173,29.1C211.27,46.66,236,85.48,236,128Z"></path><style>
+				#spinner {
+					animation: spin 1s linear infinite;
+				}
+				@keyframes spin {
+					100% {
+						transform: rotate(360deg);
+					}
+				}
+				</style></svg>`;
 </script>
