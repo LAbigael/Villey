@@ -28,7 +28,7 @@ const { article } = Astro.props;
           {
             article.authors.map(({ author_id: author }) => (
               <div class="article_author">
-                <a href={`auteurs/${author.slug}`}>{author.fullname}</a>
+                <a href={`/auteurs/${author.slug}`}>{author.fullname}</a>
               </div>
             ))
           }

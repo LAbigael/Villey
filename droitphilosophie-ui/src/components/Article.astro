@@ -14,7 +14,9 @@ import Download from "./Download.astro";
     <div class="my-2">
       {
         article.authors.map(({ author_id: author }) => (
-          <div class="article_author">{author.fullname}</div>
+          <div class="article_author">
+            <a href={`/auteurs/${author.slug}`}>{author.fullname}</a>
+          </div>
         ))
       }
     </div>
