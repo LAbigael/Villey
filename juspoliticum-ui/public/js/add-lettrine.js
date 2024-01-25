@@ -19,6 +19,9 @@ for (
       if (firstLetter === "&") {
         continue;
       }
+      if (firstLetter === "<") {
+        continue;
+      }
       break;
     }
   }
