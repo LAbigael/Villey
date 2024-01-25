@@ -46,7 +46,7 @@ export default ({ filter }) => {
   filter("Authors.items.read", (items) => {
     return items.map((item) => {
       if (item.articles) {
-        item.articles = item.articles.map(( article ) => {
+        item.articles = item.articles.map((article) => {
           if (!article.article_id) return article;
           return { article_id: transformAbstractsToHTML(article.article_id) };
         });
@@ -57,7 +57,7 @@ export default ({ filter }) => {
   filter("Themes.items.read", (items) => {
     return items.map((item) => {
       if (item.articles) {
-        item.articles = item.articles.map(( article ) => {
+        item.articles = item.articles.map((article) => {
           if (!article.article_id) return article;
           return { article_id: transformAbstractsToHTML(article.article_id) };
         });
@@ -110,11 +110,14 @@ function generateLinkFromFootnoteTags(item) {
       const content = el.children.map((child) => render(child)).join("");
       el.name = "a";
       el.attribs = {
-        class: "footnote-link",
+        class: "footnote-link ",
         "data-footnote-id": `#footnote-${id}`,
         href: "#nowhere",
         "data-footnote-content": content,
       };
+      if (!footnoteShouldBeCounted(htmlparser2.DomUtils.textContent(el))) {
+        el.attribs.class += " no-count";
+      }
       el.children = [];
     }
   );
@@ -144,6 +147,16 @@ function transformItemsFieldFromToHTML(filter, collection, field) {
       return item;
     });
   });
+}
+
+function footnoteShouldBeCounted(content) {
+  // If the first char of a footnote starts with *, it should not be counted
+  console.log(content)
+  if (!content) return false;
+  if (content.trim()[0] === "*") {
+    return false;
+  }
+  return true;
 }
 
 function generateHTMLFromJSON(articleContent) {

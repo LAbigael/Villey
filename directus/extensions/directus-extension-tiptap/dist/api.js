@@ -23300,6 +23300,25 @@ class DomHandler {
 }
 
 /**
+ * Get a node's text content. Ignores comments.
+ *
+ * @category Stringify
+ * @param node Node to get the text content of.
+ * @returns `node`'s text content.
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent}
+ */
+function textContent(node) {
+    if (Array.isArray(node))
+        return node.map(textContent).join("");
+    if (hasChildren(node) && !isComment(node)) {
+        return textContent(node.children);
+    }
+    if (isText(node))
+        return node.data;
+    return "";
+}
+
+/**
  * Search a node and its children for nodes passing a test function. If `node` is not an array, it will be wrapped in one.
  *
  * @category Querying
@@ -35879,7 +35898,7 @@ var e0 = ({ filter }) => {
   filter("Authors.items.read", (items) => {
     return items.map((item) => {
       if (item.articles) {
-        item.articles = item.articles.map(( article ) => {
+        item.articles = item.articles.map((article) => {
           if (!article.article_id) return article;
           return { article_id: transformAbstractsToHTML(article.article_id) };
         });
@@ -35890,7 +35909,7 @@ var e0 = ({ filter }) => {
   filter("Themes.items.read", (items) => {
     return items.map((item) => {
       if (item.articles) {
-        item.articles = item.articles.map(( article ) => {
+        item.articles = item.articles.map((article) => {
           if (!article.article_id) return article;
           return { article_id: transformAbstractsToHTML(article.article_id) };
         });
@@ -35943,11 +35962,14 @@ function generateLinkFromFootnoteTags(item) {
       const content = el.children.map((child) => _default(child)).join("");
       el.name = "a";
       el.attribs = {
-        class: "footnote-link",
+        class: "footnote-link ",
         "data-footnote-id": `#footnote-${id}`,
         href: "#nowhere",
         "data-footnote-content": content,
       };
+      if (!footnoteShouldBeCounted(textContent(el))) {
+        el.attribs.class += " no-count";
+      }
       el.children = [];
     }
   );
@@ -35977,6 +35999,16 @@ function transformItemsFieldFromToHTML(filter, collection, field) {
       return item;
     });
   });
+}
+
+function footnoteShouldBeCounted(content) {
+  // If the first char of a footnote starts with *, it should not be counted
+  console.log(content);
+  if (!content) return false;
+  if (content.trim()[0] === "*") {
+    return false;
+  }
+  return true;
 }
 
 function generateHTMLFromJSON(articleContent) {
