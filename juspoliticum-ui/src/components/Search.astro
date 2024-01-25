@@ -113,13 +113,16 @@ import SearchIcon from "../images/search.astro";
     content: "Thèmes :";
   }
   .highlighted {
-    @apply text-secondary-dark dark:text-secondary-light font-semibold;
+    @apply text-secondary-alt dark:text-secondary-alt-light font-semibold;
   }
 </style>
+
+<script src="../utils/search.js"></script>
 
 <script>
   // imports
   import Fuse from "fuse.js";
+  import { debounce, generateSearchList } from "../utils/search.js";
 
   let SEARCH_DATA;
   let FUSE_INSTANCE;
@@ -133,8 +136,7 @@ import SearchIcon from "../images/search.astro";
         name: "title",
         weight: 1,
       },
-      { name: "section", weight: 0.6 },
-      { name: "volume", weight: 0.7 },
+      { name: "volumeTitle", weight: 0.7 },
       { name: "themes", weight: 0.5 },
       { name: "authors", weight: 0.5 },
     ],
@@ -155,6 +157,7 @@ import SearchIcon from "../images/search.astro";
           throw new Error("Une erreur est survenue");
         }
         const data = await res.json();
+        console.log(data);
         SEARCH_DATA = data;
       } catch (e) {
         console.error(e);
@@ -164,11 +167,12 @@ import SearchIcon from "../images/search.astro";
       FUSE_INSTANCE = new Fuse(SEARCH_DATA, FUSE_OPTIONS);
     }
     if (!FUSE_INSTANCE) return;
-    const searchResult = FUSE_INSTANCE.search(search, { limit: 10 });
+    const searchResult = FUSE_INSTANCE.search(search, { limit: 20 });
 
     if (searchResult.length > 0) {
       resultsList.innerHTML = generateSearchList(searchResult);
-        info.querySelector("#no-result").classList.add("hidden");
+      
+    info.querySelector("#no-result").classList.add("hidden");
     } else {
       resultsList.innerHTML = "";
       if (search.length > 0) {
@@ -178,17 +182,6 @@ import SearchIcon from "../images/search.astro";
       }
     }
   }
-  const debounce = (fn, delay) => {
-    let timeoutID;
-    return function (...args) {
-      if (timeoutID) {
-        clearTimeout(timeoutID);
-      }
-      timeoutID = setTimeout(() => {
-        fn(...args);
-      }, delay);
-    };
-  };
 
   search.addEventListener(
     "input",
@@ -200,103 +193,6 @@ import SearchIcon from "../images/search.astro";
     fetchSearchResults("");
   });
 
-  function preserveSpaces(str) {
-    return str.replace(' ', '\u00A0')
-  }
-
-  function generateHighlightedString(matches) {
-    const sortedMatches = matches.sort(
-      (a, b) => a.indices[0][0] - b.indices[0][0],
-    );
-
-    return sortedMatches
-      .map(({ indices, value }) => {
-        let content = "";
-        let nextUnhighlightedRegionStartingIndex = 0;
-
-        indices.forEach((region) => {
-          const lastRegionNextIndex = region[1] + 1;
-
-          content += [
-            preserveSpaces(value.substring(nextUnhighlightedRegionStartingIndex, region[0])),
-            `<span class="highlighted">`,
-            preserveSpaces( value.substring(region[0], lastRegionNextIndex) ),
-            "</span>",
-          ].join("");
-
-          nextUnhighlightedRegionStartingIndex = lastRegionNextIndex;
-        });
-
-        content += preserveSpaces(value.substring(nextUnhighlightedRegionStartingIndex));
-
-        return content;
-      })
-      .join(", ");
-  }
-  function highlightMatchesFromStringOrJustReturnTheString(matches, key, str) {
-    const themeMatches = matches.filter((m) => m.key === key);
-    if (themeMatches.length > 0) {
-      return generateHighlightedString(themeMatches);
-    }
-    return str;
-  }
-
-  function generateListIfInMatches(matches, key) {
-    const themeMatches = matches.filter((m) => m.key === key);
-    if (themeMatches.length > 0) {
-      return `<span class="opacity-50"></span> ${generateHighlightedString(
-        themeMatches,
-      )}`;
-    }
-    return "";
-  }
-  // functions
-  function generateSearchList(results) {
-    return results
-      .map((r) => {
-        const { title, slug, type, volume, volumeNb } = r.item;
-        const themeMatches = generateListIfInMatches(r.matches, "themes");
-        const authorMatches = generateListIfInMatches(r.matches, "authors");
-
-        let hideThemes,
-          hideAuthors = "";
-
-        if (themeMatches === "") hideThemes = "hidden";
-
-        if (authorMatches === "") hideAuthors = "hidden";
-
-        return `
-          <li class="group">
-            <a href="/${type}s/${slug}/">
-              <div class="flex flex-col ">
-                 <div class="">${highlightMatchesFromStringOrJustReturnTheString(
-                   r.matches,
-                   "title",
-                   title,
-                 )}</div>
-          ${volumeTitle(volume, volumeNb, r.matches)}
-          <div class="flex flex-row themes-list ${hideThemes}">
-                  ${themeMatches}
-                </div>
-          <div class="flex flex-row authors-list ${hideAuthors}">
-                    ${authorMatches}
-                </div>
-             </div>
-             ${BACKSPACE_ICON}
-            </a>
-					</li>`;
-      })
-      .join("");
-  }
-
-  const volumeTitle = (volume = "", volumeNb, matches) => {
-    return `<span class="section-title mt-2"><span class="num ">${volumeNb}</span>${highlightMatchesFromStringOrJustReturnTheString(
-      matches,
-      "volume",
-      volume,
-    )}</span>`;
-  };
-
   const SPINNER = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#000000" viewBox="0 0 256 256" id="spinner"><path d="M236,128a108,108,0,0,1-216,0c0-42.52,24.73-81.34,63-98.9A12,12,0,1,1,93,50.91C63.24,64.57,44,94.83,44,128a84,84,0,0,0,168,0c0-33.17-19.24-63.43-49-77.09A12,12,0,1,1,173,29.1C211.27,46.66,236,85.48,236,128Z"></path><style>
 				#spinner {
 					animation: spin 1s linear infinite;
@@ -307,5 +203,4 @@ import SearchIcon from "../images/search.astro";
 					}
 				}
 				</style></svg>`;
-  const BACKSPACE_ICON = `<svg class="DocSearch-Hit-Select-Icon" width="20" height="20" viewBox="0 0 20 20"><g stroke="currentColor" fill="none" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3v4c0 2-2 4-4 4H2"></path><path d="M8 17l-6-6 6-6"></path></g></svg>`;
 </script>
