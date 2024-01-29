@@ -1,5 +1,5 @@
 import { useItems } from '@directus/extensions-sdk';
-import { ref, resolveComponent, openBlock, createElementBlock, Fragment, renderList, createBlock, withCtx, createVNode, createTextVNode, toDisplayString, Suspense, createElementVNode, reactive, computed, unref, nextTick, onMounted, isRef, watch, provide, toValue, readonly, watchEffect, shallowRef, withDirectives, mergeProps, vModelText } from 'vue';
+import { ref, resolveComponent, openBlock, createElementBlock, Fragment, renderList, createBlock, withCtx, createVNode, createTextVNode, toDisplayString, Suspense, createElementVNode, reactive, computed, unref, nextTick, onMounted, isRef, watch, provide, toValue, readonly, watchEffect, shallowRef, withDirectives, mergeProps, vModelCheckbox, vModelText, normalizeClass, pushScopeId, popScopeId } from 'vue';
 
 var _export_sfc = (sfc, props) => {
   const target = sfc.__vccOpts || sfc;
@@ -122,6 +122,8 @@ function useVolumes() {
       "sections.id",
       "sections.position",
       "sections.articles.title",
+      "sections.articles.id",
+      "sections.articles.active",
       "sections.articles.authors.author_id.fullname",
     ];
     const { getItems, items } = useItems(collectionRef, query);
@@ -1860,7 +1862,7 @@ function mergeValidationResults(a, b) {
 
 var e=[],t=[];function n(n,r){if(n&&"undefined"!=typeof document){var a,s=!0===r.prepend?"prepend":"append",d=!0===r.singleTag,i="string"==typeof r.container?document.querySelector(r.container):document.getElementsByTagName("head")[0];if(d){var u=e.indexOf(i);-1===u&&(u=e.push(i)-1,t[u]={}),a=t[u]&&t[u][s]?t[u][s]:t[u][s]=c();}else a=c();65279===n.charCodeAt(0)&&(n=n.substring(1)),a.styleSheet?a.styleSheet.cssText+=n:a.appendChild(document.createTextNode(n));}function c(){var e=document.createElement("style");if(e.setAttribute("type","text/css"),r.attributes)for(var t=Object.keys(r.attributes),n=0;n<t.length;n++)e.setAttribute(t[n],r.attributes[t[n]]);var a="prepend"===s?"afterbegin":"beforeend";return i.insertAdjacentElement(a,e),e}}
 
-var css$1 = "\nform {\n    display: flex;\n    flex-direction: column\n}\ninput {\n    width: 50%;\n    border-radius: 0.375rem;\n    border-width: 1px;\n    --tw-border-opacity: 1;\n    border-color: rgb(209 213 219 / var(--tw-border-opacity));\n    padding: 0.5rem;\n    --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n    --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);\n    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)\n}\n.chapter_title {\n    margin-top: 0.5rem;\n    margin-bottom: 0.5rem;\n    padding: 0.25rem;\n    font-size: 1.5rem;\n    line-height: 2rem;\n    font-weight: 600;\n    font-style: italic;\n    --tw-text-opacity: 1;\n    color: rgb(213 185 133 / var(--tw-text-opacity))\n}\n";
+var css$1 = "\nform[data-v-9edfaa0c] {\n    display: flex;\n    flex-direction: column\n}\ninput[data-v-9edfaa0c] {\n    width: 50%;\n    border-radius: 0.375rem;\n    border-width: 1px;\n    --tw-border-opacity: 1;\n    border-color: rgb(31 41 55 / var(--tw-border-opacity));\n    padding: 0.5rem;\n    --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n    --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);\n    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)\n}\n.chapter_title[data-v-9edfaa0c] {\n    margin-top: 0.5rem;\n    margin-bottom: 0.5rem;\n    padding: 0.25rem;\n    font-size: 1.5rem;\n    line-height: 2rem;\n    font-weight: 600;\n    font-style: italic;\n    --tw-text-opacity: 1;\n    color: rgb(213 185 133 / var(--tw-text-opacity))\n}\n.article_title[data-v-9edfaa0c] {\n    margin-top: 0.5rem;\n    margin-bottom: 0.5rem;\n    padding: 0.25rem;\n    font-size: 1.25rem;\n    line-height: 1.75rem;\n    font-weight: 600;\n    font-style: italic;\n    --tw-text-opacity: 1;\n    color: rgb(165 181 197 / var(--tw-text-opacity))\n}\n.status[data-v-9edfaa0c] {\n    margin-right: 0.5rem;\n    height: 0.5rem;\n    width: 0.5rem;\n    border-radius: 9999px;\n    --tw-bg-opacity: 1;\n    background-color: rgb(239 68 68 / var(--tw-bg-opacity))\n}\n.status.active[data-v-9edfaa0c] {\n    --tw-bg-opacity: 1;\n    background-color: rgb(34 197 94 / var(--tw-bg-opacity))\n}\ntable[data-v-9edfaa0c] {\n    width: 100%;\n    border-style: none\n}\nth[data-v-9edfaa0c] {\n    border-width: 1px;\n    --tw-bg-opacity: 1;\n    background-color: rgb(31 41 55 / var(--tw-bg-opacity));\n    padding-left: 1rem;\n    padding-right: 1rem;\n    padding-top: 0.5rem;\n    padding-bottom: 0.5rem\n}\ntd[data-v-9edfaa0c] {\n    display: flex;\n    flex-direction: row;\n    align-items: center;\n    border-width: 1px;\n    --tw-border-opacity: 1;\n    border-color: rgb(31 41 55 / var(--tw-border-opacity));\n    padding-left: 1rem;\n    padding-right: 1rem;\n    padding-top: 0.5rem;\n    padding-bottom: 0.5rem\n}\ntr[data-v-9edfaa0c]:nth-child(even) {\n    --tw-bg-opacity: 1;\n    background-color: rgb(17 24 39 / var(--tw-bg-opacity))\n}\nbutton[data-v-9edfaa0c] {\n    border-radius: 0.375rem;\n    border-width: 1px;\n    --tw-border-opacity: 1;\n    border-color: rgb(31 41 55 / var(--tw-border-opacity));\n    padding: 0.5rem;\n    --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n    --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);\n    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)\n}\n";
 n(css$1,{});
 
 const _sfc_main$1 = {
@@ -1903,54 +1905,91 @@ const _sfc_main$1 = {
   },
 };
 
-const _hoisted_1$1 = /*#__PURE__*/createElementVNode("label", { class: "relative inline-flex items-center cursor-pointer" }, [
-  /*#__PURE__*/createElementVNode("input", {
-    type: "checkbox",
-    value: "",
-    class: "sr-only peer"
-  }),
-  /*#__PURE__*/createElementVNode("div", { class: "w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600" }),
-  /*#__PURE__*/createElementVNode("span", { class: "ms-3 font-medium text-gray-900 dark:text-gray-300" }, "En ligne")
-], -1 /* HOISTED */);
-const _hoisted_2 = /*#__PURE__*/createElementVNode("label", null, "Titre du volume ", -1 /* HOISTED */);
-const _hoisted_3 = /*#__PURE__*/createElementVNode("label", null, "Numéro du volume ", -1 /* HOISTED */);
-const _hoisted_4 = /*#__PURE__*/createElementVNode("label", null, "Date de publication ", -1 /* HOISTED */);
-const _hoisted_5 = /*#__PURE__*/createElementVNode("button", null, "Submit", -1 /* HOISTED */);
-const _hoisted_6 = { class: "chapter_title" };
+const _withScopeId = n => (pushScopeId("data-v-9edfaa0c"),n=n(),popScopeId(),n);
+const _hoisted_1$1 = { class: "relative inline-flex items-center cursor-pointer" };
+const _hoisted_2 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("div", { class: "w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600" }, null, -1 /* HOISTED */));
+const _hoisted_3 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("span", { class: "ms-3 font-medium text-gray-900 dark:text-gray-300" }, "En ligne", -1 /* HOISTED */));
+const _hoisted_4 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("label", null, "Titre du volume ", -1 /* HOISTED */));
+const _hoisted_5 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("label", null, "Numéro du volume ", -1 /* HOISTED */));
+const _hoisted_6 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("label", null, "Date de publication ", -1 /* HOISTED */));
+const _hoisted_7 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("button", null, "Submit", -1 /* HOISTED */));
+const _hoisted_8 = { class: "chapter_title" };
+const _hoisted_9 = { class: "article_title" };
+const _hoisted_10 = { class: "table-auto" };
+const _hoisted_11 = { class: "relative" };
+const _hoisted_12 = ["href"];
 
 function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
   return (openBlock(), createElementBlock(Fragment, null, [
     createElementVNode("form", {
-      onSubmit: _cache[3] || (_cache[3] = (...args) => ($setup.onSubmit && $setup.onSubmit(...args)))
+      onSubmit: _cache[4] || (_cache[4] = (...args) => ($setup.onSubmit && $setup.onSubmit(...args)))
     }, [
-      _hoisted_1$1,
-      _hoisted_2,
-      withDirectives(createElementVNode("input", mergeProps({
-        type: "text",
-        "onUpdate:modelValue": _cache[0] || (_cache[0] = $event => (($setup.title) = $event))
-      }, $setup.titleAttrs), null, 16 /* FULL_PROPS */), [
-        [vModelText, $setup.title]
-      ]),
-      _hoisted_3,
-      withDirectives(createElementVNode("input", mergeProps({
-        type: "text",
-        "onUpdate:modelValue": _cache[1] || (_cache[1] = $event => (($setup.number) = $event))
-      }, $setup.numberAttrs), null, 16 /* FULL_PROPS */), [
-        [vModelText, $setup.number]
+      createElementVNode("label", _hoisted_1$1, [
+        withDirectives(createElementVNode("input", mergeProps({
+          type: "checkbox",
+          value: "",
+          class: "sr-only peer",
+          "onUpdate:modelValue": _cache[0] || (_cache[0] = $event => (($setup.active) = $event))
+        }, $setup.activeAttrs), null, 16 /* FULL_PROPS */), [
+          [vModelCheckbox, $setup.active]
+        ]),
+        _hoisted_2,
+        _hoisted_3
       ]),
       _hoisted_4,
       withDirectives(createElementVNode("input", mergeProps({
+        type: "text",
+        "onUpdate:modelValue": _cache[1] || (_cache[1] = $event => (($setup.title) = $event))
+      }, $setup.titleAttrs), null, 16 /* FULL_PROPS */), [
+        [vModelText, $setup.title]
+      ]),
+      _hoisted_5,
+      withDirectives(createElementVNode("input", mergeProps({
+        type: "text",
+        "onUpdate:modelValue": _cache[2] || (_cache[2] = $event => (($setup.number) = $event))
+      }, $setup.numberAttrs), null, 16 /* FULL_PROPS */), [
+        [vModelText, $setup.number]
+      ]),
+      _hoisted_6,
+      withDirectives(createElementVNode("input", mergeProps({
         type: "date",
-        "onUpdate:modelValue": _cache[2] || (_cache[2] = $event => (($setup.published_at) = $event))
+        "onUpdate:modelValue": _cache[3] || (_cache[3] = $event => (($setup.published_at) = $event))
       }, $setup.published_atAttrs), null, 16 /* FULL_PROPS */), [
         [vModelText, $setup.published_at]
       ]),
-      _hoisted_5
+      _hoisted_7
     ], 32 /* NEED_HYDRATION */),
-    createElementVNode("h3", _hoisted_6, "Liste des chapitres et articles associés au numéro \"" + toDisplayString($setup.data.title) + "\"", 1 /* TEXT */)
+    createElementVNode("h3", _hoisted_8, " Liste des chapitres et articles associés au numéro \"" + toDisplayString($setup.data.title) + "\" ", 1 /* TEXT */),
+    (openBlock(true), createElementBlock(Fragment, null, renderList($setup.data.sections, (section) => {
+      return (openBlock(), createElementBlock("div", {
+        key: section.id
+      }, [
+        createElementVNode("h4", _hoisted_9, toDisplayString(section.title), 1 /* TEXT */),
+        createElementVNode("table", _hoisted_10, [
+          createElementVNode("tbody", null, [
+            (openBlock(true), createElementBlock(Fragment, null, renderList(section.articles, (article) => {
+              return (openBlock(), createElementBlock("tr", {
+                key: article.id
+              }, [
+                createElementVNode("td", _hoisted_11, [
+                  createElementVNode("span", {
+                    class: normalizeClass(["status", { active: article.active }])
+                  }, null, 2 /* CLASS */),
+                  createElementVNode("h5", null, toDisplayString(article.title), 1 /* TEXT */),
+                  createElementVNode("a", {
+                    class: "absolute right-0",
+                    href: `/admin/content/Articles/${article.id}`
+                  }, "Modifier", 8 /* PROPS */, _hoisted_12)
+                ])
+              ]))
+            }), 128 /* KEYED_FRAGMENT */))
+          ])
+        ])
+      ]))
+    }), 128 /* KEYED_FRAGMENT */))
   ], 64 /* STABLE_FRAGMENT */))
 }
-var VolumeEdit = /*#__PURE__*/_export_sfc(_sfc_main$1, [['render',_sfc_render$1],['__file',"VolumeEdit.vue"]]);
+var VolumeEdit = /*#__PURE__*/_export_sfc(_sfc_main$1, [['render',_sfc_render$1],['__scopeId',"data-v-9edfaa0c"],['__file',"VolumeEdit.vue"]]);
 
 const _sfc_main = {
   props: {

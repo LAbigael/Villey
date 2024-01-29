@@ -24,6 +24,8 @@ export function useVolumes() {
       "sections.id",
       "sections.position",
       "sections.articles.title",
+      "sections.articles.id",
+      "sections.articles.active",
       "sections.articles.authors.author_id.fullname",
     ];
     const { getItems, items } = useItems(collectionRef, query);
