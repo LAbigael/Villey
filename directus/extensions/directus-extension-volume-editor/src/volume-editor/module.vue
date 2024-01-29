@@ -1,6 +1,6 @@
 <template>
-  <private-view title="Editeur de volume">
-    <div>Content goes here... not</div>
+  <private-view title="Liste des volumes">
+    <h2>Liste des volumes</h2>
     <Suspense>
       <template #default>
         <VolumeList />

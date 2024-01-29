@@ -1,19 +1,20 @@
 <template>
-  <div>Les volumes</div>
-  <div v-for="item in data" :key="item.id">
-    <div>{{ item.title }}</div>
-  </div>
+  <VList v-for="item in data" :key="item.id">
+  <VListItem :clickable="true" :href="`volume-editor/edit/${item.id}`" >
+      {{ item.title }}
+      <VIcon :small="true" name="circle" :filled="item.active ? 'true' : 'false'" />
+    </VListItem>
+  </VList>
 </template>
 <script>
 import { useItems } from "@directus/extensions-sdk";
 import { ref } from "vue";
 export default {
   async setup() {
-    console.log("VolumeList setup");
     const collectionRef = ref("Volumes");
 
     const query = {
-      fields: ref(["*"]),
+      fields: ref(["title", "number", "site_id", "slug", "id", "active"]),
       limit: ref(100),
       sort: ref(null),
       search: ref(null),
@@ -29,7 +30,6 @@ export default {
 
     await getItems(); // fetch the items
     const data = items.value; // get the items
-    console.log(data);
 
     return {
       data,

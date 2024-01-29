@@ -20,6 +20,11 @@
         "type": "module",
         "name": "volume-editor",
         "source": "src/volume-editor/index.js"
+      },
+      {
+        "type": "hook",
+        "name": "configure-vueform",
+        "source": "src/configure-vueform/index.js"
       }
     ],
     "host": "^10.3.0"
@@ -31,6 +36,14 @@
     "add": "directus-extension add"
   },
   "devDependencies": {
-    "@directus/extensions-sdk": "10.3.0"
+    "@directus/extensions-sdk": "10.3.0",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.1"
+  },
+  "dependencies": {
+    "@vueform/vueform": "^1.7.1",
+    "vee-validate": "^4.12.4",
+    "vuedraggable": "^4.1.0"
   }
 }
