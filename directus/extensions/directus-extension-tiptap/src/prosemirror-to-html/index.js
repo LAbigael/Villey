@@ -94,7 +94,7 @@ function setLatestContentFromContentVersions(item) {
   const lastArticleContent =
     item.article_contents[item.article_contents.length - 1];
 
-  if (lastArticleContent.content_bis) {
+  if (lastArticleContent?.content_bis) {
     let articleJSONContent = lastArticleContent.content_bis;
     delete item.article_contents;
     item.content = generateHTMLFromJSON(articleJSONContent);
@@ -128,7 +128,7 @@ function transformAbstractsToHTML(item) {
   const abstracts = item.abstracts;
   if (!abstracts) return item;
   for (const abstract of abstracts) {
-    if (abstract.content_bis) {
+    if (abstract?.content_bis) {
       abstract.content = generateHTMLFromJSON(abstract.content_bis);
       delete abstract.content_bis;
     }

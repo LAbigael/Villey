@@ -1,4 +1,4 @@
-import { useItems } from "@directus/extensions-sdk";
+import { useItems, useApi } from "@directus/extensions-sdk";
 import { ref } from "vue";
 
 export function useVolumes() {
@@ -34,5 +34,11 @@ export function useVolumes() {
 
     return items?.value[0];
   }
-  return { getVolume };
+  async function createSection(api, volumeId) {
+    const response = await api.post(`/items/VolumeSections`, {
+      volume_id: volumeId,
+    });
+    console.log(response);
+  }
+  return { getVolume, createSection };
 }

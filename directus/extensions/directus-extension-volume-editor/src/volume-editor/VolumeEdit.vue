@@ -15,30 +15,51 @@
     <input type="date" v-model="published_at" v-bind="published_atAttrs" />
     <button>Submit</button>
   </form>
+  <button class="mt-4" @click="addSection">Ajouter un chapitre</button>
   <h3 class="chapter_title">
     Liste des chapitres et articles associés au numéro "{{ data.title }}"
   </h3>
   <div v-for="section in data.sections" :key="section.id">
-    <h4 class="article_title">{{ section.title }}</h4>
-    <table class="table-auto">
-      <tbody>
-        <tr v-for="article in section.articles" :key="article.id">
-          <td class="relative">
-            <span class="status" :class="{ active: article.active }"></span>
-            <h5>{{ article.title }}</h5>
-            <a class="absolute right-0" :href="`/admin/content/Articles/${article.id}`">Modifier</a>
+    <div class="relative flex justify-between">
+      <h4 class="article_title">{{ section.title }}</h4>
+      <a class="absolute right-0" :href="`/admin/content/VolumeSections/${section.id}`">
+        <VIcon name="edit" />
+      </a>
+    </div>
+    <draggable v-model="section.articles" @start="drag = true" @end="drag = false" item-key="id">
+      <template #item="{ element }">
+        <tr class="flex items-center">
+          <td class="h-full py-10">
+            <span class="status" :class="{ active: element.active }"></span>
+          </td>
+          <td class="w-full">
+            <h5>{{ element.title }}</h5>
+          </td>
+          <td>
+            <a :href="`/admin/content/Articles/${element.id}`">
+              <VIcon name="edit" title="Modifier"/>
+            </a>
+            <VIcon title="Supprimer" class="cursor-pointer" name="close" @click="removeAt(index)" />
           </td>
         </tr>
-      </tbody>
-    </table>
+      </template>
+    </draggable>
+    <button class="mt-4" @click="addArticle(section.id)">
+      Ajouter un article
+    </button>
   </div>
 </template>
 
 <script>
 import { useVolumes } from "./data";
 import { useForm, useFieldArray } from "vee-validate";
+import { useApi } from "@directus/extensions-sdk";
+import draggable from "vuedraggable";
 
 export default {
+  components: {
+    draggable,
+  },
   props: {
     id: {
       type: String,
@@ -46,8 +67,9 @@ export default {
     },
   },
   async setup(props) {
+    const api = useApi();
     const { id } = props;
-    const { getVolume } = useVolumes();
+    const { getVolume, createSection } = useVolumes();
     const data = await getVolume(id);
 
     const { handleSubmit, defineField } = useForm({
@@ -63,6 +85,23 @@ export default {
     const [published_at, published_atAttrs] = defineField("published_at");
     const [active, activeAttrs] = defineField("active");
 
+    const addSection = async () => {
+      const response = await api.post(`/items/VolumeSections`, {
+        volume_id: id,
+      });
+      window.location.href =
+        "/admin/content/VolumeSections/" + response.data.data.id;
+    };
+    const addArticle = async (sectionId) => {
+      const position = data.sections.find((section) => section.id === sectionId)
+        .articles.length;
+      const response = await api.post(`/items/Articles`, {
+        section_id: sectionId,
+        position,
+      });
+      window.location.href = "/admin/content/Articles/" + response.data.data.id;
+    };
+
     return {
       title,
       titleAttrs,
@@ -74,6 +113,8 @@ export default {
       activeAttrs,
       onSubmit,
       data,
+      addSection,
+      addArticle,
     };
   },
 };
@@ -97,7 +138,7 @@ input {
 }
 
 .status {
-  @apply bg-red-500 w-2 h-2 rounded-full mr-2;
+  @apply bg-red-500 w-2 h-2 rounded-full my-2 mr-2;
 }
 
 .status.active {
@@ -109,11 +150,11 @@ table {
 }
 
 th {
-  @apply bg-gray-800 border px-4 py-2;
+  @apply bg-gray-800 border px-4 py-2 border-none;
 }
 
 td {
-  @apply border border-gray-800 px-4 py-2 flex flex-row items-center;
+  @apply border-none  px-4 py-2 flex flex-row items-center;
 }
 
 tr:nth-child(even) {
@@ -121,6 +162,6 @@ tr:nth-child(even) {
 }
 
 button {
-  @apply border border-gray-800 rounded-md shadow-sm p-2;
+  @apply border border-gray-600 rounded-md shadow-sm p-2 bg-gray-800;
 }
 </style>
