@@ -118,12 +118,15 @@ function useVolumes() {
       "slug",
       "title",
       "number",
+      "active",
       "published_at",
       "sections.title",
       "sections.id",
       "sections.position",
       "sections.articles.title",
       "sections.articles.id",
+      "sections.articles.section_id",
+      "sections.articles.position",
       "sections.articles.active",
       "sections.articles.authors.author_id.fullname",
     ];
@@ -10782,7 +10785,7 @@ var draggable = /*@__PURE__*/getDefaultExportFromCjs(vuedraggable_umdExports);
 
 var e=[],t=[];function n(n,r){if(n&&"undefined"!=typeof document){var a,s=!0===r.prepend?"prepend":"append",d=!0===r.singleTag,i="string"==typeof r.container?document.querySelector(r.container):document.getElementsByTagName("head")[0];if(d){var u=e.indexOf(i);-1===u&&(u=e.push(i)-1,t[u]={}),a=t[u]&&t[u][s]?t[u][s]:t[u][s]=c();}else a=c();65279===n.charCodeAt(0)&&(n=n.substring(1)),a.styleSheet?a.styleSheet.cssText+=n:a.appendChild(document.createTextNode(n));}function c(){var e=document.createElement("style");if(e.setAttribute("type","text/css"),r.attributes)for(var t=Object.keys(r.attributes),n=0;n<t.length;n++)e.setAttribute(t[n],r.attributes[t[n]]);var a="prepend"===s?"afterbegin":"beforeend";return i.insertAdjacentElement(a,e),e}}
 
-var css$1 = "\nform[data-v-2af5b093] {\n    display: flex;\n    flex-direction: column\n}\ninput[data-v-2af5b093] {\n    width: 50%;\n    border-radius: 0.375rem;\n    border-width: 1px;\n    --tw-border-opacity: 1;\n    border-color: rgb(31 41 55 / var(--tw-border-opacity));\n    padding: 0.5rem;\n    --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n    --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);\n    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)\n}\n.chapter_title[data-v-2af5b093] {\n    margin-top: 0.5rem;\n    margin-bottom: 0.5rem;\n    padding: 0.25rem;\n    font-size: 1.5rem;\n    line-height: 2rem;\n    font-weight: 600;\n    font-style: italic;\n    --tw-text-opacity: 1;\n    color: rgb(213 185 133 / var(--tw-text-opacity))\n}\n.article_title[data-v-2af5b093] {\n    margin-top: 0.5rem;\n    margin-bottom: 0.5rem;\n    padding: 0.25rem;\n    font-size: 1.25rem;\n    line-height: 1.75rem;\n    font-weight: 600;\n    font-style: italic;\n    --tw-text-opacity: 1;\n    color: rgb(165 181 197 / var(--tw-text-opacity))\n}\n.status[data-v-2af5b093] {\n    margin-top: 0.5rem;\n    margin-bottom: 0.5rem;\n    margin-right: 0.5rem;\n    height: 0.5rem;\n    width: 0.5rem;\n    border-radius: 9999px;\n    --tw-bg-opacity: 1;\n    background-color: rgb(239 68 68 / var(--tw-bg-opacity))\n}\n.status.active[data-v-2af5b093] {\n    --tw-bg-opacity: 1;\n    background-color: rgb(34 197 94 / var(--tw-bg-opacity))\n}\ntable[data-v-2af5b093] {\n    width: 100%;\n    border-style: none\n}\nth[data-v-2af5b093] {\n    border-width: 1px;\n    border-style: none;\n    --tw-bg-opacity: 1;\n    background-color: rgb(31 41 55 / var(--tw-bg-opacity));\n    padding-left: 1rem;\n    padding-right: 1rem;\n    padding-top: 0.5rem;\n    padding-bottom: 0.5rem\n}\ntd[data-v-2af5b093] {\n    display: flex;\n    flex-direction: row;\n    align-items: center;\n    border-style: none;\n    padding-left: 1rem;\n    padding-right: 1rem;\n    padding-top: 0.5rem;\n    padding-bottom: 0.5rem\n}\ntr[data-v-2af5b093]:nth-child(even) {\n    --tw-bg-opacity: 1;\n    background-color: rgb(17 24 39 / var(--tw-bg-opacity))\n}\nbutton[data-v-2af5b093] {\n    border-radius: 0.375rem;\n    border-width: 1px;\n    --tw-border-opacity: 1;\n    border-color: rgb(75 85 99 / var(--tw-border-opacity));\n    --tw-bg-opacity: 1;\n    background-color: rgb(31 41 55 / var(--tw-bg-opacity));\n    padding: 0.5rem;\n    --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n    --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);\n    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)\n}\n";
+var css$1 = "\nform[data-v-5c7b8a54] {\n    display: flex;\n    flex-direction: column\n}\ninput[data-v-5c7b8a54] {\n    width: 66.666667%;\n    border-radius: 0.375rem;\n    border-width: 1px;\n    --tw-border-opacity: 1;\n    border-color: rgb(31 41 55 / var(--tw-border-opacity));\n    --tw-bg-opacity: 1;\n    background-color: rgb(17 24 39 / var(--tw-bg-opacity));\n    padding: 0.5rem;\n    --tw-text-opacity: 1;\n    color: rgb(209 213 219 / var(--tw-text-opacity));\n    --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n    --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);\n    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)\n}\nlabel[data-v-5c7b8a54] {\n    margin-top: 1rem;\n    --tw-text-opacity: 1;\n    color: rgb(209 213 219 / var(--tw-text-opacity))\n}\n.chapter_title[data-v-5c7b8a54] {\n    margin-top: 0.5rem;\n    margin-bottom: 0.5rem;\n    padding: 0.25rem;\n    font-size: 1.5rem;\n    line-height: 2rem;\n    font-weight: 600;\n    font-style: italic;\n    --tw-text-opacity: 1;\n    color: rgb(213 185 133 / var(--tw-text-opacity))\n}\n.article_title[data-v-5c7b8a54] {\n    margin-top: 1rem;\n    margin-bottom: 1rem;\n    padding: 0.25rem;\n    font-size: 1.25rem;\n    line-height: 1.75rem;\n    font-weight: 600;\n    font-style: italic;\n    --tw-text-opacity: 1;\n    color: rgb(165 181 197 / var(--tw-text-opacity))\n}\n.status[data-v-5c7b8a54] {\n    margin-top: 0.5rem;\n    margin-bottom: 0.5rem;\n    margin-right: 0.5rem;\n    height: 0.5rem;\n    width: 0.5rem;\n    border-radius: 9999px;\n    --tw-bg-opacity: 1;\n    background-color: rgb(239 68 68 / var(--tw-bg-opacity))\n}\n.status.active[data-v-5c7b8a54] {\n    --tw-bg-opacity: 1;\n    background-color: rgb(34 197 94 / var(--tw-bg-opacity))\n}\ntable[data-v-5c7b8a54] {\n    width: 100%;\n    border-style: none\n}\nth[data-v-5c7b8a54] {\n    border-width: 1px;\n    border-style: none;\n    --tw-bg-opacity: 1;\n    background-color: rgb(31 41 55 / var(--tw-bg-opacity));\n    padding-left: 1rem;\n    padding-right: 1rem;\n    padding-top: 0.5rem;\n    padding-bottom: 0.5rem\n}\ntd[data-v-5c7b8a54] {\n    display: flex;\n    flex-direction: row;\n    align-items: center;\n    border-style: none;\n    padding-left: 1rem;\n    padding-right: 1rem;\n    padding-top: 0.5rem;\n    padding-bottom: 0.5rem\n}\ntr[data-v-5c7b8a54]:nth-child(even) {\n    --tw-bg-opacity: 1;\n    background-color: rgb(17 24 39 / var(--tw-bg-opacity))\n}\ntr[data-v-5c7b8a54] {\n    border-bottom-width: 1px;\n    --tw-border-opacity: 1;\n    border-color: rgb(31 41 55 / var(--tw-border-opacity))\n}\nbutton[data-v-5c7b8a54] {\n    margin-top: 0.5rem;\n    margin-bottom: 0.5rem;\n    width: 16rem;\n    border-radius: 0.375rem;\n    border-width: 1px;\n    --tw-border-opacity: 1;\n    border-color: rgb(75 85 99 / var(--tw-border-opacity));\n    padding: 0.5rem;\n    --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n    --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);\n    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)\n}\n";
 n(css$1,{});
 
 const _sfc_main$1 = {
@@ -10798,8 +10801,9 @@ const _sfc_main$1 = {
   async setup(props) {
     const api = useApi();
     const { id } = props;
-    const { getVolume, createSection } = useVolumes();
+    const { getVolume } = useVolumes();
     const data = await getVolume(id);
+    let sections = ref(data.sections);
 
     const { handleSubmit, defineField } = useForm({
       initialValues: { ...data, published_at: data.published_at.split("T")[0] },
@@ -10815,20 +10819,59 @@ const _sfc_main$1 = {
     const [active, activeAttrs] = defineField("active");
 
     const addSection = async () => {
+      const position = sections.value.length + 1;
       const response = await api.post(`/items/VolumeSections`, {
         volume_id: id,
+        position,
+        title: "Nouveau chapitre",
       });
       window.location.href =
         "/admin/content/VolumeSections/" + response.data.data.id;
     };
+
     const addArticle = async (sectionId) => {
-      const position = data.sections.find((section) => section.id === sectionId)
-        .articles.length;
+      const position =
+        sections.value.find((section) => section.id === sectionId).articles.length +
+        1;
       const response = await api.post(`/items/Articles`, {
         section_id: sectionId,
         position,
+        title: "Nouvel article",
       });
       window.location.href = "/admin/content/Articles/" + response.data.data.id;
+    };
+
+    const removeArticle = async (articleId, sectionId) => {
+      if (!confirm("Êtes-vous sûr de vouloir supprimer cet article ?")) return;
+      sections.value = sections.value.map((section) => {
+        if (section.id === sectionId) {
+          section.articles = section.articles.filter(
+            (article) => article.id !== articleId
+          );
+        }
+        return section;
+      });
+      
+      await api.delete(`/items/Articles/${articleId}`);
+    };
+
+    const removeSection = async (sectionId) => {
+      if (!confirm("Êtes-vous sûr de vouloir supprimer ce chapitre ?")) return;
+      sections.value = sections.value.filter((section) => section.id !== sectionId);
+      await api.delete(`/items/VolumeSections/${sectionId}`);
+    };
+
+    const onPositionChange = (elem) => {
+      const { element } = elem.moved;
+      const section = sections.find(
+        (section) => section.id === element.section_id
+      );
+      section.articles.forEach((article, index) => {
+        article.position = index + 1;
+        api.patch(`/items/Articles/${article.id}`, {
+          position: article.position,
+        });
+      });
     };
 
     return {
@@ -10844,37 +10887,42 @@ const _sfc_main$1 = {
       data,
       addSection,
       addArticle,
+      removeArticle,
+      removeSection,
+      sections,
+      onPositionChange,
     };
   },
 };
 
-const _withScopeId = n => (pushScopeId("data-v-2af5b093"),n=n(),popScopeId(),n);
-const _hoisted_1$1 = { class: "relative inline-flex items-center cursor-pointer" };
-const _hoisted_2 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("div", { class: "w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600" }, null, -1 /* HOISTED */));
-const _hoisted_3 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("span", { class: "ms-3 font-medium text-gray-900 dark:text-gray-300" }, "En ligne", -1 /* HOISTED */));
-const _hoisted_4 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("label", null, "Titre du volume ", -1 /* HOISTED */));
-const _hoisted_5 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("label", null, "Numéro du volume ", -1 /* HOISTED */));
-const _hoisted_6 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("label", null, "Date de publication ", -1 /* HOISTED */));
-const _hoisted_7 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("button", null, "Submit", -1 /* HOISTED */));
-const _hoisted_8 = { class: "chapter_title" };
-const _hoisted_9 = { class: "relative flex justify-between" };
-const _hoisted_10 = { class: "article_title" };
-const _hoisted_11 = ["href"];
-const _hoisted_12 = { class: "flex items-center" };
-const _hoisted_13 = { class: "h-full py-10" };
-const _hoisted_14 = { class: "w-full" };
-const _hoisted_15 = ["href"];
-const _hoisted_16 = ["onClick"];
+const _withScopeId = n => (pushScopeId("data-v-5c7b8a54"),n=n(),popScopeId(),n);
+const _hoisted_1$1 = { class: "px-4" };
+const _hoisted_2 = { class: "relative inline-flex items-center cursor-pointer" };
+const _hoisted_3 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("div", { class: "w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600" }, null, -1 /* HOISTED */));
+const _hoisted_4 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("span", { class: "ms-3 font-medium text-gray-900 dark:text-gray-300" }, "En ligne", -1 /* HOISTED */));
+const _hoisted_5 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("label", null, "Titre du volume ", -1 /* HOISTED */));
+const _hoisted_6 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("label", null, "Numéro du volume ", -1 /* HOISTED */));
+const _hoisted_7 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("label", null, "Date de publication ", -1 /* HOISTED */));
+const _hoisted_8 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("button", null, "Enregistrer", -1 /* HOISTED */));
+const _hoisted_9 = { class: "chapter_title mt-8" };
+const _hoisted_10 = { class: "relative border-b border-gray-800 items-center flex justify-between" };
+const _hoisted_11 = { class: "w-full article_title" };
+const _hoisted_12 = ["href"];
+const _hoisted_13 = { class: "flex items-center cursor-pointer" };
+const _hoisted_14 = { class: "h-full py-10" };
+const _hoisted_15 = { class: "w-full" };
+const _hoisted_16 = ["href"];
+const _hoisted_17 = ["onClick"];
 
 function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
   const _component_VIcon = resolveComponent("VIcon");
   const _component_draggable = resolveComponent("draggable");
 
-  return (openBlock(), createElementBlock(Fragment, null, [
+  return (openBlock(), createElementBlock("div", _hoisted_1$1, [
     createElementVNode("form", {
       onSubmit: _cache[4] || (_cache[4] = (...args) => ($setup.onSubmit && $setup.onSubmit(...args)))
     }, [
-      createElementVNode("label", _hoisted_1$1, [
+      createElementVNode("label", _hoisted_2, [
         withDirectives(createElementVNode("input", mergeProps({
           type: "checkbox",
           value: "",
@@ -10883,96 +10931,118 @@ function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
         }, $setup.activeAttrs), null, 16 /* FULL_PROPS */), [
           [vModelCheckbox, $setup.active]
         ]),
-        _hoisted_2,
-        _hoisted_3
+        _hoisted_3,
+        _hoisted_4
       ]),
-      _hoisted_4,
+      _hoisted_5,
       withDirectives(createElementVNode("input", mergeProps({
         type: "text",
         "onUpdate:modelValue": _cache[1] || (_cache[1] = $event => (($setup.title) = $event))
       }, $setup.titleAttrs), null, 16 /* FULL_PROPS */), [
         [vModelText, $setup.title]
       ]),
-      _hoisted_5,
+      _hoisted_6,
       withDirectives(createElementVNode("input", mergeProps({
         type: "text",
         "onUpdate:modelValue": _cache[2] || (_cache[2] = $event => (($setup.number) = $event))
       }, $setup.numberAttrs), null, 16 /* FULL_PROPS */), [
         [vModelText, $setup.number]
       ]),
-      _hoisted_6,
+      _hoisted_7,
       withDirectives(createElementVNode("input", mergeProps({
         type: "date",
         "onUpdate:modelValue": _cache[3] || (_cache[3] = $event => (($setup.published_at) = $event))
       }, $setup.published_atAttrs), null, 16 /* FULL_PROPS */), [
         [vModelText, $setup.published_at]
       ]),
-      _hoisted_7
+      _hoisted_8
     ], 32 /* NEED_HYDRATION */),
-    createElementVNode("button", {
-      class: "mt-4",
-      onClick: _cache[5] || (_cache[5] = (...args) => ($setup.addSection && $setup.addSection(...args)))
-    }, "Ajouter un chapitre"),
-    createElementVNode("h3", _hoisted_8, " Liste des chapitres et articles associés au numéro \"" + toDisplayString($setup.data.title) + "\" ", 1 /* TEXT */),
-    (openBlock(true), createElementBlock(Fragment, null, renderList($setup.data.sections, (section) => {
+    createElementVNode("h3", _hoisted_9, " Liste des chapitres et articles associés au numéro \"" + toDisplayString($setup.title) + "\" ", 1 /* TEXT */),
+    (openBlock(true), createElementBlock(Fragment, null, renderList($setup.sections, (section) => {
       return (openBlock(), createElementBlock("div", {
         key: section.id
       }, [
-        createElementVNode("div", _hoisted_9, [
-          createElementVNode("h4", _hoisted_10, toDisplayString(section.title), 1 /* TEXT */),
+        createElementVNode("div", _hoisted_10, [
+          createElementVNode("h4", _hoisted_11, toDisplayString(section.title), 1 /* TEXT */),
           createElementVNode("a", {
-            class: "absolute right-0",
+            class: "",
             href: `/admin/content/VolumeSections/${section.id}`
           }, [
-            createVNode(_component_VIcon, { name: "edit" })
-          ], 8 /* PROPS */, _hoisted_11)
+            createVNode(_component_VIcon, {
+              name: "edit",
+              title: "Modifier le chapitre"
+            })
+          ], 8 /* PROPS */, _hoisted_12),
+          createVNode(_component_VIcon, {
+            title: "Supprimer le chapitre",
+            class: "cursor-pointer",
+            name: "close",
+            onClick: $event => ($setup.removeSection(section.id))
+          }, null, 8 /* PROPS */, ["onClick"])
         ]),
         createVNode(_component_draggable, {
           modelValue: section.articles,
           "onUpdate:modelValue": $event => ((section.articles) = $event),
-          onStart: _cache[7] || (_cache[7] = $event => (_ctx.drag = true)),
-          onEnd: _cache[8] || (_cache[8] = $event => (_ctx.drag = false)),
+          onChange: $setup.onPositionChange,
+          onStart: _cache[5] || (_cache[5] = $event => (_ctx.drag = true)),
+          onEnd: _cache[6] || (_cache[6] = $event => (_ctx.drag = false)),
           "item-key": "id"
         }, {
-          item: withCtx(({ element }) => [
-            createElementVNode("tr", _hoisted_12, [
-              createElementVNode("td", _hoisted_13, [
-                createElementVNode("span", {
-                  class: normalizeClass(["status", { active: element.active }])
-                }, null, 2 /* CLASS */)
+          item: withCtx(({ element: article }) => [
+            createElementVNode("tr", _hoisted_13, [
+              createElementVNode("td", null, [
+                createVNode(_component_VIcon, {
+                  name: "menu",
+                  title: "Glisser-déposer"
+                })
               ]),
               createElementVNode("td", _hoisted_14, [
-                createElementVNode("h5", null, toDisplayString(element.title), 1 /* TEXT */)
+                createElementVNode("span", {
+                  class: normalizeClass(["status", { active: article.active }])
+                }, null, 2 /* CLASS */)
+              ]),
+              createElementVNode("td", _hoisted_15, [
+                createElementVNode("h5", null, toDisplayString(article.title), 1 /* TEXT */)
               ]),
               createElementVNode("td", null, [
                 createElementVNode("a", {
-                  href: `/admin/content/Articles/${element.id}`
+                  href: `/admin/content/Articles/${article.id}`
                 }, [
                   createVNode(_component_VIcon, {
                     name: "edit",
-                    title: "Modifier"
+                    title: "Modifier l'article"
                   })
-                ], 8 /* PROPS */, _hoisted_15),
+                ], 8 /* PROPS */, _hoisted_16),
                 createVNode(_component_VIcon, {
-                  title: "Supprimer",
+                  title: "Supprimer l'article",
                   class: "cursor-pointer",
                   name: "close",
-                  onClick: _cache[6] || (_cache[6] = $event => (_ctx.removeAt(_ctx.index)))
-                })
+                  onClick: $event => ($setup.removeArticle(article.id, section.id))
+                }, null, 8 /* PROPS */, ["onClick"])
               ])
             ])
           ]),
           _: 2 /* DYNAMIC */
-        }, 1032 /* PROPS, DYNAMIC_SLOTS */, ["modelValue", "onUpdate:modelValue"]),
+        }, 1032 /* PROPS, DYNAMIC_SLOTS */, ["modelValue", "onUpdate:modelValue", "onChange"]),
         createElementVNode("button", {
           class: "mt-4",
           onClick: $event => ($setup.addArticle(section.id))
-        }, " Ajouter un article ", 8 /* PROPS */, _hoisted_16)
+        }, [
+          createTextVNode(" Ajouter un article "),
+          createVNode(_component_VIcon, { name: "add" })
+        ], 8 /* PROPS */, _hoisted_17)
       ]))
-    }), 128 /* KEYED_FRAGMENT */))
-  ], 64 /* STABLE_FRAGMENT */))
+    }), 128 /* KEYED_FRAGMENT */)),
+    createElementVNode("button", {
+      class: "mt-8",
+      onClick: _cache[7] || (_cache[7] = (...args) => ($setup.addSection && $setup.addSection(...args)))
+    }, [
+      createTextVNode(" Ajouter un chapitre "),
+      createVNode(_component_VIcon, { name: "add" })
+    ])
+  ]))
 }
-var VolumeEdit = /*#__PURE__*/_export_sfc(_sfc_main$1, [['render',_sfc_render$1],['__scopeId',"data-v-2af5b093"],['__file',"VolumeEdit.vue"]]);
+var VolumeEdit = /*#__PURE__*/_export_sfc(_sfc_main$1, [['render',_sfc_render$1],['__scopeId',"data-v-5c7b8a54"],['__file',"VolumeEdit.vue"]]);
 
 const _sfc_main = {
   props: {
