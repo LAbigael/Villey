@@ -1,8 +1,19 @@
 <template>
   <VList v-for="item in data" :key="item.id">
-  <VListItem :clickable="true" :href="`volume-editor/edit/${item.id}`" >
-      {{ item.title }}
-      <VIcon :small="true" name="circle" :filled="item.active ? 'true' : 'false'" />
+    <VListItem :clickable="true" :href="`volume-editor/edit/${item.id}`">
+      <tr class="w-full flex items-center cursor-pointer">
+        <td class="h-full py-10">
+          <span class="status" :class="{ active: item.active }"></span>
+        </td>
+        <td class="w-full">
+          <h5>{{ item.title }}</h5>
+        </td>
+        <td>
+          <a :href="`/admin/volume-editor/edit/${item.id}`">
+            <VIcon name="edit" title="Modifier le volume" />
+          </a>
+        </td>
+      </tr>
     </VListItem>
   </VList>
 </template>
@@ -37,3 +48,24 @@ export default {
   },
 };
 </script>
+<style>
+.status {
+  @apply bg-red-500 w-2 h-2 rounded-full my-2 mr-2;
+}
+
+.status.active {
+  @apply bg-green-500;
+}
+
+td {
+  @apply border-none px-4 py-2 flex flex-row items-center;
+}
+
+tr:nth-child(even) {
+  @apply bg-gray-900;
+}
+
+tr {
+  @apply border-b border-gray-800;
+}
+</style>

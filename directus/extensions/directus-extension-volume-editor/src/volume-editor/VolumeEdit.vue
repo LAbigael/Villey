@@ -30,12 +30,13 @@
       <draggable v-model="section.articles" @change="onPositionChange" @start="drag = true" @end="drag = false"
         item-key="id">
         <template #item="{ element: article }">
-          <tr class="flex items-center cursor-pointer">
+          <tr class="">
             <td>
               <VIcon name="menu" title="Glisser-déposer" />
             </td>
             <td class="h-full py-10">
-              <span class="status" :class="{ active: article.active }"></span>
+              <span class="status cursor-pointer" :title="active ? 'Désactiver' : 'Activer'"
+                :class="{ active: article.active }" @click="toggleActive(section.id, article.id)"></span>
             </td>
             <td class="w-full">
               <h5>{{ article.title }}</h5>
@@ -67,7 +68,7 @@ import { useVolumes } from "./data";
 import { useForm } from "vee-validate";
 import { useApi } from "@directus/extensions-sdk";
 import draggable from "vuedraggable";
-import {ref} from 'vue'
+import { ref } from "vue";
 
 export default {
   components: {
@@ -112,8 +113,8 @@ export default {
 
     const addArticle = async (sectionId) => {
       const position =
-        sections.value.find((section) => section.id === sectionId).articles.length +
-        1;
+        sections.value.find((section) => section.id === sectionId).articles
+          .length + 1;
       const response = await api.post(`/items/Articles`, {
         section_id: sectionId,
         position,
@@ -132,19 +133,21 @@ export default {
         }
         return section;
       });
-      
+
       await api.delete(`/items/Articles/${articleId}`);
     };
 
     const removeSection = async (sectionId) => {
       if (!confirm("Êtes-vous sûr de vouloir supprimer ce chapitre ?")) return;
-      sections.value = sections.value.filter((section) => section.id !== sectionId);
+      sections.value = sections.value.filter(
+        (section) => section.id !== sectionId
+      );
       await api.delete(`/items/VolumeSections/${sectionId}`);
     };
 
     const onPositionChange = (elem) => {
       const { element } = elem.moved;
-      const section = sections.find(
+      const section = sections.value.find(
         (section) => section.id === element.section_id
       );
       section.articles.forEach((article, index) => {
@@ -152,6 +155,24 @@ export default {
         api.patch(`/items/Articles/${article.id}`, {
           position: article.position,
         });
+      });
+    };
+    const toggleActive = async (sectionId, articleId) => {
+      let active;
+      sections.value = sections.value.map((section) => {
+        if (section.id === sectionId) {
+          section.articles = section.articles.map((article) => {
+            if (article.id === articleId) {
+              article.active = !article.active;
+              active = article.active;
+            }
+            return article;
+          });
+        }
+        return section;
+      });
+      await api.patch(`/items/Articles/${articleId}`, {
+        active,
       });
     };
 
@@ -172,6 +193,7 @@ export default {
       removeSection,
       sections,
       onPositionChange,
+      toggleActive,
     };
   },
 };
@@ -199,19 +221,11 @@ label {
 }
 
 .status {
-  @apply bg-red-500 w-2 h-2 rounded-full my-2 mr-2;
+  @apply bg-red-500 w-2 h-2 rounded-full my-2 mr-2 hover:border-white hover:border hover:border-solid;
 }
 
 .status.active {
   @apply bg-green-500;
-}
-
-table {
-  @apply w-full border-none;
-}
-
-th {
-  @apply bg-gray-800 border px-4 py-2 border-none;
 }
 
 td {
@@ -223,7 +237,7 @@ tr:nth-child(even) {
 }
 
 tr {
-  @apply border-b border-gray-800;
+  @apply border-b border-gray-800 flex items-center cursor-grab hover:bg-gray-800;
 }
 
 button {
