@@ -9,7 +9,7 @@
           <h5>{{ item.title }}</h5>
         </td>
         <td>
-          <a :href="`/admin/volume-editor/edit/${item.id}`">
+          <a target="_self" :href="`/admin/volume-editor/edit/${item.id}`">
             <VIcon name="edit" title="Modifier le volume" />
           </a>
         </td>

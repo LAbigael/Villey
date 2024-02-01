@@ -91,8 +91,14 @@ export default {
       initialValues: { ...data, published_at: data.published_at.split("T")[0] },
     });
 
-    const onSubmit = handleSubmit((values) => {
-      console.log(JSON.stringify(values, null, 2));
+    const onSubmit = handleSubmit(async (values) => {
+      const { title, number, published_at, active } = values;
+      await api.patch(`/items/Volumes/${id}`, {
+        title,
+        number,
+        published_at,
+        active,
+      });
     });
 
     const [title, titleAttrs] = defineField("title");
@@ -157,6 +163,7 @@ export default {
         });
       });
     };
+
     const toggleActive = async (sectionId, articleId) => {
       let active;
       sections.value = sections.value.map((section) => {

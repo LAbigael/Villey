@@ -1,6 +1,11 @@
 import { useItems, useApi } from '@directus/extensions-sdk';
 import * as vue from 'vue';
-import { ref, resolveComponent, openBlock, createElementBlock, Fragment, renderList, createBlock, withCtx, createVNode, createTextVNode, toDisplayString, Suspense, createElementVNode, reactive, computed, unref, nextTick, onMounted, isRef, watch, provide, toValue, readonly, watchEffect, shallowRef, withDirectives, mergeProps, vModelCheckbox, vModelText, normalizeClass, pushScopeId, popScopeId } from 'vue';
+import { ref, resolveComponent, openBlock, createElementBlock, Fragment, renderList, createBlock, withCtx, createVNode, createElementVNode, normalizeClass, toDisplayString, Suspense, reactive, computed, unref, nextTick, onMounted, isRef, watch, provide, toValue, readonly, watchEffect, shallowRef, withDirectives, mergeProps, vModelCheckbox, vModelText, createTextVNode, pushScopeId, popScopeId } from 'vue';
+
+var e=[],t=[];function n(n,r){if(n&&"undefined"!=typeof document){var a,s=!0===r.prepend?"prepend":"append",d=!0===r.singleTag,i="string"==typeof r.container?document.querySelector(r.container):document.getElementsByTagName("head")[0];if(d){var u=e.indexOf(i);-1===u&&(u=e.push(i)-1,t[u]={}),a=t[u]&&t[u][s]?t[u][s]:t[u][s]=c();}else a=c();65279===n.charCodeAt(0)&&(n=n.substring(1)),a.styleSheet?a.styleSheet.cssText+=n:a.appendChild(document.createTextNode(n));}function c(){var e=document.createElement("style");if(e.setAttribute("type","text/css"),r.attributes)for(var t=Object.keys(r.attributes),n=0;n<t.length;n++)e.setAttribute(t[n],r.attributes[t[n]]);var a="prepend"===s?"afterbegin":"beforeend";return i.insertAdjacentElement(a,e),e}}
+
+var css$3 = "\n.status {\n    margin-top: 0.5rem;\n    margin-bottom: 0.5rem;\n    margin-right: 0.5rem;\n    height: 0.5rem;\n    width: 0.5rem;\n    border-radius: 9999px;\n    --tw-bg-opacity: 1;\n    background-color: rgb(239 68 68 / var(--tw-bg-opacity))\n}\n.status.active {\n    --tw-bg-opacity: 1;\n    background-color: rgb(34 197 94 / var(--tw-bg-opacity))\n}\ntd {\n    display: flex;\n    flex-direction: row;\n    align-items: center;\n    border-style: none;\n    padding-left: 1rem;\n    padding-right: 1rem;\n    padding-top: 0.5rem;\n    padding-bottom: 0.5rem\n}\ntr:nth-child(even) {\n    --tw-bg-opacity: 1;\n    background-color: rgb(17 24 39 / var(--tw-bg-opacity))\n}\ntr {\n    border-bottom-width: 1px;\n    --tw-border-opacity: 1;\n    border-color: rgb(31 41 55 / var(--tw-border-opacity))\n}\n";
+n(css$3,{});
 
 var _export_sfc = (sfc, props) => {
   const target = sfc.__vccOpts || sfc;
@@ -10,7 +15,7 @@ var _export_sfc = (sfc, props) => {
   return target;
 };
 
-const _sfc_main$3 = {
+const _sfc_main$4 = {
   async setup() {
     const collectionRef = ref("Volumes");
 
@@ -38,7 +43,12 @@ const _sfc_main$3 = {
   },
 };
 
-function _sfc_render$3(_ctx, _cache, $props, $setup, $data, $options) {
+const _hoisted_1$3 = { class: "w-full flex items-center cursor-pointer" };
+const _hoisted_2$2 = { class: "h-full py-10" };
+const _hoisted_3$1 = { class: "w-full" };
+const _hoisted_4$1 = ["href"];
+
+function _sfc_render$4(_ctx, _cache, $props, $setup, $data, $options) {
   const _component_VIcon = resolveComponent("VIcon");
   const _component_VListItem = resolveComponent("VListItem");
   const _component_VList = resolveComponent("VList");
@@ -53,12 +63,27 @@ function _sfc_render$3(_ctx, _cache, $props, $setup, $data, $options) {
           href: `volume-editor/edit/${item.id}`
         }, {
           default: withCtx(() => [
-            createTextVNode(toDisplayString(item.title) + " ", 1 /* TEXT */),
-            createVNode(_component_VIcon, {
-              small: true,
-              name: "circle",
-              filled: item.active ? 'true' : 'false'
-            }, null, 8 /* PROPS */, ["filled"])
+            createElementVNode("tr", _hoisted_1$3, [
+              createElementVNode("td", _hoisted_2$2, [
+                createElementVNode("span", {
+                  class: normalizeClass(["status", { active: item.active }])
+                }, null, 2 /* CLASS */)
+              ]),
+              createElementVNode("td", _hoisted_3$1, [
+                createElementVNode("h5", null, toDisplayString(item.title), 1 /* TEXT */)
+              ]),
+              createElementVNode("td", null, [
+                createElementVNode("a", {
+                  target: "_self",
+                  href: `/admin/volume-editor/edit/${item.id}`
+                }, [
+                  createVNode(_component_VIcon, {
+                    name: "edit",
+                    title: "Modifier le volume"
+                  })
+                ], 8 /* PROPS */, _hoisted_4$1)
+              ])
+            ])
           ]),
           _: 2 /* DYNAMIC */
         }, 1032 /* PROPS, DYNAMIC_SLOTS */, ["href"])
@@ -67,10 +92,130 @@ function _sfc_render$3(_ctx, _cache, $props, $setup, $data, $options) {
     }, 1024 /* DYNAMIC_SLOTS */))
   }), 128 /* KEYED_FRAGMENT */))
 }
-var VolumeList = /*#__PURE__*/_export_sfc(_sfc_main$3, [['render',_sfc_render$3],['__file',"VolumeList.vue"]]);
+var VolumeList = /*#__PURE__*/_export_sfc(_sfc_main$4, [['render',_sfc_render$4],['__file',"VolumeList.vue"]]);
+
+const _sfc_main$3 = {};
+
+function _sfc_render$3(_ctx, _cache) {
+  const _component_v_icon = resolveComponent("v-icon");
+  const _component_v_list_item_icon = resolveComponent("v-list-item-icon");
+  const _component_v_text_overflow = resolveComponent("v-text-overflow");
+  const _component_v_list_item_content = resolveComponent("v-list-item-content");
+  const _component_v_list_item = resolveComponent("v-list-item");
+  const _component_v_list = resolveComponent("v-list");
+
+  return (openBlock(), createBlock(_component_v_list, { nav: "" }, {
+    default: withCtx(() => [
+      createVNode(_component_v_list_item, { href: "/volumes" }, {
+        default: withCtx(() => [
+          createVNode(_component_v_list_item_icon, null, {
+            default: withCtx(() => [
+              createVNode(_component_v_icon, { name: "import_contacts" })
+            ]),
+            _: 1 /* STABLE */
+          }),
+          createVNode(_component_v_list_item_content, null, {
+            default: withCtx(() => [
+              createVNode(_component_v_text_overflow, { text: "Volumes" })
+            ]),
+            _: 1 /* STABLE */
+          })
+        ]),
+        _: 1 /* STABLE */
+      }),
+      createVNode(_component_v_list_item, null, {
+        default: withCtx(() => [
+          createVNode(_component_v_list_item_icon, null, {
+            default: withCtx(() => [
+              createVNode(_component_v_icon, { name: "book" })
+            ]),
+            _: 1 /* STABLE */
+          }),
+          createVNode(_component_v_list_item_content, null, {
+            default: withCtx(() => [
+              createVNode(_component_v_text_overflow, { text: "Numéros" })
+            ]),
+            _: 1 /* STABLE */
+          })
+        ]),
+        _: 1 /* STABLE */
+      }),
+      createVNode(_component_v_list_item, null, {
+        default: withCtx(() => [
+          createVNode(_component_v_list_item_icon, null, {
+            default: withCtx(() => [
+              createVNode(_component_v_icon, { name: "article" })
+            ]),
+            _: 1 /* STABLE */
+          }),
+          createVNode(_component_v_list_item_content, null, {
+            default: withCtx(() => [
+              createVNode(_component_v_text_overflow, { text: "Recensions" })
+            ]),
+            _: 1 /* STABLE */
+          })
+        ]),
+        _: 1 /* STABLE */
+      }),
+      createVNode(_component_v_list_item, null, {
+        default: withCtx(() => [
+          createVNode(_component_v_list_item_icon, null, {
+            default: withCtx(() => [
+              createVNode(_component_v_icon, { name: "person" })
+            ]),
+            _: 1 /* STABLE */
+          }),
+          createVNode(_component_v_list_item_content, null, {
+            default: withCtx(() => [
+              createVNode(_component_v_text_overflow, { text: "Auteurs" })
+            ]),
+            _: 1 /* STABLE */
+          })
+        ]),
+        _: 1 /* STABLE */
+      }),
+      createVNode(_component_v_list_item, null, {
+        default: withCtx(() => [
+          createVNode(_component_v_list_item_icon, null, {
+            default: withCtx(() => [
+              createVNode(_component_v_icon, { name: "explore" })
+            ]),
+            _: 1 /* STABLE */
+          }),
+          createVNode(_component_v_list_item_content, null, {
+            default: withCtx(() => [
+              createVNode(_component_v_text_overflow, { text: "Appels à contribution" })
+            ]),
+            _: 1 /* STABLE */
+          })
+        ]),
+        _: 1 /* STABLE */
+      }),
+      createVNode(_component_v_list_item, null, {
+        default: withCtx(() => [
+          createVNode(_component_v_list_item_icon, null, {
+            default: withCtx(() => [
+              createVNode(_component_v_icon, { name: "palette" })
+            ]),
+            _: 1 /* STABLE */
+          }),
+          createVNode(_component_v_list_item_content, null, {
+            default: withCtx(() => [
+              createVNode(_component_v_text_overflow, { text: "Thèmes" })
+            ]),
+            _: 1 /* STABLE */
+          })
+        ]),
+        _: 1 /* STABLE */
+      })
+    ]),
+    _: 1 /* STABLE */
+  }))
+}
+var PageNavigation = /*#__PURE__*/_export_sfc(_sfc_main$3, [['render',_sfc_render$3],['__file',"PageNavigation.vue"]]);
 
 const _sfc_main$2 = {
-  components: { VolumeList, Suspense },
+  components: { VolumeList, Suspense, PageNavigation },
   setup() { },
 };
 
@@ -78,10 +223,14 @@ const _hoisted_1$2 = /*#__PURE__*/createElementVNode("h2", null, "Liste des volu
 const _hoisted_2$1 = /*#__PURE__*/createElementVNode("div", null, "Loading...", -1 /* HOISTED */);
 
 function _sfc_render$2(_ctx, _cache, $props, $setup, $data, $options) {
+  const _component_PageNavigation = resolveComponent("PageNavigation");
   const _component_VolumeList = resolveComponent("VolumeList");
   const _component_private_view = resolveComponent("private-view");
 
   return (openBlock(), createBlock(_component_private_view, { title: "Liste des volumes" }, {
+    navigation: withCtx(() => [
+      createVNode(_component_PageNavigation)
+    ]),
     default: withCtx(() => [
       _hoisted_1$2,
       (openBlock(), createBlock(Suspense, null, {
@@ -10783,9 +10932,7 @@ var require$$1 = /*@__PURE__*/getAugmentedNamespace(sortable_esm);
 var vuedraggable_umdExports = vuedraggable_umd.exports;
 var draggable = /*@__PURE__*/getDefaultExportFromCjs(vuedraggable_umdExports);
 
-var e=[],t=[];function n(n,r){if(n&&"undefined"!=typeof document){var a,s=!0===r.prepend?"prepend":"append",d=!0===r.singleTag,i="string"==typeof r.container?document.querySelector(r.container):document.getElementsByTagName("head")[0];if(d){var u=e.indexOf(i);-1===u&&(u=e.push(i)-1,t[u]={}),a=t[u]&&t[u][s]?t[u][s]:t[u][s]=c();}else a=c();65279===n.charCodeAt(0)&&(n=n.substring(1)),a.styleSheet?a.styleSheet.cssText+=n:a.appendChild(document.createTextNode(n));}function c(){var e=document.createElement("style");if(e.setAttribute("type","text/css"),r.attributes)for(var t=Object.keys(r.attributes),n=0;n<t.length;n++)e.setAttribute(t[n],r.attributes[t[n]]);var a="prepend"===s?"afterbegin":"beforeend";return i.insertAdjacentElement(a,e),e}}
-
-var css$1 = "\nform[data-v-5c7b8a54] {\n    display: flex;\n    flex-direction: column\n}\ninput[data-v-5c7b8a54] {\n    width: 66.666667%;\n    border-radius: 0.375rem;\n    border-width: 1px;\n    --tw-border-opacity: 1;\n    border-color: rgb(31 41 55 / var(--tw-border-opacity));\n    --tw-bg-opacity: 1;\n    background-color: rgb(17 24 39 / var(--tw-bg-opacity));\n    padding: 0.5rem;\n    --tw-text-opacity: 1;\n    color: rgb(209 213 219 / var(--tw-text-opacity));\n    --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n    --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);\n    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)\n}\nlabel[data-v-5c7b8a54] {\n    margin-top: 1rem;\n    --tw-text-opacity: 1;\n    color: rgb(209 213 219 / var(--tw-text-opacity))\n}\n.chapter_title[data-v-5c7b8a54] {\n    margin-top: 0.5rem;\n    margin-bottom: 0.5rem;\n    padding: 0.25rem;\n    font-size: 1.5rem;\n    line-height: 2rem;\n    font-weight: 600;\n    font-style: italic;\n    --tw-text-opacity: 1;\n    color: rgb(213 185 133 / var(--tw-text-opacity))\n}\n.article_title[data-v-5c7b8a54] {\n    margin-top: 1rem;\n    margin-bottom: 1rem;\n    padding: 0.25rem;\n    font-size: 1.25rem;\n    line-height: 1.75rem;\n    font-weight: 600;\n    font-style: italic;\n    --tw-text-opacity: 1;\n    color: rgb(165 181 197 / var(--tw-text-opacity))\n}\n.status[data-v-5c7b8a54] {\n    margin-top: 0.5rem;\n    margin-bottom: 0.5rem;\n    margin-right: 0.5rem;\n    height: 0.5rem;\n    width: 0.5rem;\n    border-radius: 9999px;\n    --tw-bg-opacity: 1;\n    background-color: rgb(239 68 68 / var(--tw-bg-opacity))\n}\n.status.active[data-v-5c7b8a54] {\n    --tw-bg-opacity: 1;\n    background-color: rgb(34 197 94 / var(--tw-bg-opacity))\n}\ntable[data-v-5c7b8a54] {\n    width: 100%;\n    border-style: none\n}\nth[data-v-5c7b8a54] {\n    border-width: 1px;\n    border-style: none;\n    --tw-bg-opacity: 1;\n    background-color: rgb(31 41 55 / var(--tw-bg-opacity));\n    padding-left: 1rem;\n    padding-right: 1rem;\n    padding-top: 0.5rem;\n    padding-bottom: 0.5rem\n}\ntd[data-v-5c7b8a54] {\n    display: flex;\n    flex-direction: row;\n    align-items: center;\n    border-style: none;\n    padding-left: 1rem;\n    padding-right: 1rem;\n    padding-top: 0.5rem;\n    padding-bottom: 0.5rem\n}\ntr[data-v-5c7b8a54]:nth-child(even) {\n    --tw-bg-opacity: 1;\n    background-color: rgb(17 24 39 / var(--tw-bg-opacity))\n}\ntr[data-v-5c7b8a54] {\n    border-bottom-width: 1px;\n    --tw-border-opacity: 1;\n    border-color: rgb(31 41 55 / var(--tw-border-opacity))\n}\nbutton[data-v-5c7b8a54] {\n    margin-top: 0.5rem;\n    margin-bottom: 0.5rem;\n    width: 16rem;\n    border-radius: 0.375rem;\n    border-width: 1px;\n    --tw-border-opacity: 1;\n    border-color: rgb(75 85 99 / var(--tw-border-opacity));\n    padding: 0.5rem;\n    --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n    --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);\n    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)\n}\n";
+var css$1 = "\nform[data-v-51beb72a] {\n    display: flex;\n    flex-direction: column\n}\ninput[data-v-51beb72a] {\n    width: 66.666667%;\n    border-radius: 0.375rem;\n    border-width: 1px;\n    --tw-border-opacity: 1;\n    border-color: rgb(31 41 55 / var(--tw-border-opacity));\n    --tw-bg-opacity: 1;\n    background-color: rgb(17 24 39 / var(--tw-bg-opacity));\n    padding: 0.5rem;\n    --tw-text-opacity: 1;\n    color: rgb(209 213 219 / var(--tw-text-opacity));\n    --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n    --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);\n    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)\n}\nlabel[data-v-51beb72a] {\n    margin-top: 1rem;\n    --tw-text-opacity: 1;\n    color: rgb(209 213 219 / var(--tw-text-opacity))\n}\n.chapter_title[data-v-51beb72a] {\n    margin-top: 0.5rem;\n    margin-bottom: 0.5rem;\n    padding: 0.25rem;\n    font-size: 1.5rem;\n    line-height: 2rem;\n    font-weight: 600;\n    font-style: italic;\n    --tw-text-opacity: 1;\n    color: rgb(213 185 133 / var(--tw-text-opacity))\n}\n.article_title[data-v-51beb72a] {\n    margin-top: 1rem;\n    margin-bottom: 1rem;\n    padding: 0.25rem;\n    font-size: 1.25rem;\n    line-height: 1.75rem;\n    font-weight: 600;\n    font-style: italic;\n    --tw-text-opacity: 1;\n    color: rgb(165 181 197 / var(--tw-text-opacity))\n}\n.status[data-v-51beb72a] {\n    margin-top: 0.5rem;\n    margin-bottom: 0.5rem;\n    margin-right: 0.5rem;\n    height: 0.5rem;\n    width: 0.5rem;\n    border-radius: 9999px;\n    --tw-bg-opacity: 1;\n    background-color: rgb(239 68 68 / var(--tw-bg-opacity))\n}\n.status[data-v-51beb72a]:hover {\n    border-width: 1px;\n    border-style: solid;\n    --tw-border-opacity: 1;\n    border-color: rgb(255 255 255 / var(--tw-border-opacity))\n}\n.status.active[data-v-51beb72a] {\n    --tw-bg-opacity: 1;\n    background-color: rgb(34 197 94 / var(--tw-bg-opacity))\n}\ntd[data-v-51beb72a] {\n    display: flex;\n    flex-direction: row;\n    align-items: center;\n    border-style: none;\n    padding-left: 1rem;\n    padding-right: 1rem;\n    padding-top: 0.5rem;\n    padding-bottom: 0.5rem\n}\ntr[data-v-51beb72a]:nth-child(even) {\n    --tw-bg-opacity: 1;\n    background-color: rgb(17 24 39 / var(--tw-bg-opacity))\n}\ntr[data-v-51beb72a] {\n    display: flex;\n    align-items: center;\n    border-bottom-width: 1px;\n    --tw-border-opacity: 1;\n    border-color: rgb(31 41 55 / var(--tw-border-opacity));\n    cursor: grab\n}\ntr[data-v-51beb72a]:hover {\n    --tw-bg-opacity: 1;\n    background-color: rgb(31 41 55 / var(--tw-bg-opacity))\n}\nbutton[data-v-51beb72a] {\n    margin-top: 0.5rem;\n    margin-bottom: 0.5rem;\n    width: 16rem;\n    border-radius: 0.375rem;\n    border-width: 1px;\n    --tw-border-opacity: 1;\n    border-color: rgb(75 85 99 / var(--tw-border-opacity));\n    padding: 0.5rem;\n    --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);\n    --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);\n    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)\n}\n";
 n(css$1,{});
 
 const _sfc_main$1 = {
@@ -10809,8 +10956,14 @@ const _sfc_main$1 = {
       initialValues: { ...data, published_at: data.published_at.split("T")[0] },
     });
 
-    const onSubmit = handleSubmit((values) => {
-      console.log(JSON.stringify(values, null, 2));
+    const onSubmit = handleSubmit(async (values) => {
+      const { title, number, published_at, active } = values;
+      await api.patch(`/items/Volumes/${id}`, {
+        title,
+        number,
+        published_at,
+        active,
+      });
     });
 
     const [title, titleAttrs] = defineField("title");
@@ -10831,8 +10984,8 @@ const _sfc_main$1 = {
 
     const addArticle = async (sectionId) => {
       const position =
-        sections.value.find((section) => section.id === sectionId).articles.length +
-        1;
+        sections.value.find((section) => section.id === sectionId).articles
+          .length + 1;
       const response = await api.post(`/items/Articles`, {
         section_id: sectionId,
         position,
@@ -10851,19 +11004,21 @@ const _sfc_main$1 = {
         }
         return section;
       });
-      
+
       await api.delete(`/items/Articles/${articleId}`);
     };
 
     const removeSection = async (sectionId) => {
       if (!confirm("Êtes-vous sûr de vouloir supprimer ce chapitre ?")) return;
-      sections.value = sections.value.filter((section) => section.id !== sectionId);
+      sections.value = sections.value.filter(
+        (section) => section.id !== sectionId
+      );
       await api.delete(`/items/VolumeSections/${sectionId}`);
     };
 
     const onPositionChange = (elem) => {
       const { element } = elem.moved;
-      const section = sections.find(
+      const section = sections.value.find(
         (section) => section.id === element.section_id
       );
       section.articles.forEach((article, index) => {
@@ -10871,6 +11026,25 @@ const _sfc_main$1 = {
         api.patch(`/items/Articles/${article.id}`, {
           position: article.position,
         });
+      });
+    };
+
+    const toggleActive = async (sectionId, articleId) => {
+      let active;
+      sections.value = sections.value.map((section) => {
+        if (section.id === sectionId) {
+          section.articles = section.articles.map((article) => {
+            if (article.id === articleId) {
+              article.active = !article.active;
+              active = article.active;
+            }
+            return article;
+          });
+        }
+        return section;
+      });
+      await api.patch(`/items/Articles/${articleId}`, {
+        active,
       });
     };
 
@@ -10891,11 +11065,12 @@ const _sfc_main$1 = {
       removeSection,
       sections,
       onPositionChange,
+      toggleActive,
     };
   },
 };
 
-const _withScopeId = n => (pushScopeId("data-v-5c7b8a54"),n=n(),popScopeId(),n);
+const _withScopeId = n => (pushScopeId("data-v-51beb72a"),n=n(),popScopeId(),n);
 const _hoisted_1$1 = { class: "px-4" };
 const _hoisted_2 = { class: "relative inline-flex items-center cursor-pointer" };
 const _hoisted_3 = /*#__PURE__*/ _withScopeId(() => /*#__PURE__*/createElementVNode("div", { class: "w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600" }, null, -1 /* HOISTED */));
@@ -10908,11 +11083,12 @@ const _hoisted_9 = { class: "chapter_title mt-8" };
 const _hoisted_10 = { class: "relative border-b border-gray-800 items-center flex justify-between" };
 const _hoisted_11 = { class: "w-full article_title" };
 const _hoisted_12 = ["href"];
-const _hoisted_13 = { class: "flex items-center cursor-pointer" };
+const _hoisted_13 = { class: "" };
 const _hoisted_14 = { class: "h-full py-10" };
-const _hoisted_15 = { class: "w-full" };
-const _hoisted_16 = ["href"];
-const _hoisted_17 = ["onClick"];
+const _hoisted_15 = ["title", "onClick"];
+const _hoisted_16 = { class: "w-full" };
+const _hoisted_17 = ["href"];
+const _hoisted_18 = ["onClick"];
 
 function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
   const _component_VIcon = resolveComponent("VIcon");
@@ -10998,10 +11174,12 @@ function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
               ]),
               createElementVNode("td", _hoisted_14, [
                 createElementVNode("span", {
-                  class: normalizeClass(["status", { active: article.active }])
-                }, null, 2 /* CLASS */)
+                  class: normalizeClass(["status cursor-pointer", { active: article.active }]),
+                  title: $setup.active ? 'Désactiver' : 'Activer',
+                  onClick: $event => ($setup.toggleActive(section.id, article.id))
+                }, null, 10 /* CLASS, PROPS */, _hoisted_15)
               ]),
-              createElementVNode("td", _hoisted_15, [
+              createElementVNode("td", _hoisted_16, [
                 createElementVNode("h5", null, toDisplayString(article.title), 1 /* TEXT */)
               ]),
               createElementVNode("td", null, [
@@ -11012,7 +11190,7 @@ function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
                     name: "edit",
                     title: "Modifier l'article"
                   })
-                ], 8 /* PROPS */, _hoisted_16),
+                ], 8 /* PROPS */, _hoisted_17),
                 createVNode(_component_VIcon, {
                   title: "Supprimer l'article",
                   class: "cursor-pointer",
@@ -11030,7 +11208,7 @@ function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
         }, [
           createTextVNode(" Ajouter un article "),
           createVNode(_component_VIcon, { name: "add" })
-        ], 8 /* PROPS */, _hoisted_17)
+        ], 8 /* PROPS */, _hoisted_18)
       ]))
     }), 128 /* KEYED_FRAGMENT */)),
     createElementVNode("button", {
@@ -11042,7 +11220,7 @@ function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
     ])
   ]))
 }
-var VolumeEdit = /*#__PURE__*/_export_sfc(_sfc_main$1, [['render',_sfc_render$1],['__scopeId',"data-v-5c7b8a54"],['__file',"VolumeEdit.vue"]]);
+var VolumeEdit = /*#__PURE__*/_export_sfc(_sfc_main$1, [['render',_sfc_render$1],['__scopeId',"data-v-51beb72a"],['__file',"VolumeEdit.vue"]]);
 
 const _sfc_main = {
   props: {
