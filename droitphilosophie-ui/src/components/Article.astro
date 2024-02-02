@@ -6,7 +6,6 @@ import TableOfContent from "./TableOfContent.astro";
 import Chapters from "./Chapters.astro";
 import OtherRecensions from "./OtherRecensions.astro";
 import Download from "./Download.astro";
-
 ---
 
 <article class="article max-w-screen-2xl mx-auto px-2">
@@ -33,7 +32,7 @@ import Download from "./Download.astro";
     <div id="sidebar-2" class="w-full lg:w-1/4 lg:mx-3 sidebar-2 flex flex-col">
       <div class="sidebar__inner sidebar__inner-2">
         <FontSize />
-        <Download />
+        <Download article={article} />
         <TableOfContent />
         <Footnotes />
       </div>
@@ -103,7 +102,8 @@ import Download from "./Download.astro";
     counter-increment: footnote;
     content: "[" counter(footnote) "]";
   }
-  a.footnote-link,.no-count::after {
+  a.footnote-link,
+  .no-count::after {
     content: "[*]";
   }
 

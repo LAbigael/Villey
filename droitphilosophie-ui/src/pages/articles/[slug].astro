@@ -21,7 +21,9 @@ const articles = await directus.request(
       "subtitle",
       "authors.author_id.*",
       "article_contents.content_bis",
-      "section_id.volume_id", // Quentin
+      "section_id.volume_id",
+      "files.directus_file_id.title",
+      "files.directus_file_id.id",
     ],
     sort: ["-id"],
     filter: {
@@ -39,6 +41,7 @@ const articles = await directus.request(
   }),
 );
 let article = articles[0];
+console.log(article.files);
 
 let sections = [];
 let volume = null;

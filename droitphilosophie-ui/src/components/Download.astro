@@ -1,8 +1,27 @@
-<button class="download_button">Télécharger en PDF</button>
+---
+import { getImagePath } from "../utils/get-directus-client.js";
+const { article } = Astro.props;
+const file = article?.files[0]?.directus_file_id;
+---
+
+{
+  file ? (
+    <a
+      href={`${getImagePath(file.id)}?download`}
+      class="download_button"
+      target="_blank"
+      download="Your File.pdf"
+    >
+      Télécharger en PDF
+    </a>
+  ) : (
+    <span>Pas de pdf disponible</span>
+  )
+}
 
 <style is:global>
   #sidebar-2.is-affixed .download_button {
-    @apply hidden
+    @apply hidden;
   }
   .download_button {
     /* background-color: rgba(var(--accent-light)); */
