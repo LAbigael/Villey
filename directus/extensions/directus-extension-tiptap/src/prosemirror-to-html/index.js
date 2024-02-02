@@ -151,7 +151,6 @@ function transformItemsFieldFromToHTML(filter, collection, field) {
 
 function footnoteShouldBeCounted(content) {
   // If the first char of a footnote starts with *, it should not be counted
-  console.log(content)
   if (!content) return false;
   if (content.trim()[0] === "*") {
     return false;
