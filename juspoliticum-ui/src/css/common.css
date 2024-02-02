@@ -11,7 +11,7 @@
 }
 
 .sidebar {
-  @apply hidden lg:block w-1/4 border-accent-light;
+  @apply hidden lg:block w-2/6 border-accent-light;
 }
 
 .sidebar_list {
@@ -23,7 +23,7 @@
 }
 
 .sidebar_title {
-  @apply text-2xl p-4 text-center w-full flex justify-center dark:bg-accent-light dark:text-accent-dark bg-accent-dark text-accent-light;
+  @apply text-2xl p-4 text-center w-full flex justify-center dark:bg-accent-light dark:text-accent-dark bg-accent text-color-light;
 }
 
 .sidebar_title a {
