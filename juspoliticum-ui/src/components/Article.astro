@@ -53,7 +53,7 @@ const { article } = Astro.props;
     <div id="sidebar-2" class="w-full lg:w-1/4 lg:mx-4 sidebar-2 flex flex-col">
       <div class="sidebar__inner sidebar__inner-2">
         <FontSize />
-        <Download />
+        <Download article={article} />
         <TableOfContent />
         <Footnotes />
       </div>

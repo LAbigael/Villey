@@ -1,8 +1,8 @@
 ---
-const { summary } = Astro.props;
+const { summary, open } = Astro.props;
 ---
 
-<details>
+<details open={open}>
   <summary>
  <span role="term"> {summary}</span></summary>
 </details>

@@ -1,8 +1,35 @@
-<button class="download_button">Télécharger en PDF</button>
+---
+import Collapse from "./Collapse.astro";
+import { getImagePath } from "../utils/get-directus-client.js";
+const { article } = Astro.props;
+const files = article?.files;
+console.log(files);
+---
+
+<Collapse summary="Documents associés" open={true}>
+  <div class="flex flex-col">
+    {
+      files && files.length > 0 ? (
+        files.map(({ directus_file_id: file }) => (
+          <a
+            href={`${getImagePath(file.id)}?download`}
+            class="download_button"
+            target="_blank"
+            download="Your File.pdf"
+          >
+            {file.title}
+          </a>
+        ))
+      ) : (
+        <span>Pas de pdf disponible</span>
+      )
+    }
+  </div>
+</Collapse>
 
 <style is:global>
   #sidebar-2.is-affixed .download_button {
-    @apply hidden
+    @apply lg:block hidden;
   }
   .download_button {
     /* background-color: rgba(var(--accent-light)); */

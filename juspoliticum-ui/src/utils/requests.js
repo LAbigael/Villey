@@ -143,6 +143,8 @@ export const getArticleBySlug = async (slug) => {
         "section_id.volume_id", // Quentin
         "abstracts.*",
         "themes.theme_id.*",
+        "files.directus_file_id.title",
+        "files.directus_file_id.id",
       ],
       sort: ["-id"],
       filter: {
