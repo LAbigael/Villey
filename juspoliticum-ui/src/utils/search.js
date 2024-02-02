@@ -76,7 +76,7 @@ export function generateSearchList(results) {
 
       return `
           <li class="group">
-            <a href="/${type}s/${slug}/">
+            <a href="/articles/${slug}/">
               <div class="flex flex-col ">
                  <div class="">${highlightMatchesFromStringOrJustReturnTheString(
         r.matches,

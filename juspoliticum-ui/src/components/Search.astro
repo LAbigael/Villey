@@ -157,7 +157,6 @@ import SearchIcon from "../images/search.astro";
           throw new Error("Une erreur est survenue");
         }
         const data = await res.json();
-        console.log(data);
         SEARCH_DATA = data;
       } catch (e) {
         console.error(e);
