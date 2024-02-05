@@ -13,7 +13,7 @@ console.log(files);
         files.map(({ directus_file_id: file }) => (
           <a
             href={`${getImagePath(file.id)}?download`}
-            class="download_button"
+            class="download_button text-left"
             target="_blank"
             download="Your File.pdf"
           >
