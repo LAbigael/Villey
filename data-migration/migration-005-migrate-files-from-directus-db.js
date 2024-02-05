@@ -116,7 +116,9 @@ const migrateJp = async () => {
 
     try {
       importedFile = await client.request(
-        importFile(`https://juspoliticum.com/uploads/${oldArticle.filename}`, { title: oldArticle.name })
+        importFile(`https://juspoliticum.com/uploads/${oldArticle.filename}`, {
+          title: oldArticle.name,
+        })
       );
     } catch (error) {
       console.log(`${count} : Error importing file ${oldArticle.name}`);
@@ -156,7 +158,15 @@ const migrateJp = async () => {
 migrateJp()
   .then(() => {
     console.log("done");
-    process.exit(0);
+    migrateDp()
+      .then(() => {
+        console.log("done");
+        process.exit(0);
+      })
+      .catch((err) => {
+        console.log(err);
+        process.exit(1);
+      });
   })
   .catch((err) => {
     console.log(err);
