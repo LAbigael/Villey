@@ -1,6 +1,7 @@
-export default ({ action }) => {
-  action("Authors.items.update", async (item, { database: knex }) => {
-    const { keys, payload } = item;
+export default ({ filter }) => {
+  filter("Authors.items.update", async (payload, event, { database: knex }) => {
+    const { keys } = event;
+
     keys.forEach(async (key) => {
       const author = await knex("Authors").select("*").where({ id: key });
       if (!payload.lastname) {
@@ -15,8 +16,8 @@ export default ({ action }) => {
     });
   });
 
-  action("Authors.items.create", async (item, { database: knex }) => {
-    const { key, payload } = item;
+  filter("Authors.items.create", async (payload, event, { database: knex }) => {
+    const { key } = event;
 
     payload.fullname = `${payload.firstname} ${payload.lastname}`;
 
