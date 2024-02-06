@@ -51,15 +51,17 @@ const { article } = Astro.props;
       <div class="article_content" set:html={article.content} />
       <div class="audio_files">
         {
-          article.files.map(({ directus_file_id: file }) => (
-            <div class="w-full flex flex-col items-center">
-              <span class="text-xl text-center">{file.title}</span>
-              <audio controls>
-                <source src={getImagePath(file.id)} type="audio/mpeg" />
-                Your browser does not support the audio element.
-              </audio>
-            </div>
-          ))
+          article.files
+            .filter(({ directus_file_id: file }) => file.type === "audio/mpeg")
+            .map(({ directus_file_id: file }) => (
+              <div class="w-full flex flex-col items-center">
+                <span class="text-xl text-center">{file.title}</span>
+                <audio controls>
+                  <source src={getImagePath(file.id)} type="audio/mpeg" />
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            ))
         }
       </div>
       <Citation article={article} />
