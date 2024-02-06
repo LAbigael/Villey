@@ -27,7 +27,11 @@ var e0 = ({ filter }) => {
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
-var slugify = {exports: {}};
+function getDefaultExportFromCjs (x) {
+	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
+}
+
+var slugify$1 = {exports: {}};
 
 (function (module, exports) {
 (function (name, root, factory) {
@@ -91,13 +95,49 @@ var slugify = {exports: {}};
 
 	  return replace
 	})); 
-} (slugify));
+} (slugify$1));
+
+var slugifyExports = slugify$1.exports;
+var slugify = /*@__PURE__*/getDefaultExportFromCjs(slugifyExports);
 
 var e1 = ({ action }) => {
-  action("Authors.items.update", async (item, { database: knex }) => {
-    const { keys, payload } = item;
-    await knex("Authors").select("*").where({ id: keys[0] });
-  });
+  const generateSlugOnUpdate = async (collection, toBeSlug) => {
+    action(`${collection}.items.update`, async (item, { database: knex }) => {
+      const { keys } = item;
+      keys.forEach(async (key) => {
+        await updateSlugForItem(collection, knex, toBeSlug, key);
+      });
+    });
+  };
+
+  const generateSlugOnCreate = async (collection, toBeSlug) => {
+    action(`${collection}.items.create`, async (item, { database: knex }) => {
+      const { key } = item;
+      await updateSlugForItem(collection, knex, toBeSlug, key);
+    });
+  };
+
+  const generateSlugForACollection = async (collection, toBeSlug) => {
+    generateSlugOnUpdate(collection, toBeSlug);
+    generateSlugOnCreate(collection, toBeSlug);
+  };
+
+  const updateSlugForItem = async (collection, database, toBeSlug, id) => {
+    const item = await database(collection).select("*").where({ id });
+    const slug = getSlug(item[0][toBeSlug], id);
+    await database(collection).where({ id }).update({ slug });
+  };
+
+  generateSlugForACollection("Authors", "fullname");
+  generateSlugForACollection("Volumes", "title");
+  generateSlugForACollection("VolumeSections", "title");
+  generateSlugForACollection("Articles", "title");
+  generateSlugForACollection("Themes", "name");
+  generateSlugForACollection("ContributionCalls", "title");
+};
+
+const getSlug = (from, id) => {
+  return slugify(from + "-" + id, { lower: true });
 };
 
 const hooks = [{name:'generate-fullname-on-authors',config:e0},{name:'generate-slugs',config:e1}];const endpoints = [];const operations = [];
