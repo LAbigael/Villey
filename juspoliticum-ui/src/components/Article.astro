@@ -7,6 +7,7 @@ import Download from "./Download.astro";
 import Abstract from "./Abstract.astro";
 import VolumeTitle from "./VolumeTitle.astro";
 import Citation from "./Citation.astro";
+import { getImagePath } from "../utils/get-directus-client";
 
 const { article } = Astro.props;
 ---
@@ -48,6 +49,19 @@ const { article } = Astro.props;
       </div>
       <Abstract abstracts={article.abstracts} />
       <div class="article_content" set:html={article.content} />
+      <div class="audio_files">
+        {
+          article.files.map(({ directus_file_id: file }) => (
+            <div class="w-full flex flex-col items-center">
+              <span class="text-xl text-center">{file.title}</span>
+              <audio controls>
+                <source src={getImagePath(file.id)} type="audio/mpeg" />
+                Your browser does not support the audio element.
+              </audio>
+            </div>
+          ))
+        }
+      </div>
       <Citation article={article} />
     </div>
     <div id="sidebar-2" class="w-full lg:w-1/4 lg:mx-4 sidebar-2 flex flex-col">
@@ -173,6 +187,12 @@ const { article } = Astro.props;
     }
     .article_content p {
       @apply my-4;
+    }
+    .audio_files {
+      @apply my-4 flex flex-col items-center;
+    }
+    .audio_files audio {
+      @apply my-2;
     }
   </style>
 </article>

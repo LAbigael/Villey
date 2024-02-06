@@ -3,7 +3,6 @@ import Collapse from "./Collapse.astro";
 import { getImagePath } from "../utils/get-directus-client.js";
 const { article } = Astro.props;
 const files = article?.files;
-console.log(files);
 ---
 
 <Collapse summary="Documents associés" open={true}>
@@ -21,7 +20,7 @@ console.log(files);
           </a>
         ))
       ) : (
-        <span>Pas de pdf disponible</span>
+        <span>Pas de document disponible</span>
       )
     }
   </div>

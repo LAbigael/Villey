@@ -70,7 +70,6 @@ const { items } = Astro.props;
   const filterItems = (letter) => {
     const items = document.querySelectorAll(".filtered_item");
     items.forEach((item) => {
-      console.log(item.innerText[0]);
       if (item.innerText[0] === letter) {
         item.style.display = "block";
       } else {

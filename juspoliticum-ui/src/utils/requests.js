@@ -145,6 +145,7 @@ export const getArticleBySlug = async (slug) => {
         "themes.theme_id.*",
         "files.directus_file_id.title",
         "files.directus_file_id.id",
+        "files.directus_file_id.type",
       ],
       sort: ["-id"],
       filter: {
