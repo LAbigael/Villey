@@ -26,6 +26,11 @@
 				"type": "hook",
 				"name": "add-authors-to-volumes",
 				"source": "src/add-authors-to-volumes/index.js"
+			},
+			{
+				"type": "endpoint",
+				"name": "convert-document-to-tiptap",
+				"source": "src/convert-document-to-tiptap/index.js"
 			}
 		]
 	},
@@ -65,8 +70,10 @@
 		"@tiptap/html": "^2.1.12",
 		"@tiptap/starter-kit": "^2.1.12",
 		"@tiptap/vue-3": "^2.1.12",
+		"busboy": "^1.6.0",
 		"cheerio": "^1.0.0-rc.12",
 		"htmlparser2": "^9.0.0",
+		"pandocjs": "^2.9.2-1.1",
 		"tiptap-extension-footnote": "^1.4.2"
 	}
 }
