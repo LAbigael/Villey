@@ -98,6 +98,7 @@
     </Toolbar>
     <editor-content class="content" :editor="editor" />
   </div>
+  <ImportDocument />
 </template>
 
 <script>
@@ -128,6 +129,7 @@ import BulletListIcon from "../icons/list-unordered.vue";
 
 import Toolbar from "./components/ToolbarGroup.vue";
 import ToolbarButton from "./components/ToolbarButton.vue";
+import ImportDocument from "./components/ImportDocument.vue";
 
 export default {
   components: {
@@ -150,6 +152,7 @@ export default {
     BulletListIcon,
     Toolbar,
     ToolbarButton,
+    ImportDocument,
   },
 
   props: {
@@ -189,7 +192,7 @@ export default {
       return editor.value?.isActive(type, options);
     };
     function setLink() {
-      const previousUrl = this.editor.getAttributes("link").href;
+      const previousUrl = editor.value.getAttributes("link").href;
       const url = window.prompt("URL", previousUrl);
 
       // cancelled
@@ -199,13 +202,13 @@ export default {
 
       // empty
       if (url === "") {
-        this.editor.chain().focus().extendMarkRange("link").unsetLink().run();
+        editor.value.chain().focus().extendMarkRange("link").unsetLink().run();
 
         return;
       }
 
       // update link
-      this.editor
+      editor.value
         .chain()
         .focus()
         .extendMarkRange("link")
@@ -343,9 +346,10 @@ export default {
 .footnote-toolbar .button {
   @apply mr-2 border;
 }
+
 .content .ProseMirror ul {
-  list-style-type: disc ;
+  list-style-type: disc;
   margin: 0;
-  padding-left: 1em ;
+  padding-left: 1em;
 }
 </style>
