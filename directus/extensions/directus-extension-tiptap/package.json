@@ -73,7 +73,9 @@
 		"busboy": "^1.6.0",
 		"cheerio": "^1.0.0-rc.12",
 		"htmlparser2": "^9.0.0",
+		"mammoth": "^1.6.0",
 		"pandocjs": "^2.9.2-1.1",
-		"tiptap-extension-footnote": "^1.4.2"
+		"tiptap-extension-footnote": "^1.4.2",
+		"uid": "^2.0.2"
 	}
 }
