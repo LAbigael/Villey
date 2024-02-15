@@ -7,7 +7,7 @@ interface Props {
 const { title, className } = Astro.props;
 ---
 
-<div class={`max-w-screen-lg lg:mx-auto mx-2 text-justify ${className}`}>
+<div class={`max-w-screen-lg lg:mx-auto lg:px-2 mx-2 text-justify ${className}`}>
   <div
     class={`flex flex-row items-center ${
       title === "none" ? "hidden" : "block"
