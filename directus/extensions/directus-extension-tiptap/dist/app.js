@@ -28550,7 +28550,6 @@ var script$1 = {
   },
   setup(props) {
     const { setContent } = props;
-    console.log(setContent);
 
     const files = ref();
     const api = useApi();
@@ -28570,7 +28569,6 @@ var script$1 = {
           headers,
         })
         .then((res) => {
-          console.log(res.data);
           setContent(res.data);
         });
     }
@@ -28650,6 +28648,7 @@ var script = {
         TableHeader,
       ],
       onUpdate: ({ editor }) => {
+        console.log("updating editor");
         emit("input", editor.getJSON());
       },
     });
@@ -28690,11 +28689,13 @@ var script = {
         .setLink({ href: url })
         .run();
     }
+    const setContentAndEmit = (content) =>
+      editor.value?.commands.setContent(content, true);
     return {
       editor,
       isActive,
       setLink,
-      setContent: (content) => editor.value?.commands.setContent(content),
+      setContent: setContentAndEmit,
     };
   },
 };
@@ -28778,7 +28779,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           }, 8 /* PROPS */, ["label", "isActive"]),
           createVNode(_component_ToolbarButton, {
             onClick: _cache[5] || (_cache[5] = $event => (
-          $setup.editor.chain().focus().insertContent({ type: 'footnote' }).run()
+        $setup.editor.chain().focus().insertContent({ type: 'footnote' }).run()
         )),
             label: _ctx.footnote,
             isActive: $setup.isActive('footnote')
@@ -28886,7 +28887,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
   ], 64 /* STABLE_FRAGMENT */))
 }
 
-var css = "\n.ProseMirror {\n  font-size: large;\n  counter-reset: footnote;\n  padding: 10px;\n}\n.ProseMirror footnote {\n  display: inline-block;\n  position: relative;\n  cursor: pointer;\n}\n.ProseMirror footnote::after {\n  content: counter(footnote);\n  vertical-align: super;\n  font-size: 75%;\n  counter-increment: footnote;\n}\n.ProseMirror-hideselection .footnote-tooltip *::-moz-selection {\n  background-color: transparent;\n}\n.ProseMirror-hideselection .footnote-tooltip *::selection {\n  background-color: transparent;\n}\n.ProseMirror-hideselection .footnote-tooltip *::-moz-selection {\n  background-color: transparent;\n}\n\n/* Make prosemirror fixed size and content scrollable */\n.ProseMirror {\n  max-height: 400px;\n  overflow: auto;\n}\n.footnote-tooltip {\n  color: #333;\n  cursor: auto;\n  position: absolute;\n  left: -30px;\n  top: calc(100% + 10px);\n  background: silver;\n  padding: 3px;\n  border-radius: 2px;\n  width: 500px;\n}\n.footnote-tooltip::before {\n  border: 5px solid silver;\n  border-top-width: 0px;\n  border-left-color: transparent;\n  border-right-color: transparent;\n  position: absolute;\n  top: -5px;\n  left: 27px;\n  content: \" \";\n  height: 0;\n  width: 0;\n}\n.ProseMirror button {\n  border: none;\n  background: none;\n  cursor: pointer;\n  outline: none;\n  padding: 0;\n  margin: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  border-radius: 4px;\n  transition: background-color 0.2s;\n}\n.ProseMirror button.active {\n  background-color: #aaa;\n}\n.ProseMirror blockquote {\n  border-left: 2px solid #aaa;\n  margin-left: 0;\n  margin-right: 0;\n  padding-left: 10px;\n  color: #aaa;\n  font-style: italic;\n}\n.ProseMirror h1 {\n  font-size: 1.5em;\n  font-weight: bold;\n  color: red;\n}\n.ProseMirror h3 {\n  font-size: 1.5em;\n  font-weight: bold;\n}\n.ProseMirror h4 {\n  font-size: 1.25em;\n  font-weight: bold;\n}\n.ProseMirror p {\n  margin: 15px 0;\n}\n.ProseMirror h3 {\n  margin: 30px 0;\n  font-size: 1.1em;\n  font-weight: bold;\n}\n.ProseMirror h4 {\n  margin: 20px 0;\n  font-size: 1em;\n  font-weight: bold;\n}\n.ProseMirror a {\n  color: #007aff;\n  text-decoration: none;\n}\n.footnote-toolbar {\n  margin-left: 1rem;\n  margin-top: 2rem;\n}\n.footnote-toolbar .button {\n  margin-right: 0.5rem;\n  border-width: 1px;\n}\n.content .ProseMirror ul {\n  list-style-type: disc;\n  margin: 0;\n  padding-left: 1em;\n}\ntable {\n  border-collapse: collapse;\n  width: 100%;\n}\ntr {\n  display: flex;\n  flex-direction: row;\n  border: 1px solid white;\n}\nth,\ntd {\n  border: 1px solid white;\n  padding: 8px;\n  text-align: left;\n}\n.ProseMirror h1::after,\nh2::after {\n  content: \"Titre non conforme\";\n  padding: 2px;\n  display: none;\n  position: relative;\n  top: -20px;\n  right: -30px;\n  width: 150px;\n  text-align: center;\n  background-color: #fef4c5;\n  border: 1px solid #d4b943;\n  border-radius: 2px;\n}\n.ProseMirror h1:hover::after,\nh2:hover::after {\n  display: block;\n}\n";
+var css = "\n.ProseMirror {\n  font-size: large;\n  counter-reset: footnote;\n  padding: 10px;\n}\n.ProseMirror footnote {\n  display: inline-block;\n  position: relative;\n  cursor: pointer;\n}\n.ProseMirror footnote::after {\n  content: counter(footnote);\n  vertical-align: super;\n  font-size: 75%;\n  counter-increment: footnote;\n}\n.ProseMirror-hideselection .footnote-tooltip *::-moz-selection {\n  background-color: transparent;\n}\n.ProseMirror-hideselection .footnote-tooltip *::selection {\n  background-color: transparent;\n}\n.ProseMirror-hideselection .footnote-tooltip *::-moz-selection {\n  background-color: transparent;\n}\n\n/* Make prosemirror fixed size and content scrollable */\n.ProseMirror {\n  max-height: 400px;\n  overflow: auto;\n}\n.footnote-tooltip {\n  color: #333;\n  cursor: auto;\n  position: absolute;\n  left: -30px;\n  top: calc(100% + 10px);\n  background: silver;\n  padding: 3px;\n  border-radius: 2px;\n  width: 500px;\n}\n.footnote-tooltip::before {\n  border: 5px solid silver;\n  border-top-width: 0px;\n  border-left-color: transparent;\n  border-right-color: transparent;\n  position: absolute;\n  top: -5px;\n  left: 27px;\n  content: \" \";\n  height: 0;\n  width: 0;\n}\n.ProseMirror button {\n  border: none;\n  background: none;\n  cursor: pointer;\n  outline: none;\n  padding: 0;\n  margin: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  border-radius: 4px;\n  transition: background-color 0.2s;\n}\n.ProseMirror button.active {\n  background-color: #aaa;\n}\n.ProseMirror blockquote {\n  border-left: 2px solid #aaa;\n  margin-left: 0;\n  margin-right: 0;\n  padding-left: 10px;\n  color: #aaa;\n  font-style: italic;\n}\n.ProseMirror h1 {\n  font-size: 1.5em;\n  font-weight: bold;\n  color: red;\n}\n.ProseMirror h3 {\n  font-size: 1.5em;\n  font-weight: bold;\n}\n.ProseMirror h4 {\n  font-size: 1.25em;\n  font-weight: bold;\n}\n.ProseMirror p {\n  margin: 15px 0;\n}\n.ProseMirror h3 {\n  margin: 30px 0;\n  font-size: 1.1em;\n  font-weight: bold;\n}\n.ProseMirror h4 {\n  margin: 20px 0;\n  font-size: 1em;\n  font-weight: bold;\n}\n.ProseMirror a {\n  color: #007aff;\n  text-decoration: none;\n}\n.footnote-toolbar {\n  margin-left: 1rem;\n  margin-top: 2rem;\n}\n.footnote-toolbar .button {\n  margin-right: 0.5rem;\n  border-width: 1px;\n}\n.content .ProseMirror ul {\n  list-style-type: disc;\n  margin: 0;\n  padding-left: 1em;\n}\n.ProseMirror table {\n  border-collapse: collapse;\n  width: 100%;\n}\n.ProseMirror tr {\n  display: flex;\n  flex-direction: row;\n  border: 1px solid white;\n}\n.ProseMirror th,\n.ProseMirror td {\n  border: 1px solid white;\n  padding: 8px;\n  text-align: left;\n}\n.ProseMirror h1::after,\n.ProseMirror h2::after {\n  content: \"Titre non conforme\";\n  padding: 2px;\n  display: none;\n  position: relative;\n  top: -20px;\n  right: -30px;\n  width: 150px;\n  text-align: center;\n  background-color: #fef4c5;\n  border: 1px solid #d4b943;\n  border-radius: 2px;\n}\n.ProseMirror h1:hover::after,\n.ProseMirror h2:hover::after {\n  display: block;\n}\n";
 n(css,{});
 
 script.render = render;

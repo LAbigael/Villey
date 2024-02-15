@@ -17,7 +17,6 @@ export default {
   },
   setup(props) {
     const { setContent } = props;
-    console.log(setContent);
 
     const files = ref();
     const api = useApi();
@@ -37,7 +36,6 @@ export default {
           headers,
         })
         .then((res) => {
-          console.log(res.data);
           setContent(res.data);
         });
     }
