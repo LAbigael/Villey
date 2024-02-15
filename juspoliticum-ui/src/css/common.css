@@ -53,18 +53,6 @@
   @apply text-accent-light ml-1;
 }
 
-.btn {
-  background-color: rgba(var(--accent-light));
-  color: rgba(var(--accent-dark));
-  border-color: rgba(var(--accent-dark));
-}
-
-.btn:hover {
-  background-color: rgba(var(--accent-dark));
-  color: rgba(var(--accent-light));
-  border-color: rgba(var(--accent-light));
-}
-
 table {
   @apply w-full;
 }
@@ -86,6 +74,6 @@ table th {
   @apply p-2;
 }
 
-button {
-  @apply font-light text-accent-dark hover:text-color-light border border-accent-dark hover:bg-accent focus:ring-2 focus:outline-none focus:ring-accent rounded px-7 py-1.5 text-center dark:border-color-light dark:text-color-light dark:hover:text-color dark:hover:bg-accent dark:focus:ring-accent-dark;
+.btn, button {
+  @apply font-light text-accent-dark hover:text-color-light border border-accent-dark hover:bg-accent focus:ring-2 focus:outline-none focus:ring-accent rounded px-7 py-1.5 text-center dark:border-color-light dark:text-color-light dark:hover:text-color dark:hover:bg-accent dark:focus:ring-accent-dark opacity-100 ;
 }

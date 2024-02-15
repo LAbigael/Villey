@@ -1,25 +1,27 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import PageLayout from "../layouts/PageLayout.astro";
 import AboutSection from "../components/sections/AboutSection.astro";
 import NewsSection from "../components/sections/NewsSection.astro";
 import SubmitSection from "../components/sections/SubmitSection.astro";
 ---
 
 <Layout title="Juspoliticum">
-  <div class="aboutsection">
-    <AboutSection />
-  </div>
-  <div class="newssection">
-    <NewsSection />
-  </div>
-  <div class="submitsection">
-    <SubmitSection />
-  </div>
+  <PageLayout title="À la une" className="max-w-screen-xl">
+    <div class="aboutsection">
+      <AboutSection />
+    </div>
+    <div class="newssection">
+      <NewsSection />
+    </div>
+    <div class="submitsection">
+      <SubmitSection />
+    </div>
+  </PageLayout>
 </Layout>
 
 <style>
   main {
-    margin: auto;
   }
   .aboutsection {
     @apply bg-background-light dark:bg-background-dark flex justify-center;

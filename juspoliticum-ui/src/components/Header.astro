@@ -8,30 +8,34 @@ import ThemeToggle from "./ThemeToggle.astro";
 ---
 
 <div class="head1">
-  <img
-    class=" hidden lg:block"
-    height="200"
-    width="auto"
-    src={headerLeft.src}
-    alt="Logo droit philosophie"
-  />
-  <ThemeToggle />
-  <img
-    class="absolute top-0 right-0 z-10 "
-    height="auto"
-    width="auto"
-    src={headerRight.src}
-    alt="ornement"
-  />
+  <a href="/" class="opacity-100">
+    <img
+      class="absolute ml-8 top-0 letf-0 z-10 hidden lg:block"
+      height="200"
+      width="auto"
+      src={headerLeft.src}
+      alt="Logo droit philosophie"
+    />
+  </a>
+  <div class="absolute h-full top-0 right-0 z-10 flex items-center">
+    <ThemeToggle />
+    <img height="auto" width="auto" src={headerRight.src} alt="ornement" />
+  </div>
 </div>
 
 <script src="/js/change-theme.js" type="text/javascript"></script>
 
 <style>
   .head1 {
-    @apply relative flex justify-center items-center bg-accent;
-    min-height: 8rem;
+    @apply relative flex  items-center bg-accent;
+    min-height: 6rem;
   }
+  @media (min-width: 1024px) {
+    .head1 {
+      min-height: 9rem;
+    }
+  }
+
   .head1 img {
     @apply max-h-full;
   }
