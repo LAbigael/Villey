@@ -10,7 +10,15 @@ import { ref } from "vue";
 import { useApi } from "@directus/extensions-sdk";
 
 export default {
-  setup() {
+  props: {
+    setContent: {
+      type: Function,
+    },
+  },
+  setup(props) {
+    const { setContent } = props;
+    console.log(setContent);
+
     const files = ref();
     const api = useApi();
 
@@ -28,9 +36,9 @@ export default {
         .post("/convert-document-to-tiptap", formData, {
           headers,
         })
-        .then((res) => res.json())
-        .then((data) => {
-          console.log(data);
+        .then((res) => {
+          console.log(res.data);
+          setContent(res.data);
         });
     }
     return {

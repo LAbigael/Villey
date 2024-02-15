@@ -23,18 +23,18 @@
         <BlockquoteIcon />
       </ToolbarButton>
       <ToolbarButton
-        @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
-        :label="h1"
-        :isActive="isActive('heading', { level: 1 })"
+        @click="editor.chain().focus().toggleHeading({ level: 3 }).run()"
+        :label="h3"
+        :isActive="isActive('heading', { level: 3 })"
       >
-        <H1Icon />
+        <H3Icon />
       </ToolbarButton>
       <ToolbarButton
-        @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
-        :label="h2"
-        :isActive="isActive('heading', { level: 2 })"
+        @click="editor.chain().focus().toggleHeading({ level: 4 }).run()"
+        :label="h4"
+        :isActive="isActive('heading', { level: 4 })"
       >
-        <H2Icon />
+        <H4Icon />
       </ToolbarButton>
       <ToolbarButton
         @click="
@@ -98,7 +98,7 @@
     </Toolbar>
     <editor-content class="content" :editor="editor" />
   </div>
-  <ImportDocument />
+  <ImportDocument :setContent="setContent" />
 </template>
 
 <script>
@@ -108,6 +108,10 @@ import Footnote, { FontVariant } from "tiptap-extension-footnote";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import TextStyle from "@tiptap/extension-text-style";
+import Table from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableCell from "@tiptap/extension-table-cell";
+import TableHeader from "@tiptap/extension-table-header";
 import { watch } from "vue";
 import "./style.css";
 import BoldIcon from "../icons/bold.vue";
@@ -119,8 +123,8 @@ import LinkIcon from "../icons/link.vue";
 import ParagraphIcon from "../icons/paragraph.vue";
 import UndoIcon from "../icons/arrow-go-back-line.vue";
 import RedoIcon from "../icons/arrow-go-forward-line.vue";
-import H1Icon from "../icons/h1.vue";
-import H2Icon from "../icons/h2.vue";
+import H3Icon from "../icons/h3.vue";
+import H4Icon from "../icons/h4.vue";
 import AlignLeftIcon from "../icons/align-left.vue";
 import AlignCenterIcon from "../icons/align-center.vue";
 import AlignJustifyIcon from "../icons/align-justify.vue";
@@ -138,8 +142,8 @@ export default {
     ItalicIcon,
     BlockquoteIcon,
     FootnoteIcon,
-    H1Icon,
-    H2Icon,
+    H3Icon,
+    H4Icon,
     ClearFormattingIcon,
     LinkIcon,
     ParagraphIcon,
@@ -168,11 +172,15 @@ export default {
         StarterKit,
         Link,
         TextAlign.configure({
-          types: ["heading", "paragraph"],
+          types: ["heading", "paragraph", "blockquote"],
         }),
         Footnote,
         FontVariant,
         TextStyle,
+        Table,
+        TableRow,
+        TableCell,
+        TableHeader,
       ],
       onUpdate: ({ editor }) => {
         emit("input", editor.getJSON());
@@ -215,7 +223,12 @@ export default {
         .setLink({ href: url })
         .run();
     }
-    return { editor, isActive, setLink };
+    return {
+      editor,
+      isActive,
+      setLink,
+      setContent: (content) => editor.value?.commands.setContent(content),
+    };
   },
 };
 </script>
@@ -308,12 +321,25 @@ export default {
   font-style: italic;
 }
 
+
+.ProseMirror h1 {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: red;
+}
+
+.ProseMirror h1 {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: red;
+}
+
 .ProseMirror h3 {
   font-size: 1.5em;
   font-weight: bold;
 }
 
-.ProseMirror h2 {
+.ProseMirror h4 {
   font-size: 1.25em;
   font-weight: bold;
 }
@@ -352,4 +378,45 @@ export default {
   margin: 0;
   padding-left: 1em;
 }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+tr {
+  @apply flex flex-row;
+  border: 1px solid white;
+}
+
+th,
+td {
+  border: 1px solid white;
+  padding: 8px;
+  text-align: left;
+}
+
+.ProseMirror h1::after,
+h2::after {
+  content: "Titre non conforme";
+  padding: 2px;
+  display: none;
+  position: relative;
+  top: -20px;
+  right: -30px;
+  width: 150px;
+  text-align: center;
+  background-color: #fef4c5;
+  border: 1px solid #d4b943;
+  -moz-border-radius: 2px;
+  -webkit-border-radius: 2px;
+  -ms-border-radius: 2px;
+  border-radius: 2px;
+}
+
+.ProseMirror h1:hover::after,
+h2:hover::after {
+  display: block;
+}
 </style>
+
