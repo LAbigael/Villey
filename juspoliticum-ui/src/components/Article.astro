@@ -66,7 +66,7 @@ const { article } = Astro.props;
       </div>
       <Citation article={article} />
     </div>
-    <div id="sidebar-2" class="w-full lg:w-1/4 lg:mx-4 sidebar-2 flex flex-col">
+    <div id="sidebar-2" class="w-full lg:w-1/3 lg:mx-4 sidebar-2 flex flex-col">
       <div class="sidebar__inner sidebar__inner-2">
         <FontSize />
         <Download article={article} />
@@ -148,7 +148,7 @@ const { article } = Astro.props;
       letter-spacing: normal;
       display: inline-block;
       vertical-align: super;
-      color: skyblue;
+      @apply text-secondary-alt dark:text-secondary-alt-light;
     }
 
     .article_author {

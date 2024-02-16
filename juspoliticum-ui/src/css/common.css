@@ -15,7 +15,7 @@
 }
 
 .sidebar_list {
-  @apply list-none p-4 border border-accent-dark dark:border-accent-light;
+  @apply list-none p-4 border border-accent dark:border-accent-light;
 }
 
 .volume_title {
