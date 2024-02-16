@@ -36,6 +36,10 @@ const { mobile } = Astro.props;
       const footnoteId = this.getAttribute("data-footnote-id");
       const footnote = document.querySelector(footnoteId);
       footnote.classList.toggle("show");
+      const tocDetail = document.querySelector("#toc details[open]");
+      if (tocDetail) {
+        tocDetail.removeAttribute("open");
+      }
     });
   });
 </script>

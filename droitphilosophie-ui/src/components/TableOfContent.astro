@@ -1,6 +1,12 @@
-<div tabindex="0" id="toc" class="collapse lg:collapse-open">
-  <div class="text-xl font-semibold text-center collapse-title">Sommaire</div>
-  <ul class="collapse-content table_of_content_list"></ul>
+---
+import Collapse from "./Collapse.astro";
+---
+
+<!-- <details open id="toc"> --><!--   <summary --><!--     class="text-xl cursor-pointer font-semibold text-center text-accent-dark" --><!--   > --><!--     Sommaire de l'article --><!--   </summary> --><!-- <ul class=" table_of_content_list"></ul> --><!-- </details> -->
+<div id="toc" class="">
+  <Collapse summary="Sommaire de l'article">
+    <ul class="table_of_content_list"></ul>
+  </Collapse>
 </div>
 
 <script>
@@ -27,7 +33,7 @@
 
 <style is:global>
   #toc {
-    @apply p-1 lg:p-2 my-3 mt-4 border-y border-color dark:border-color-light rounded-none ;
+    @apply p-1 lg:p-2 my-3 mt-4 border-y border-color dark:border-color-light rounded-none;
   }
   #toc li {
     list-style-type: none;
@@ -44,6 +50,6 @@
     padding-left: 5px;
   }
   .is-affixed #toc {
-    @apply lg:block hidden;
+    @apply lg:block hidden lg:h-auto h-0;
   }
 </style>
