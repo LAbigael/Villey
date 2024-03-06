@@ -17,6 +17,12 @@
 .sidebar_title {
   @apply text-2xl p-4 text-center w-full flex justify-center bg-accent-light text-accent-dark;
 }
+
+.sidebar_authors {
+  width: 300px;
+}
+
+
 .sidebar_title a {
   @apply text-inherit;
 }
