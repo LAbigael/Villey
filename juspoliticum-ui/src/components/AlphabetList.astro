@@ -30,10 +30,20 @@ const { items } = Astro.props;
   <button id="Y" class="filter_button">Y</button>
   <button id="Z" class="filter_button">Z</button>
 </div>
+
+<div id="search-container">
+  <input
+    type="text"
+    id="search-input"
+    placeholder="Recherche..."
+    autocomplete="off"
+  />
+</div>
+
 <ul class="filtered_item_list">
   {
     items.map((item) => (
-      <li class="filtered_item" style="display: none;">
+      <li class="filtered_item">
         <a href={item.link}>{item.content}</a>
       </li>
     ))
@@ -42,10 +52,10 @@ const { items } = Astro.props;
 
 <style>
   #alphabet-buttons {
-    @apply flex flex-wrap justify-center mb-4;
+    @apply flex flex-wrap justify-start mb-4;
   }
   #alphabet-buttons button {
-    @apply bg-background-alt hover:bg-background-alt-dark px-0 rounded-none w-8 dark:bg-background-alt-dark dark:hover:bg-background-alt border border-background-alt-dark dark:border-background-alt ;
+    @apply bg-background-alt hover:bg-background-alt-dark px-0 rounded-none w-8 dark:bg-background-alt-dark dark:hover:bg-background-alt border border-background-alt-dark dark:border-background-alt;
   }
   #alphabet-buttons button:disabled {
     @apply opacity-50;
@@ -59,24 +69,35 @@ const { items } = Astro.props;
   .filtered_item a {
     @apply mb-4 text-color dark:text-color-light text-lg;
   }
+  #search-container {
+    @apply mb-4 flex justify-start
+  }
+  #search-input {
+    @apply border px-2 py-2  rounded-sm shadow-inner w-1/2 text-lg bg-background-alt focus:outline-none focus:border-slate-400 focus:ring-0  dark:text-color-light  dark:bg-background-alt-dark;
+  }
 </style>
 
 <script type="text/javascript">
-  document.querySelectorAll(".filter_button").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      filterItems(event.target.id);
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".filter_button").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        filterItems(event.target.id);
+      });
     });
+    disableButtonsIfNoItem();
   });
+
   const filterItems = (letter) => {
     const items = document.querySelectorAll(".filtered_item");
     items.forEach((item) => {
-      if (item.innerText[0] === letter) {
+      if (item.innerText[0].toUpperCase() === letter) {
         item.style.display = "block";
       } else {
         item.style.display = "none";
       }
     });
   };
+
   const disableButtonsIfNoItem = () => {
     const buttons = document.querySelectorAll(".filter_button");
     buttons.forEach((button) => {
@@ -84,14 +105,42 @@ const { items } = Astro.props;
       const items = document.querySelectorAll(".filtered_item");
       let hasItem = false;
       items.forEach((item) => {
-        if (item.innerText[0] === letter) {
+        if (item.innerText[0].toUpperCase() === letter) {
           hasItem = true;
         }
       });
-      if (!hasItem) {
-        button.disabled = true;
+      button.disabled = !hasItem;
+    });
+  };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    // Existing setup for filter buttons
+    document.querySelectorAll(".filter_button").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        filterItems(event.target.id);
+      });
+    });
+
+    // New search functionality
+    document
+      .getElementById("search-input")
+      .addEventListener("input", (event) => {
+        const searchValue = event.target.value.toUpperCase();
+        liveFilterSearch(searchValue);
+      });
+
+    // Disable buttons if no corresponding items exist
+    disableButtonsIfNoItem();
+  });
+
+  const liveFilterSearch = (searchValue) => {
+    const items = document.querySelectorAll(".filtered_item");
+    items.forEach((item) => {
+      if (item.innerText.toUpperCase().includes(searchValue)) {
+        item.style.display = "block";
+      } else {
+        item.style.display = "none";
       }
     });
   };
-  disableButtonsIfNoItem();
 </script>
