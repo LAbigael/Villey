@@ -1,7 +1,7 @@
 ---
-import ornement from "../images/ornementHaut.png";
-import logo from "../images/droit-philosophie.png";
-import LogoNavBar from "./icons/LogoNavBar.astro";
+// import ornement from "../images/ornementHaut.png";
+// import logo from "../images/droit-philosophie.png";
+// import LogoNavBar from "./icons/LogoNavBar.astro";
 import headerLeft from "../images/header-left.png";
 import headerRight from "../images/header-right.png";
 import ThemeToggle from "./ThemeToggle.astro";
@@ -10,16 +10,18 @@ import ThemeToggle from "./ThemeToggle.astro";
 <div class="head1">
   <a href="/" class="opacity-100">
     <img
-      class="absolute ml-8 top-0 letf-0 z-10 hidden lg:block"
+      class="absolute ml-8 top-0 left-0 z-10 hidden lg:block"
       height="200"
       width="auto"
       src={headerLeft.src}
       alt="Logo droit philosophie"
     />
   </a>
-  <div class="absolute h-full top-0 right-0 z-10 flex items-center">
-    <ThemeToggle />
-    <img height="auto" width="auto" src={headerRight.src} alt="ornement" />
+  <div class="absolute h-full top-12 left-2 z-100"><ThemeToggle /></div>
+  <div
+    class="header-right-container absolute top-0 right-0 z-10 flex items-center justify-end w-full"
+  >
+    <img src={headerRight.src} alt="ornement" class="ornament-image" />
   </div>
 </div>
 
@@ -27,15 +29,15 @@ import ThemeToggle from "./ThemeToggle.astro";
 
 <style>
   .head1 {
-    @apply relative flex  items-center bg-accent;
-    min-height: 6rem;
-  }
-  @media (min-width: 1024px) {
-    .head1 {
-      min-height: 9rem;
-    }
+    @apply relative flex items-center bg-accent;
+    @apply overflow-hidden;
   }
 
+  @media (min-width: 1024px) {
+    .head1 {
+      height: 120px;
+    }
+  }
   .head1 img {
     @apply max-h-full;
   }
@@ -43,10 +45,19 @@ import ThemeToggle from "./ThemeToggle.astro";
   h1 {
     @apply text-4xl lg:text-5xl;
     position: relative;
-    /* font-weight: 700; */
     line-height: 1;
     text-align: center;
     color: rgba(var(--background));
     z-index: 2;
+  }
+
+  .header-right-container {
+    @apply absolute top-0 right-0 z-10 flex items-center justify-end w-full;
+  }
+
+  .ornament-image {
+    @apply max-h-full; /* Ensures the image is no taller than the header */
+    height: auto; /* Maintain aspect ratio */
+    height: 120px; /* Additional safeguard */
   }
 </style>
