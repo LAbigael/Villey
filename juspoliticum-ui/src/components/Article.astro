@@ -40,7 +40,7 @@ const { article } = Astro.props;
               <span class="mr-2">Thèmes : </span>
               {article.themes.map(({ theme_id: theme }) => (
                 <div class="article_theme">
-                  <a href={`themes/${theme.slug}`}>{theme.name}</a>
+                  <a href={`/themes/${theme.slug}`}>{theme.name}</a>
                 </div>
               ))}
             </div>
