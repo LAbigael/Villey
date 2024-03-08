@@ -17,7 +17,7 @@ const { author } = Astro.props;
 ---
 
 <Layout title="Juspoliticum">
-  <PageLayout title={`Les articles de l'auteur : ${author.fullname}`}>
+  <PageLayout title={`Les articles de l'auteur : ${author.fullname}`} className="max-w-screen-2xl lg:px-24 px-10">
     <ul>
       {
         author.articles.map((article) => (

@@ -7,15 +7,13 @@ const editors = ["Denis Baranger", "Olivier Beaud"];
 ---
 
 <div class="flex space-x-10 sm:px-24 p-5 max-sm:pt-7 max-sm:pr-6">
-  <div>
+  <div class="sm:block hidden">
     <Latest />
   </div>
 
   <div class="sm:flex flex-col justify-between hidden">
     <div class=""><Editors editors={editors} /></div>
-    <div class="flex grow mt-10">
-      <About />
-    </div>
+    <div class="mt-10"> <About /></div>
   </div>
 </div>
 

@@ -17,7 +17,7 @@ const { theme } = Astro.props;
 ---
 
 <Layout title="Juspoliticum">
-  <PageLayout title={`Les articles du thème : ${theme.name}`}>
+  <PageLayout title={`Les articles du thème : ${theme.name}`} className="max-w-screen-2xl lg:px-24 px-10">
     <ul>
       {
         theme.articles.map((article) => (
