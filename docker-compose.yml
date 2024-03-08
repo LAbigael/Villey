@@ -21,7 +21,7 @@ services:
       - directus-net
 
   directus:
-    image: directus/directus:10.8.3
+    image: directus/directus:10.10.1
     ports:
       - 8055:8055
     volumes:
