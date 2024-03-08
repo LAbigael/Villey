@@ -19,7 +19,8 @@ const { mobile } = Astro.props;
     // hide
     footnoteListItem.classList.add("footnote");
     footnoteListItem.setAttribute("id", footnoteId.replace("#", ""));
-    footnoteListItem.innerHTML = footnoteContent;
+    footnoteListItem.innerHTML = `<button class="close-button" onclick="this.parentElement.classList.remove('show')">X</button>`;
+    footnoteListItem.innerHTML += footnoteContent;
 
     footnoteList.appendChild(footnoteListItem);
 
@@ -47,6 +48,13 @@ const { mobile } = Astro.props;
 <script type="text/Javascript" src="/js/footnotes-swipe.js"></script>
 
 <style is:global>
+  .close-button {
+    @apply hidden;
+  }
+  #sidebar-2.is-affixed .close-button {
+    @apply  w-full lg:hidden p-3 border-none bg-transparent shadow-black flex justify-end;
+  }
+
   .footnote {
     @apply p-2;
     display: none;

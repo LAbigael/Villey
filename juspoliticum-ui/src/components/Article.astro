@@ -19,7 +19,7 @@ const { article } = Astro.props;
     <!-- <Chapters article={article} />-->
     <!--</div> -->
     <!--</div> -->
-    <div class="lg:w-3/4 mx-auto leading-normal flex flex-col">
+    <div class="lg:w-3/4 leading-normal flex flex-col">
       <div class="article_topWrapper">
         <div class="mb-4 border-b lg:h-14 mt-2 lg:mt-0">
           <VolumeTitle volume={article.volume} />
@@ -66,7 +66,7 @@ const { article } = Astro.props;
       </div>
       <Citation article={article} />
     </div>
-    <div id="sidebar-2" class="w-full lg:w-1/3 lg:mx-4 sidebar-2 flex flex-col">
+    <div id="sidebar-2" class="w-full lg:w-1/3 mx-0 lg:mx-4 sidebar-2 flex flex-col">
       <div class="sidebar__inner sidebar__inner-2">
         <FontSize />
         <Download article={article} />

@@ -5,29 +5,31 @@ const { article } = Astro.props;
 const files = article?.files;
 ---
 
-<Collapse summary="Documents associés" open={true}>
-  <div class="flex flex-col">
-    {
-      files && files.length > 0 ? (
-        files.map(({ directus_file_id: file }) => (
-          <a
-            href={`${getImagePath(file.id)}?download`}
-            class="download_button text-left"
-            target="_blank"
-            download="Your File.pdf"
-          >
-            {file.title}
-          </a>
-        ))
-      ) : (
-        <span>Pas de document disponible</span>
-      )
-    }
-  </div>
-</Collapse>
+<div class="wrap">
+  <Collapse summary="Documents associés" open={true}>
+    <div class="flex flex-col">
+      {
+        files && files.length > 0 ? (
+          files.map(({ directus_file_id: file }) => (
+            <a
+              href={`${getImagePath(file.id)}?download`}
+              class="download_button text-left"
+              target="_blank"
+              download="Your File.pdf"
+            >
+              {file.title}
+            </a>
+          ))
+        ) : (
+          <span>Pas de document disponible</span>
+        )
+      }
+    </div>
+  </Collapse>
+</div>
 
 <style is:global>
-  #sidebar-2.is-affixed .download_button {
+  #sidebar-2.is-affixed .wrap {
     @apply lg:block hidden;
   }
   .download_button {
