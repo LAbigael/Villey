@@ -3,7 +3,7 @@
 }
 
 .page_title {
-  @apply text-4xl p-1 my-4 border-b border-secondary;
+  @apply text-4xl p-1 my-4 border-b border-secondary opacity-80;
 }
 
 .sidebar {
