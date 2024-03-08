@@ -65,16 +65,19 @@ a {
 }
 
 h3 {
+  opacity: 0.8;
   font-weight: 600;
   font-size: 1.5rem;
 }
 
 h4 {
+  opacity: 0.8;
   font-weight: 500;
   font-size: 1.25rem;
 }
 
 h5 {
+  opacity: 0.8;
   font-weight: 500;
   font-size: 1.0625rem;
 }

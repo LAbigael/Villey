@@ -48,14 +48,14 @@ const { summary, open } = Astro.props;
     box-sizing: border-box;
     max-width: 500px;
     max-height: 0;
-    overflow: hidden;
+    overflow: scroll;
     padding: 0 10px;
     transition:
       max-height 400ms ease-out,
   }
 
   details[open] + div.content {
-    max-height: 800px; /* Set a max-height value enough to show all the content */
+    max-height: 1000px; /* Set a max-height value enough to show all the content */
     transition:
       max-height 300ms ease-out,
   }
