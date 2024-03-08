@@ -1,0 +1,62 @@
+<button id="togglefullscreen-button" aria-label="Open full screen mode">
+  <svg class="fill-current" viewBox="10 10 16 16" aria-hidden="true">
+    <path d="M10 16h2v-4h4v-2h-6v6z"></path>
+    <path d="M20 10v2h4v4h2v-6h-6z"></path>
+    <path d="M24 24h-4v2h6v-6h-2v4z"></path>
+    <path d="M12 20h-2v6h6v-2h-4v-4z"></path>
+  </svg>
+</button>
+
+<script>
+  "use-strict";
+  const button = document.querySelector("#togglefullscreen-button");
+  button.addEventListener("click", (e) => {
+    button.matches('[aria-label^="O"]')
+      ? button.setAttribute("aria-label", "Close full screen view")
+      : button.setAttribute("aria-label", "Open full screen view");
+    document.getElementById("sidebar").classList.toggle("hidden");
+    // make articlecontent take the full width
+    document.querySelector(".article_column").classList.toggle("lg:w-2/4");
+  });
+
+  // Sidebar toggle
+  // document
+  //   .getElementById("sidebar-1-toggle")
+  //   .addEventListener("click", function () {
+  //   });
+</script>
+
+<style>
+  #togglefullscreen-button {
+    all: unset;
+    width: 3vh;
+    height: auto;
+    opacity: 0.8;
+  }
+
+  @media (max-width: 640px) {
+    #togglefullscreen-button {
+      display: none;
+    }
+  }
+  #togglefullscreen-button svg {
+    width: 100%;
+    height: auto;
+    padding: 10%;
+  }
+  #togglefullscreen-button path {
+    transition: transform.25s ease-in;
+  }
+  [aria-label^="C"] path {
+    transform: translate(62%, 62%);
+  }
+  [aria-label^="C"] path:nth-of-type(2) {
+    transform: translate(-62%, 62%);
+  }
+  [aria-label^="C"] path:nth-of-type(3) {
+    transform: translate(-62%, -62%);
+  }
+  [aria-label^="C"] path:nth-of-type(4) {
+    transform: translate(62%, -62%);
+  }
+</style>

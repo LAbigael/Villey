@@ -1,6 +1,6 @@
 ---
 const { article } = Astro.props;
-import Fullscreen from "../images/fullscreen.astro";
+import ToggleFullscreen from "./ToggleFullscreen.astro";
 import FontSize from "./FontSize.astro";
 import Footnotes from "./Footnotes.astro";
 import TableOfContent from "./TableOfContent.astro";
@@ -22,7 +22,7 @@ import Download from "./Download.astro";
       }
     </div>
   </div>
-  <div class="main-content relative flex lg:flex-row flex-col-reverse">
+  <div class="main-content relative flex lg:flex-row justify-end flex-col-reverse">
     <div id="sidebar" class="w-1/4 sidebar-1 flex flex-col">
       <div class="sidebar__inner sidebar__inner-1">
         {
@@ -34,13 +34,11 @@ import Download from "./Download.astro";
       </div>
     </div>
     <div class="relative w-full lg:w-2/4 article_column" title="Agrandir">
-      <div id="sidebar-1-toggle" class="w-4 h-4 opacity-70 cursor-pointer hidden lg:block absolute -left-4 top-8">
-        <Fullscreen />
-      </div>
       <div class="article_content" set:html={article.content} />
     </div>
     <div id="sidebar-2" class="w-full lg:w-1/4 lg:mx-3 sidebar-2 flex flex-col">
       <div class="sidebar__inner sidebar__inner-2">
+        <ToggleFullscreen />
         <FontSize />
         <Download article={article} />
         <TableOfContent />
@@ -68,17 +66,6 @@ import Download from "./Download.astro";
 </script>
 
 <script type="text/javascript" src="/js/add-lettrine.js"></script>
-
-<script>
-  // Sidebar toggle
-  document
-    .getElementById("sidebar-1-toggle")
-    .addEventListener("click", function () {
-      document.getElementById("sidebar").classList.toggle("hidden");
-      // make articlecontent take the full width
-      document.querySelector(".article_column").classList.toggle("lg:w-2/4");
-    });
-</script>
 
 <style is:global>
   .article_content {
@@ -157,5 +144,8 @@ import Download from "./Download.astro";
   }
   .article_content p {
     @apply my-4;
+  }
+  #sidebar-2 {
+    min-width: 25%;
   }
 </style>
