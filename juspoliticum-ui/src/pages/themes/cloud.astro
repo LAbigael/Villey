@@ -1,0 +1,45 @@
+---
+// Import necessary components and utilities
+import Layout from "../../layouts/Layout.astro";
+import PageLayout from "../../layouts/PageLayout.astro";
+import { getThemes } from "../../utils/requests";
+
+// Fetch and prepare themes data
+let themes = await getThemes();
+themes = themes.map(theme => ({
+  link: `/themes/${theme.slug}`,
+  content: theme.name,
+}));
+---
+
+<Layout title="Thèmes">
+  <PageLayout title="Thèmes" className="max-w-screen-2xl lg:px-24 px-10">
+    <canvas id="tag-cloud-canvas" width="1000" height="1000">Tag Cloud not supported.</canvas>
+    <ul id="tag-list" style="display: none;">
+      {themes.map(theme => (
+        <li><a href={theme.link}>{theme.content}</a></li>
+      ))}
+    </ul>
+    <script src="https://www.goat1000.com/tagcanvas.min.js?2.9"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        if(!TagCanvas.Start('tag-cloud-canvas', 'tag-list', {
+          textColour: '#292524',
+          outlineColour: 'transparent',
+          reverse: true,
+          depth: 0.8,
+          maxSpeed: 0.05,
+          textFont: 'Helvetica, sans-serif',
+          textHeight: 10,
+          initial: [0.1,-0.1],
+          decel: 0.98,
+          shuffleTags: true,
+          shape: 'sphere',
+        })) {
+          // Something went wrong, or not supported
+          // document.getElementById('tag-cloud-canvas').style.display = 'none';
+        }
+      });
+    </script>
+  </PageLayout>
+</Layout>
