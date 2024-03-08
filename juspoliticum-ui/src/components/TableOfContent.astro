@@ -10,25 +10,47 @@ import Collapse from "./Collapse.astro";
 </div>
 
 <script>
-  // for each h3, and h4 within, add a list item to the table of content
-  // Add id to headings dynamically
-  var toc = document.querySelector(".table_of_content_list");
-  var headings = document.querySelectorAll("h3, h4");
+  // Ensure the DOM is fully loaded before executing
+document.addEventListener("DOMContentLoaded", () => {
+  const toc = document.querySelector(".table_of_content_list");
+  const headings = document.querySelectorAll("h3, h4");
+
   if (headings.length === 0) {
-    document.querySelector("#toc").style.display = "none";
+    document.querySelector("#toc")?.setAttribute("style", "display: none;");
+    return;
   }
 
-  // Loop through all heading
-  for (var i = 0; i < headings.length; i++) {
-    var heading = headings[i];
-    var headingText = heading.textContent;
-    var headingLevel = heading.tagName.slice(-1);
-    var headingId = headingText.replace(/\s+/g, "-").toLowerCase();
+  headings.forEach((heading: Element, index: number) => {
+    const headingText = heading.textContent || `Section ${index}`;
+    const headingLevel = heading.nodeName.slice(-1); // "H3" or "H4"
+    const headingId = headingText.replace(/\s+/g, "-").toLowerCase();
     heading.setAttribute("id", headingId);
-    var listItem = document.createElement("li");
+
+    const listItem = document.createElement("li");
     listItem.innerHTML = `<a class="heading_level_${headingLevel}" href="#${headingId}">${headingText}</a>`;
-    toc.appendChild(listItem);
+    toc?.appendChild(listItem);
+  });
+
+  // Adding event listener for smooth scroll
+  if (toc) {
+    toc.addEventListener("click", (event) => {
+      const target = event.target as HTMLElement; 
+      if (target && target.nodeName === "A") {
+        event.preventDefault();
+
+        const href = (target as HTMLAnchorElement).getAttribute("href");
+        if (!href) return;
+
+        const id = href.replace("#", "");
+        const elementToScrollTo = document.getElementById(id);
+
+        if (elementToScrollTo) {
+          elementToScrollTo.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+    });
   }
+});
 </script>
 
 <style is:global>

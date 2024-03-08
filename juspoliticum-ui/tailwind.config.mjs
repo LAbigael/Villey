@@ -26,6 +26,7 @@ export default {
         "background-alt-dark": "#524134",
         "background-light": "#f5f4f3",
         "background-dark": "#292524",
+        "dark-light" : "rgb(138 123 111 / var(--tw-bg-opacity))",
         color: "#101010",
         "color-light": "#e8e8e8",
         "accent-gradient-dark":
