@@ -62,7 +62,7 @@ td {
 }
 
 tr:nth-child(even) {
-  @apply bg-slate-200;
+  @apply bg-slate-2 00;
 }
 
 tr {

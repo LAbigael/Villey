@@ -212,7 +212,7 @@ form {
 }
 
 input {
-  @apply border border-gray-800 rounded-md shadow-sm w-2/3 p-2 bg-gray-900 text-gray-300;
+  @apply border border-gray-800 rounded-md shadow-sm w-2/3 p-2 bg-gray-100 text-gray-300;
 }
 
 label {
@@ -240,7 +240,7 @@ td {
 }
 
 tr:nth-child(even) {
-  @apply bg-gray-900;
+  @apply bg-gray-200;
 }
 
 tr {
