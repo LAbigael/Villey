@@ -150,6 +150,18 @@ import SearchIcon from "../images/search.astro";
   async function fetchSearchResults(search: string) {
     // if (search.length === 0) return;
     resultsList.innerHTML = SPINNER;
+
+    const SEARCH_DATA_TIMESTAMP = localStorage.getItem("SEARCH_DATA_TIMESTAMP");
+    if (
+      SEARCH_DATA_TIMESTAMP &&
+      Date.now() - parseInt(SEARCH_DATA_TIMESTAMP) > 1000 * 60 * 60 * 24
+    ) {
+      // 1 day
+      localStorage.removeItem("SEARCH_DATA");
+      localStorage.removeItem("SEARCH_DATA_TIMESTAMP");
+    }
+    SEARCH_DATA = JSON.parse(localStorage.getItem("SEARCH_DATA"));
+
     if (!SEARCH_DATA) {
       try {
         const res = await fetch("/search.json");
@@ -157,6 +169,8 @@ import SearchIcon from "../images/search.astro";
           throw new Error("Une erreur est survenue");
         }
         const data = await res.json();
+        localStorage.setItem("SEARCH_DATA", JSON.stringify(data));
+        localStorage.setItem("SEARCH_DATA_TIMESTAMP", Date.now().toString());
         SEARCH_DATA = data;
       } catch (e) {
         console.error(e);
@@ -170,8 +184,8 @@ import SearchIcon from "../images/search.astro";
 
     if (searchResult.length > 0) {
       resultsList.innerHTML = generateSearchList(searchResult);
-      
-    info.querySelector("#no-result").classList.add("hidden");
+
+      info.querySelector("#no-result").classList.add("hidden");
     } else {
       resultsList.innerHTML = "";
       if (search.length > 0) {
