@@ -48,7 +48,7 @@ export default {
   },
 };
 </script>
-<style>
+<style scoped>
 .status {
   @apply bg-red-500 w-2 h-2 rounded-full my-2 mr-2;
 }
@@ -59,10 +59,6 @@ export default {
 
 td {
   @apply border-none px-4 py-2 flex flex-row items-center;
-}
-
-tr:nth-child(even) {
-  @apply bg-slate-2 00;
 }
 
 tr {

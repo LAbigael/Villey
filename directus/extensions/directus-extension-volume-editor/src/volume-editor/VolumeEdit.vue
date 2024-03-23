@@ -14,7 +14,7 @@
       <input type="text" v-model="number" v-bind="numberAttrs" />
       <label>Date de publication </label>
       <input type="date" v-model="published_at" v-bind="published_atAttrs" />
-      <button>Enregistrer</button>
+      <VButton class="mt-4 w-64" type="button">Enregistrer</VButton>
     </form>
     <h3 class="chapter_title mt-8">
       Liste des chapitres et articles associés au numéro "{{ title }}"
@@ -212,7 +212,7 @@ form {
 }
 
 input {
-  @apply border border-gray-800 rounded-md shadow-sm w-2/3 p-2 bg-gray-100 text-gray-300;
+  @apply border border-gray-800 rounded-md shadow-sm w-2/3 p-2 text-gray-300;
 }
 
 label {
@@ -239,15 +239,9 @@ td {
   @apply border-none px-4 py-2 flex flex-row items-center;
 }
 
-tr:nth-child(even) {
-  @apply bg-gray-200;
-}
 
 tr {
   @apply border-b border-gray-800 flex items-center cursor-grab hover:bg-gray-800;
 }
 
-button {
-  @apply border border-gray-600 rounded-md shadow-sm p-2 w-64 my-2;
-}
 </style>
