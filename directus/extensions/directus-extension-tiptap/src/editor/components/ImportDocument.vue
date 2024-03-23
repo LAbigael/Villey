@@ -2,6 +2,7 @@
   <div class="flex flex-col mt-8">
     <input type="file" @change="handleFileChange" />
     <button class="import_button" @click="submitFile">Importer</button>
+    <p v-if="message" >{{ message }}</p>
   </div>
 </template>
 
@@ -19,6 +20,7 @@ export default {
     const { setContent } = props;
 
     const files = ref();
+    const message = ref(null);
     const api = useApi();
 
     function handleFileChange(event) {
@@ -26,6 +28,11 @@ export default {
     }
 
     function submitFile() {
+      if (!files.value) {
+        message.value = "Selectionnez un fichier";
+        return;
+      }
+      message.value = null;
       const file = files.value[0];
 
       const formData = new FormData();
@@ -42,6 +49,7 @@ export default {
     return {
       handleFileChange,
       submitFile,
+      error: message,
     };
   },
 };

@@ -1,4 +1,6 @@
 <template>
+  <h3 v-if="siteId == 1">Droit & Philosophie</h3>
+  <h3 v-else>Juspoliticum</h3>
   <VList v-for="item in data" :key="item.id">
     <VListItem :clickable="true" :href="`volume-editor/edit/${item.id}`">
       <tr class="w-full flex items-center cursor-pointer">
@@ -21,7 +23,13 @@
 import { useItems } from "@directus/extensions-sdk";
 import { ref } from "vue";
 export default {
-  async setup() {
+  props: {
+    siteId: {
+      type: String,
+      default: 1,
+    },
+  },
+  async setup({ siteId }) {
     const collectionRef = ref("Volumes");
 
     const query = {
@@ -36,7 +44,7 @@ export default {
     const { getItems, items } = useItems(collectionRef, query);
 
     query.search.value = ""; // update query search
-    query.filter.value.site_id = 1; // update query filter
+    query.filter.value.site_id = siteId; // update query filter
     query.sort.value = "-number"; // update query sort
 
     await getItems(); // fetch the items
@@ -63,5 +71,8 @@ td {
 
 tr {
   @apply border-b border-gray-800;
+}
+h3 {
+  @apply text-2xl font-semibold;
 }
 </style>

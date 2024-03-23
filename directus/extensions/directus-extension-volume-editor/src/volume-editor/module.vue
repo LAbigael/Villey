@@ -3,11 +3,9 @@
     <template #navigation>
       <PageNavigation />
     </template>
-
-    <h2>Liste des volumes</h2>
     <Suspense>
       <template #default>
-        <VolumeList />
+        <VolumeList :siteId="siteId"/>
       </template>
       <template #fallback>
         <div>Loading...</div>
@@ -24,6 +22,15 @@ import PageNavigation from "./PageNavigation.vue";
 
 export default {
   components: { VolumeList, Suspense, PageNavigation },
-  setup() { },
+  props: {
+    siteId: {
+      type: String,
+      default: 1,
+    },
+  },
+  setup({ siteId }) {
+    console.log(siteId);
+    return { siteId };
+  },
 };
 </script>

@@ -7,11 +7,17 @@ export default {
 	name: 'Editeur de volume',
 	icon: 'book',
 	routes: [
-		{
-      name: 'index',
-			path: '',
-			component: ModuleComponent,
-		},
+    {
+      name: 'default',
+      path: '',
+      component: ModuleComponent,
+    },
+    {
+      name: 'volumeList',
+      path: ':siteId',
+      component: ModuleComponent,
+      props: true,
+    },
 		{
       name: 'edit',
 			path: 'edit/:id',
