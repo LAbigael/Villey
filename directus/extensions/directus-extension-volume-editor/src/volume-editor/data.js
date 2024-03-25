@@ -14,6 +14,8 @@ export function useVolumes() {
       page: ref(1),
     };
 
+    // sort articles in chapters by position
+
     query.filter.value = { id: id };
     query.fields.value = [
       "slug",
@@ -24,6 +26,15 @@ export function useVolumes() {
       "sections.title",
       "sections.id",
       "sections.position",
+      "sections.chapters.position",
+      "sections.chapters.id",
+      "sections.chapters.title",
+      "sections.chapters.articles.title",
+      "sections.chapters.articles.id",
+      "sections.chapters.articles.section_id",
+      "sections.chapters.articles.position",
+      "sections.chapters.articles.active",
+      "sections.chapters.articles.authors.author_id.fullname",
       "sections.articles.title",
       "sections.articles.id",
       "sections.articles.section_id",
