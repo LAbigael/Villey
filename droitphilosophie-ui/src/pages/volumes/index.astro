@@ -30,6 +30,9 @@ const volumes = await directus.request(
       site_id: {
         _eq: "1",
       },
+      active: {
+        _eq: "1",
+      },
     },
   }),
 );
