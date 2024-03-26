@@ -66,6 +66,9 @@ export function extractFootnotes(html) {
       let content = render(el.children[0]).replace(/<a.*?<\/a>/, "");
       content = transformHTML(content);
       content = htmlToTiptap(content);
+      if (content.type = "doc") {
+        content = content.content[0];
+      }
       footnotes.push({ position: i + 1, id, content, uid: uid() });
     }
   });
