@@ -22,52 +22,76 @@ const articles = await directus.request(
       "authors.author_id.*",
       "article_contents.content_bis",
       "section_id.volume_id",
+      "chapter_id.section_id.volume_id",
       "files.directus_file_id.title",
       "files.directus_file_id.id",
     ],
     sort: ["-id"],
+    limit: 1,
     filter: {
-      _and: [
-        {
-          site_id: {
-            _eq: "1",
-          },
-          slug: {
-            _eq: slug,
-          },
-        },
-      ],
+      slug: {
+        _eq: slug,
+      },
     },
   }),
 );
 let article = articles[0];
-console.log(article.files);
 
 let sections = [];
 let volume = null;
-if (article.section_id) {
-  sections = await directus.request(
-    readItems("VolumeSections", {
-      fields: ["title", "slug", "id", { articles: ["slug", "title"] }],
-      filter: {
-        volume_id: {
-          _eq: article.section_id.volume_id,
-        },
-      },
-    }),
-  );
-  volume = await directus.request(
-    readItem("Volumes", article.section_id.volume_id),
-  );
+//  sections = await directus.request(
+//    readItems("VolumeSections", {
+//      fields: ["title", "slug", "id", { articles: ["slug", "title"] }],
+//      filter: {
+//        volume_id: {
+//          _eq: article.section_id.volume_id,
+//        },
+//      },
+//    }),
+//  );
+let section_id = article?.section_id;
+if (!section_id) {
+  section_id = article.chapter_id.section_id;
 }
+
+volume = await directus.request(
+  readItem("Volumes", section_id.volume_id, {
+    fields: [
+      "slug",
+      "title",
+      "number",
+      "published_at",
+      {
+        sections: [
+          "title",
+          {
+            chapters: [
+              "title",
+              "position",
+              {
+                articles: [
+                  "title",
+                  "slug",
+                  { authors: ["author_id.fullname"] },
+                ],
+              },
+            ],
+          },
+          {
+            articles: ["title", "slug", { authors: ["author_id.fullname"] }],
+          },
+        ],
+      },
+    ],
+  }),
+);
 
 article = {
   ...article,
   contents: article.article_contents,
-  sections,
+  sections: volume.sections,
   volume,
 };
-import { Debug } from "astro:components";
 ---
 
 <Layout title="Droit & Philosophie.">

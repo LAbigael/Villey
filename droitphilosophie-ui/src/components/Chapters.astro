@@ -2,6 +2,8 @@
 import Link from "./icons/Link.astro";
 const { article ,currentArticle} = Astro.props;
 import Collapse from "./Collapse.astro";
+
+import { Debug } from "astro:components";
 ---
 
 <!-- <Collapse summary={article.volume.title}> -->
@@ -23,6 +25,7 @@ import Collapse from "./Collapse.astro";
 <!--   </div> -->
 <!-- </Collapse> -->
 <div class="lg:block hidden">
+
   <h1 class="sidebar_title">
     <a href={`/volumes/${article.volume.slug}`}>{article.volume.title}</a>
   </h1>
@@ -31,6 +34,18 @@ import Collapse from "./Collapse.astro";
     article.sections.map((section) => (
       <div>
         <h2>{section.title}</h2>
+        {section.chapters?.map((chapter) => (
+          <div>
+            <h4>{chapter.title}</h3>
+            <ul>
+              {chapter.articles.map((section) => (
+                <li>
+                  <a href={`/articles/${section.slug}`}>{section.title}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
         <ul>
           {section.articles.map((article) => (
           <li className={`${article.title == currentArticle ? "highlight" : ""}`}>

@@ -17,6 +17,9 @@ const volumes = await directus.request(
         sections: [
           "title",
           {
+          chapters: ["title", "position", {articles: ["title", "slug", { authors: ["author_id.fullname"] }]}],
+          },
+          {
             articles: ["title", "slug", { authors: ["author_id.fullname"] }],
           },
         ],

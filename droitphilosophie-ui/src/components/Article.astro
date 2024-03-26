@@ -22,15 +22,13 @@ import Download from "./Download.astro";
       }
     </div>
   </div>
-  <div class="main-content relative flex lg:flex-row justify-end flex-col-reverse">
+  <div
+    class="main-content relative flex lg:flex-row justify-end flex-col-reverse"
+  >
     <div id="sidebar" class="w-1/4 sidebar-1 flex flex-col">
       <div class="sidebar__inner sidebar__inner-1">
-        {
-          article.type === "article" && (
-            <Chapters article={article} currentArticle={article.title} />
-          )
-        }
         {article.type === "recension" && <OtherRecensions article={article} />}
+        <Chapters article={article} currentArticle={article.title} />
       </div>
     </div>
     <div class="relative w-full lg:w-2/4 article_column" title="Agrandir">

@@ -14,6 +14,26 @@ const { volume } = Astro.props;
             <h2 class="chapter_title" id={section.id}>
               {section.title}
             </h2>
+            {section?.chapters.map((chapter) => (
+              <h4 class="chapter_title" id={chapter.id}>
+                {chapter.title}
+              </h4>
+              <ul>
+                {chapter?.articles.map((article) => (
+                  <li class="">
+                    <span class="mr-1 ">
+                      {article.authors
+                        .map((a) => a.author_id.fullname)
+                        .join(", ")}{" "}
+                      :
+                    </span>
+                    <span class="article_title ">
+                      <a href={`/articles/${article.slug}`}>{article.title}</a>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ))}
             <ul>
               {section.articles.map((article) => (
               <li class="">
