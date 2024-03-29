@@ -6,49 +6,49 @@ import OtherVolumes from "../../components/OtherVolumes.astro";
 import { getDirectusClient } from "../../utils/get-directus-client";
 import { readItems } from "@directus/sdk";
 
-export async function getStaticPaths() {
-  const directus = await getDirectusClient();
-  const volumes = await directus.request(
-    readItems("Volumes", {
-      fields: [
-        "slug",
-        "title",
-        "number",
-        "published_at",
-        {
-          sections: [
-            "title",
-            {
-              articles: [
-                "title",
-                "slug",
-                {
-                  authors: [
-                    "author_id.fullname",
-                    "author_id.firstname",
-                    "author_id.lastname",
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-      sort: ["-id"],
-      filter: {
-        site_id: {
-          _eq: "1",
-        },
-      },
-    }),
-  );
-  return volumes.map((volume) => ({
-    params: { slug: volume.slug },
-    props: { volume },
-  }));
-}
+const { slug } = Astro.params;
 
-const { volume } = Astro.props;
+const directus = await getDirectusClient();
+
+const volumes = await directus.request(
+  readItems("Volumes", {
+    fields: [
+      "slug",
+      "title",
+      "number",
+      "published_at",
+      {
+        sections: [
+          "title",
+          {
+            articles: [
+              "title",
+              "slug",
+              {
+                authors: [
+                  "author_id.fullname",
+                  "author_id.firstname",
+                  "author_id.lastname",
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    sort: ["-id"],
+    filter: {
+      site_id: {
+        _eq: "1",
+      },
+      slug: {
+        _eq: slug,
+      },
+    },
+  }),
+);
+
+const volume = volumes[0];
 ---
 
 <Layout title="Droit & Philosophie.">

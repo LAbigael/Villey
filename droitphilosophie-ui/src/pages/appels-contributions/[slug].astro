@@ -1,26 +1,20 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import Volume from "../../components/Volume.astro";
-import OtherVolumes from "../../components/OtherVolumes.astro";
 
 import { getDirectusClient } from "../../utils/get-directus-client";
 import { readItems } from "@directus/sdk";
 
-export async function getStaticPaths() {
-  const directus = await getDirectusClient();
-  const contributionCalls = await directus.request(
-    readItems("ContributionCalls", {
-      fields: ["title", "slug", "content", "created_at"],
-      sort: ["-created_at"],
-    }),
-  );
-  return contributionCalls.map((contributionCall) => ({
-    params: { slug: contributionCall.slug },
-    props: { contributionCall, contributionCalls },
-  }));
-}
+const directus = await getDirectusClient();
+const contributionCalls = await directus.request(
+  readItems("ContributionCalls", {
+    fields: ["title", "slug", "content", "created_at"],
+    sort: ["-created_at"],
+  }),
+);
 
-const { contributionCall, contributionCalls } = Astro.props;
+const { slug } = Astro.params;
+
+const contributionCall = contributionCalls.find((contributionCall) => contributionCall.slug === slug);
 ---
 
 <Layout title="Droit & Philosophie.">

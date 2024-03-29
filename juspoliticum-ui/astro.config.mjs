@@ -8,7 +8,7 @@ import tailwind from "@astrojs/tailwind";
 export default defineConfig({
   integrations: [vue(), tailwind()],
   // server: { port: 4322, host: true },
-  output: 'static',
+  output: 'server',
   // adapter: netlify(),
   vite: {
     ssr: {

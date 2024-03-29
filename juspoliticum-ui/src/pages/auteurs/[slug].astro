@@ -3,21 +3,17 @@ import Layout from "../../layouts/Layout.astro";
 import PageLayout from "../../layouts/PageLayout.astro";
 import ArticleTitle from "../../components/ArticleTitle.astro";
 
-import { getAuthorsWithArticles } from "../../utils/requests";
+import { getAuthorWithArticlesFromSlug } from "../../utils/requests";
+const { slug } = Astro.params;
 
-export async function getStaticPaths() {
-  const authors = await getAuthorsWithArticles();
-  return authors.map((author) => ({
-    params: { slug: author.slug },
-    props: { author },
-  }));
-}
-
-const { author } = Astro.props;
+const author = await getAuthorWithArticlesFromSlug(slug);
 ---
 
 <Layout title="Juspoliticum">
-  <PageLayout title={`Les articles de l'auteur : ${author.fullname}`} className="max-w-screen-2xl lg:px-24 px-10">
+  <PageLayout
+    title={`Les articles de l'auteur : ${author.fullname}`}
+    className="max-w-screen-2xl lg:px-24 px-10"
+  >
     <ul>
       {
         author.articles.map((article) => (

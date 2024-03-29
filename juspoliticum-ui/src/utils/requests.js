@@ -47,6 +47,28 @@ export const getVolume = async (id) => {
     }),
   );
 };
+
+export const getVolumeBySlug = async (slug) => {
+  const volumes = await directus.request(
+    readItems("Volumes", {
+      fields: volumeFields,
+      sort: ["-id"],
+      filter: {
+        _and: [
+          {
+            site_id: {
+              _eq: "2",
+            },
+            slug: {
+              _eq: slug,
+            },
+          },
+        ],
+      },
+    }),
+  );
+  return volumes[0];
+}
 export const getAuthors = async () => {
   return directus.request(
     readItems("Authors", {
@@ -61,8 +83,8 @@ export const getAuthors = async () => {
     }),
   );
 };
-export const getAuthorsWithArticles = async () => {
-  return directus.request(
+export const getAuthorWithArticlesFromSlug = async (slug) => {
+  const author = await directus.request(
     readItems("Authors", {
       fields: [
         "id",
@@ -82,9 +104,13 @@ export const getAuthorsWithArticles = async () => {
         site_id: {
           _eq: "2",
         },
+        slug: {
+          _eq: slug,
+        },
       },
     }),
   );
+  return author[0];
 };
 
 export const getThemes = async () => {
@@ -102,8 +128,8 @@ export const getThemes = async () => {
   );
 };
 
-export const getThemesWithArticles = async () => {
-  return directus.request(
+export const getThemeWithArticlesBySlug = async (slug) => {
+  const theme = await directus.request(
     readItems("Themes", {
       fields: [
         "id",
@@ -123,9 +149,13 @@ export const getThemesWithArticles = async () => {
         site_id: {
           _eq: "2",
         },
+        slug: {
+          _eq: slug,
+        },
       },
     }),
   );
+  return theme[0];
 };
 
 export const getArticleBySlug = async (slug) => {

@@ -3,21 +3,18 @@ import Layout from "../../layouts/Layout.astro";
 import PageLayout from "../../layouts/PageLayout.astro";
 import ArticleTitle from "../../components/ArticleTitle.astro";
 
-import { getThemesWithArticles } from "../../utils/requests";
+import { getThemeWithArticlesBySlug } from "../../utils/requests";
 
-export async function getStaticPaths() {
-  const themes = await getThemesWithArticles();
-  return themes.map((theme) => ({
-    params: { slug: theme.slug },
-    props: { theme },
-  }));
-}
+const { slug } = Astro.params;
 
-const { theme } = Astro.props;
+const theme = await getThemeWithArticlesBySlug(slug);
 ---
 
 <Layout title="Juspoliticum">
-  <PageLayout title={`Les articles du thème : ${theme.name}`} className="max-w-screen-2xl lg:px-24 px-10">
+  <PageLayout
+    title={`Les articles du thème : ${theme.name}`}
+    className="max-w-screen-2xl lg:px-24 px-10"
+  >
     <ul>
       {
         theme.articles.map((article) => (

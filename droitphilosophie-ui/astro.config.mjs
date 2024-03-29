@@ -7,7 +7,7 @@ import tailwind from "@astrojs/tailwind";
 export default defineConfig({
   integrations: [vue(), tailwind()],
   server: { port: 4321, host: true },
-  output: "hybrid",
+  output: "server",
   vite: {
     ssr: {
       noExternal: ["modern-normalize"]

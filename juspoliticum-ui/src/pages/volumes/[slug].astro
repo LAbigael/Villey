@@ -1,27 +1,18 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import PageLayout from "../../layouts/PageLayout.astro";
-import ArticleTitle from "../../components/ArticleTitle.astro";
 import VolumeTitle from "../../components/VolumeTitle.astro";
 import Volume from "../../components/Volume.astro";
 
-import { getVolumes, getVolume } from "../../utils/requests";
-import { readItems } from "@directus/sdk";
+import { getVolumes, getVolumeBySlug } from "../../utils/requests";
 
-export async function getStaticPaths() {
-  const volumes = await getVolumes();
+let volumes = await getVolumes();
+const { slug } = Astro.params;
 
-  return volumes.map((volume) => ({
-    params: { slug: volume.slug },
-    props: { volumes, volume },
-  }));
-}
-
-let { volume, volumes } = Astro.props;
+const volume = await getVolumeBySlug(slug);
 
 volumes = volumes.filter((v) => v.slug !== volume.slug);
 
-volume = await getVolume(volume.id);
 ---
 
 <Layout title="Juspoliticum">

@@ -14,7 +14,7 @@ const { volume } = Astro.props;
             <h2 class="chapter_title" id={section.id}>
               {section.title}
             </h2>
-            {section?.chapters.map((chapter) => (
+            {section?.chapters?.map((chapter) => (
               <h4 class="chapter_title" id={chapter.id}>
                 {chapter.title}
               </h4>
