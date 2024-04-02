@@ -28659,9 +28659,12 @@ var script = {
         TableHeader,
       ],
       onUpdate: ({ editor }) => {
-        console.log("updating editor");
         emit("input", editor.getJSON());
       },
+    });
+
+    onMounted(() => {
+      editor.value?.commands.setContent(props.value);
     });
 
     const unwatch = watch(
@@ -28702,6 +28705,7 @@ var script = {
     }
     const setContentAndEmit = (content) =>
       editor.value?.commands.setContent(content, true);
+    
     return {
       editor,
       isActive,
