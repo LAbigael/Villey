@@ -8,7 +8,7 @@ export const getDirectusClient = async (local = false) => {
 };
 
 export const getImagePath = (image) => {
-  return `http://localhost:8055/assets/${image}`;
+  return `https://villey.rubidiumweb.eu/assets/${image}`;
 };
 
 export const volumeFields = [
