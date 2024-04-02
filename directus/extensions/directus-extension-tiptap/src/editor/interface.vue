@@ -72,7 +72,7 @@ import Table from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
-import { watch } from "vue";
+import { watch ,onMounted } from "vue";
 import "./style.css";
 import BoldIcon from "../icons/bold.vue";
 import ItalicIcon from "../icons/italic.vue";
@@ -94,6 +94,7 @@ import BulletListIcon from "../icons/list-unordered.vue";
 import Toolbar from "./components/ToolbarGroup.vue";
 import ToolbarButton from "./components/ToolbarButton.vue";
 import ImportDocument from "./components/ImportDocument.vue";
+
 
 export default {
   components: {
@@ -143,9 +144,12 @@ export default {
         TableHeader,
       ],
       onUpdate: ({ editor }) => {
-        console.log("updating editor")
         emit("input", editor.getJSON());
       },
+    });
+
+    onMounted(() => {
+      editor.value?.commands.setContent(props.value);
     });
 
     const unwatch = watch(
@@ -186,7 +190,7 @@ export default {
     }
     const setContentAndEmit = (content) =>
       editor.value?.commands.setContent(content, true);
-    ;
+    
     return {
       editor,
       isActive,
