@@ -13,14 +13,15 @@
   const big_font = document.getElementById("big_font");
 
   small_font.addEventListener("click", () => {
-    document.querySelector(".article_content").style.fontSize = "1em";
+    document.querySelector(".article_content").style.fontSize = "0.9rem";
   });
   medium_font.addEventListener("click", () => {
-    document.querySelector(".article_content").style.fontSize = "1.25em";
+    document.querySelector(".article_content").style.fontSize = "1rem";
   });
   big_font.addEventListener("click", () => {
-    document.querySelector(".article_content").style.fontSize = "1.5em";
+    document.querySelector(".article_content").style.fontSize = "1.25rem";
   });
+
 </script>
 
 <style is:global>
@@ -31,13 +32,13 @@
     @apply lg:flex hidden ;
   }
   .small_font {
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
   .medium_font {
-    font-size: 1.25rem;
+    font-size: 1rem;
   }
   .big_font {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
   }
 
   .font_size_button {

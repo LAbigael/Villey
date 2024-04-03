@@ -14,7 +14,7 @@ const { article } = Astro.props;
 
 <article class="article">
   <div class="main-content relative flex lg:flex-row flex-col-reverse">
-    <div class="lg:w-3/4 leading-normal flex flex-col">
+    <div class="lg:w-2/3 leading-normal flex flex-col">
       <div class="article_topWrapper">
         <div class="mb-4 border-b lg:h-14 mt-2 lg:mt-0">
           <VolumeTitle volume={article.volume} />
@@ -86,8 +86,15 @@ const { article } = Astro.props;
 
   <style is:global>
     .article_content {
-      @apply text-lg text-justify w-full;
+      @apply text-justify w-full;
+      font-size: 1rem;
       counter-reset: footnote;
+    }
+    .article_content p {
+      font-family: "Georgia", serif;
+      color: black;
+      opacity: 0.8;
+      line-height: 1.6;
     }
 
     .lettrine {
@@ -133,10 +140,10 @@ const { article } = Astro.props;
     }
 
     .article_content .footnote-link::after {
-      font-size: 1.3rem; /* Maintain relative font-size in browsers that support it */
+      /* font-size: 1.3rem; /1* Maintain relative font-size in browsers that support it *1/ */
       letter-spacing: normal;
-      display: inline-block;
-      vertical-align: super;
+      /* display: inline-block; */
+      /* vertical-align: super; */
       @apply text-secondary-alt dark:text-secondary-alt-light;
     }
 

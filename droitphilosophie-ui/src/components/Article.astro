@@ -67,9 +67,16 @@ import Download from "./Download.astro";
 
 <style is:global>
   .article_content {
-    @apply text-lg text-justify mx-auto leading-normal mt-2 px-2 lg:px-6 md:px-2;
+    @apply  text-justify mx-auto leading-normal mt-2 px-2 lg:px-6 md:px-2;
+    font-size: 1rem;
     max-width: none;
     counter-reset: footnote;
+  }
+
+  .article_content p {
+    font-family: "Georgia", serif;
+    color: black;
+    opacity: 0.8;
   }
   @media (min-width: 1024px) {
     .article_column {
@@ -121,10 +128,10 @@ import Download from "./Download.astro";
   }
 
   .article_content .footnote-link::after {
-    font-size: 1.3rem; /* Maintain relative font-size in browsers that support it */
+    /* font-size: 1.3rem; /1* Maintain relative font-size in browsers that support it *1/ */
     letter-spacing: normal;
-    display: inline-block;
-    vertical-align: super;
+    /* display: inline-block; */
+    /* vertical-align: super; */
     color: skyblue;
   }
 
