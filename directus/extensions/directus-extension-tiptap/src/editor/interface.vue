@@ -191,6 +191,7 @@ export default {
     const setContentAndEmit = (content) =>
       editor.value?.commands.setContent(content, true);
     
+    console.log("est-ce que ça build")
     return {
       editor,
       isActive,
