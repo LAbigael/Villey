@@ -14,11 +14,6 @@ const { article } = Astro.props;
 
 <article class="article">
   <div class="main-content relative flex lg:flex-row flex-col-reverse">
-    <!-- <div id="sidebar" class="w-1/4 sidebar-1 flex flex-col"> -->
-    <!-- <div class="sidebar__inner sidebar__inner-1">-->
-    <!-- <Chapters article={article} />-->
-    <!--</div> -->
-    <!--</div> -->
     <div class="lg:w-3/4 leading-normal flex flex-col">
       <div class="article_topWrapper">
         <div class="mb-4 border-b lg:h-14 mt-2 lg:mt-0">
@@ -84,12 +79,6 @@ const { article } = Astro.props;
       topSpacing: 20,
       bottomSpacing: 20,
       stickyClass: "is-affixed",
-    });
-    new StickySidebar(`.sidebar-1`, {
-      containerSelector: ".main-content",
-      innerWrapperSelector: ".sidebar__inner-1",
-      topSpacing: 20,
-      bottomSpacing: 20,
     });
   </script>
 
