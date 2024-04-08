@@ -15,6 +15,7 @@ const { slug } = Astro.params;
 const directus = await getDirectusClient();
 
 let article = await getArticleBySlug(slug);
+console.log(slug);
 
 let sections = [];
 let volume = null;

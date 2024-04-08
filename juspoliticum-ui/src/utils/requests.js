@@ -179,16 +179,9 @@ export const getArticleBySlug = async (slug) => {
       ],
       sort: ["-id"],
       filter: {
-        _and: [
-          {
-            site_id: {
-              _eq: "2",
-            },
             slug: {
               _eq: slug,
             },
-          },
-        ],
       },
     }),
   );

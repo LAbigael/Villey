@@ -91,20 +91,14 @@ const { article } = Astro.props;
       counter-reset: footnote;
     }
     .article_content p {
+      @apply text-black dark:text-white;
       font-family: "Georgia", serif;
-      color: black;
       opacity: 0.8;
       line-height: 1.6;
     }
 
-    .lettrine {
-      /* @apply float-left font-bold text-5xl mr-2; */
-      position: relative;
-      float: left;
-      font-size: 55px;
-      line-height: 1;
-      font-weight: bold;
-      margin-right: 9px;
+    .drop-cap {
+      @apply float-left font-bold text-5xl mr-2 ;
     }
 
     @media (max-width: 1024px) {

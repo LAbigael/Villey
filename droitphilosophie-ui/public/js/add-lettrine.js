@@ -3,6 +3,8 @@
 
 let firstParagraph;
 
+
+if (!document.querySelector(".drop-cap")) {
 for (
   let i = 0;
   i < document.querySelector(".article_content").children.length;
@@ -43,6 +45,7 @@ if (firstParagraph.innerHTML[1] === "'") {
   firstParagraph.innerHTML = firstParagraph.innerHTML.slice(2);
 }
 
-firstParagraph.innerHTML = `<span class="lettrine">${firstLetter}</span>${firstParagraph.innerHTML.slice(
+firstParagraph.innerHTML = `<span class="drop-cap">${firstLetter}</span>${firstParagraph.innerHTML.slice(
   1,
 )}`;
+}
