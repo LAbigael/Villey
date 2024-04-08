@@ -45,9 +45,12 @@
       <ToolbarButton @click="editor.commands.toggleBulletList()" :label="bulletList" :isActive="isActive('bulletList')">
         <BulletListIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.chain().focus().toggleSmallCaps().run()" :label="redo"
+      <ToolbarButton @click="editor.chain().focus().toggleSmallCaps().run()" :label="smallCaps"
         :isActive="isActive('textStyle', { fontVariant: 'small-caps' })">
         <span class="small-caps bold">A</span>
+      </ToolbarButton>
+      <ToolbarButton @click="editor.chain().focus().toggleDropCap().run()" :label="dropCap">
+        <span class="drop-cap bold">L</span>
       </ToolbarButton>
       <ToolbarButton @click="editor.chain().focus().undo().run()" :label="undo">
         <UndoIcon />
@@ -72,6 +75,7 @@ import Table from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
+import DropCap from "../extensions/drop-cap";
 import { watch ,onMounted } from "vue";
 import "./style.css";
 import BoldIcon from "../icons/bold.vue";
@@ -142,6 +146,7 @@ export default {
         TableRow,
         TableCell,
         TableHeader,
+        DropCap,
       ],
       onUpdate: ({ editor }) => {
         emit("input", editor.getJSON());
@@ -234,6 +239,18 @@ export default {
 .ProseMirror {
   max-height: 400px;
   overflow: auto;
+}
+
+.drop-cap {
+  font-size: 3em;
+  line-height: 0.8;
+  float: left;
+  margin-right: 0.1em;
+}
+
+.toolbar .drop-cap {
+  font-size: 1.5em;
+  
 }
 
 .footnote-tooltip {

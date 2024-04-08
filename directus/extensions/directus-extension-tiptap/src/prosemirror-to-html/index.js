@@ -11,6 +11,7 @@ import TableRow from "@tiptap/extension-table-row";
 import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
 import Image from "@tiptap/extension-image";
+import DropCap from "../extensions/drop-cap";
 
 export default ({ filter }) => {
   filter("Articles.items.read", (items) => {
@@ -184,6 +185,7 @@ function generateHTMLFromJSON(articleContent) {
     TableCell,
     TableHeader,
     Image,
+    DropCap,
   ]);
   return articleContent;
 }
