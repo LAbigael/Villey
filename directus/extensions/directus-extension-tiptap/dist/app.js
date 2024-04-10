@@ -1,4 +1,4 @@
-import { defineComponent, ref, onMounted, onBeforeUnmount, h, getCurrentInstance, watchEffect, nextTick, unref, Teleport, shallowRef, reactive, markRaw, customRef, openBlock, createElementBlock, createElementVNode, renderSlot, normalizeClass, toDisplayString, createCommentVNode, watch, resolveComponent, Fragment as Fragment$1, createTextVNode, createVNode, withCtx } from 'vue';
+import { defineComponent, ref, onMounted, onBeforeUnmount, h, getCurrentInstance, watchEffect, nextTick, unref, Teleport, shallowRef, reactive, markRaw, customRef, openBlock, createElementBlock, createElementVNode, renderSlot, normalizeClass, toDisplayString, createCommentVNode, watch, resolveComponent, Fragment as Fragment$1, createVNode, withCtx } from 'vue';
 import { useApi } from '@directus/extensions-sdk';
 
 // ::- Persistent data structure representing an ordered mapping from
@@ -28779,7 +28779,6 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
 
   return (openBlock(), createElementBlock(Fragment$1, null, [
     createElementVNode("div", _hoisted_1, [
-      createTextVNode(" au revoir titi "),
       createVNode(_component_Toolbar, null, {
         default: withCtx(() => [
           createVNode(_component_ToolbarButton, {
