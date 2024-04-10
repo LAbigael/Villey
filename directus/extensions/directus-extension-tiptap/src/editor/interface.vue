@@ -1,5 +1,6 @@
 <template>
   <div class="rounded-lg border border-white">
+    bonjour
     <Toolbar>
       <ToolbarButton @click="editor.chain().focus().toggleBold().run()" :label="bold" :isActive="isActive('bold')">
         <BoldIcon />
