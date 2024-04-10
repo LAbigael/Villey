@@ -28779,7 +28779,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
 
   return (openBlock(), createElementBlock(Fragment$1, null, [
     createElementVNode("div", _hoisted_1, [
-      createTextVNode(" au revoir "),
+      createTextVNode(" au revoir titi "),
       createVNode(_component_Toolbar, null, {
         default: withCtx(() => [
           createVNode(_component_ToolbarButton, {
