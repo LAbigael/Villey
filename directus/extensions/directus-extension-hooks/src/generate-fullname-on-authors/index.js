@@ -20,7 +20,5 @@ export default ({ filter }) => {
     const { key } = event;
 
     payload.fullname = `${payload.firstname} ${payload.lastname}`;
-
-    await knex("Authors").where({ id: key }).update(payload);
   });
 };

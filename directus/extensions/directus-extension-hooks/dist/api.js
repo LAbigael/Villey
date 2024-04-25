@@ -17,11 +17,8 @@ var e0 = ({ filter }) => {
   });
 
   filter("Authors.items.create", async (payload, event, { database: knex }) => {
-    const { key } = event;
 
     payload.fullname = `${payload.firstname} ${payload.lastname}`;
-
-    await knex("Authors").where({ id: key }).update(payload);
   });
 };
 
