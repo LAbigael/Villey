@@ -7,6 +7,9 @@
       <ToolbarButton @click="editor.chain().focus().toggleItalic().run()" :label="italic" :isActive="isActive('italic')">
         <ItalicIcon />
       </ToolbarButton>
+      <ToolbarButton @click="editor.chain().focus().setSuperscript().run()" :label="superscript" :isActive="isActive('superscript')">
+        setSuperscript
+      </ToolbarButton>
       <ToolbarButton @click="editor.chain().focus().toggleBlockquote().run()" :label="blockquote"
         :isActive="isActive('blockquote')">
         <BlockquoteIcon />
@@ -75,6 +78,7 @@ import Table from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
+import Superscript from "@tiptap/extension-superscript";
 import DropCap from "../extensions/drop-cap";
 import { watch ,onMounted } from "vue";
 import "./style.css";
