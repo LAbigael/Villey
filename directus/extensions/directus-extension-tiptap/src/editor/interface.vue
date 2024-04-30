@@ -8,7 +8,7 @@
         <ItalicIcon />
       </ToolbarButton>
       <ToolbarButton @click="editor.chain().focus().setSuperscript().run()" :label="superscript" :isActive="isActive('superscript')">
-        setSuperscript
+        <SuperscriptIcon />
       </ToolbarButton>
       <ToolbarButton @click="editor.chain().focus().toggleBlockquote().run()" :label="blockquote"
         :isActive="isActive('blockquote')">
@@ -83,6 +83,7 @@ import DropCap from "../extensions/drop-cap";
 import { watch ,onMounted } from "vue";
 import "./style.css";
 import BoldIcon from "../icons/bold.vue";
+import SuperscriptIcon from "../icons/superscript.vue";
 import ItalicIcon from "../icons/italic.vue";
 import BlockquoteIcon from "../icons/quote-text.vue";
 import FootnoteIcon from "../icons/footnote.vue";
@@ -109,6 +110,7 @@ export default {
     EditorContent,
     BoldIcon,
     ItalicIcon,
+    SuperscriptIcon,
     BlockquoteIcon,
     FootnoteIcon,
     H3Icon,
@@ -143,6 +145,7 @@ export default {
         TextAlign.configure({
           types: ["heading", "paragraph", "blockquote"],
         }),
+        Superscript,
         Footnote,
         FontVariant,
         TextStyle,
