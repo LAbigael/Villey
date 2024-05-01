@@ -12,6 +12,9 @@ export const getVolumes = async () => {
         site_id: {
           _eq: "2",
         },
+        active: {
+          _eq: true,
+        },
       },
     }),
   );
@@ -35,6 +38,22 @@ const volumeFields = [
           "subtitle",
           { abstracts: ["language", "content_bis"] },
           "published_at",
+        ],
+      },
+      {
+        chapters: [
+          "title",
+          "position",
+          {
+            articles: [
+              "title",
+              "slug",
+              { authors: ["author_id.fullname"] },
+              "subtitle",
+              { abstracts: ["language", "content_bis"] },
+              "published_at",
+            ],
+          },
         ],
       },
     ],
@@ -68,7 +87,7 @@ export const getVolumeBySlug = async (slug) => {
     }),
   );
   return volumes[0];
-}
+};
 export const getAuthors = async () => {
   return directus.request(
     readItems("Authors", {
@@ -179,9 +198,9 @@ export const getArticleBySlug = async (slug) => {
       ],
       sort: ["-id"],
       filter: {
-            slug: {
-              _eq: slug,
-            },
+        slug: {
+          _eq: slug,
+        },
       },
     }),
   );
@@ -202,7 +221,6 @@ export const getNews = async () => {
               _eq: "NEWS",
             },
           },
-
         ],
       },
     }),
