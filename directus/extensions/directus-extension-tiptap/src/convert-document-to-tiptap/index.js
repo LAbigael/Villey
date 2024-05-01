@@ -48,6 +48,8 @@ export default {
           styleMap: [
             "small-caps => span.small-caps",
             "p[style-name='Quotations'] => blockquote > p:fresh",
+            "p[style-name='Block Quotation'] => blockquote > p:fresh",
+            "p[style-name='DP_artCIT_§'] => blockquote > p:fresh",
             "p[style-name='left-aligned'] => p.left-aligned:fresh",
             "p[style-name='center-aligned'] => p.center-aligned:fresh",
             "p[style-name='right-aligned'] => p.right-aligned:fresh",
