@@ -4,7 +4,7 @@
 
 @font-face {
   font-family: "Linux Libertine";
-  src: url("/fonts/Linux Libertine.woff") format("woff");
+  src: url("/font/Linux Libertine.woff") format("woff");
 }
 
 @layer base {
@@ -30,8 +30,8 @@
         white 60%);
 
     /* font-family:  serif; */
-    /* font-family: "Linux Libertine";  */
-    font-family: "Cormorant Variable", serif;
+    font-family: "Linux Libertine", sans-serif;
+    /* font-family: "Cormorant Variable", serif; */
     /* font-family: "Montserrat Variable",  sans-serif; */
 
     /* font-family: Lato,  sans-serif; */

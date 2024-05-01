@@ -4,7 +4,11 @@
 
 @font-face {
   font-family: "Linux Libertine";
-  src: url("/fonts/Linux Libertine.woff") format("woff");
+  src: url("/font/Linux Libertine.woff") format("woff");
+}
+@font-face {
+  font-family: "Domine";
+  src: url("/font/Domine-VariableFont_wght.ttf") format("truetype");
 }
 
 @layer base {
@@ -29,10 +33,10 @@
         rgb(var(--accent-light)) 30%,
         white 60%);
 
-    /* font-family:  serif; */
-    /* font-family: "Linux Libertine";  */
-    font-family: "Cormorant Variable", serif;
-    /* font-family: "Montserrat Variable",  sans-serif; */
+    font-family:  "Linux Libertine", sans-serif;
+    /* font-family: "Domine", serif; */ 
+    /* font-family: "Georgia", serif; */
+    /* /1* font-family: "Montserrat Variable",  sans-serif; *1/ */
 
     /* font-family: Lato,  sans-serif; */
     color: var(--text-color);
