@@ -19280,7 +19280,7 @@ function getChildren(popper) {
     })
   };
 }
-function render$j(instance) {
+function render$k(instance) {
   var popper = div();
   var box = div();
   box.className = BOX_CLASS;
@@ -19349,7 +19349,7 @@ function render$j(instance) {
 } // Runtime check to identify if the render function is the default one; this
 // way we can apply default CSS transitions logic and it can be tree-shaken away
 
-render$j.$$tippy = true;
+render$k.$$tippy = true;
 
 var idCounter = 1;
 var mouseMoveListeners = []; // Used by `hideAll()`
@@ -20362,7 +20362,7 @@ Object.assign({}, applyStyles$1, {
 });
 
 tippy.setDefaultProps({
-  render: render$j
+  render: render$k
 });
 
 class BubbleMenuView {
@@ -28134,6 +28134,54 @@ const TableHeader = Node.create({
     },
 });
 
+const Superscript = Mark.create({
+    name: 'superscript',
+    addOptions() {
+        return {
+            HTMLAttributes: {},
+        };
+    },
+    parseHTML() {
+        return [
+            {
+                tag: 'sup',
+            },
+            {
+                style: 'vertical-align',
+                getAttrs(value) {
+                    // Don’t match this rule if the vertical align isn’t super.
+                    if (value !== 'super') {
+                        return false;
+                    }
+                    // If it falls through we’ll match, and this mark will be applied.
+                    return null;
+                },
+            },
+        ];
+    },
+    renderHTML({ HTMLAttributes }) {
+        return ['sup', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0];
+    },
+    addCommands() {
+        return {
+            setSuperscript: () => ({ commands }) => {
+                return commands.setMark(this.name);
+            },
+            toggleSuperscript: () => ({ commands }) => {
+                return commands.toggleMark(this.name);
+            },
+            unsetSuperscript: () => ({ commands }) => {
+                return commands.unsetMark(this.name);
+            },
+        };
+    },
+    addKeyboardShortcuts() {
+        return {
+            'Mod-.': () => this.editor.commands.toggleSuperscript(),
+        };
+    },
+});
+
 const DropCap = Mark.create({
   name: "dropCap",
 
@@ -28175,13 +28223,34 @@ var e=[],t=[];function n(n,r){if(n&&"undefined"!=typeof document){var a,s=!0===r
 var css$2 = "/*\n! tailwindcss v3.3.5 | MIT License | https://tailwindcss.com\n*//*\n1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)\n2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)\n*/\n\n*,\n::before,\n::after {\n  box-sizing: border-box; /* 1 */\n  border-width: 0; /* 2 */\n  border-style: solid; /* 2 */\n  border-color: #e5e7eb; /* 2 */\n}\n\n::before,\n::after {\n  --tw-content: '';\n}\n\n/*\n1. Use a consistent sensible line-height in all browsers.\n2. Prevent adjustments of font size after orientation changes in iOS.\n3. Use a more readable tab size.\n4. Use the user's configured `sans` font-family by default.\n5. Use the user's configured `sans` font-feature-settings by default.\n6. Use the user's configured `sans` font-variation-settings by default.\n*/\n\nhtml {\n  line-height: 1.5; /* 1 */\n  -webkit-text-size-adjust: 100%; /* 2 */\n  -moz-tab-size: 4; /* 3 */\n  -o-tab-size: 4;\n     tab-size: 4; /* 3 */\n  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"; /* 4 */\n  font-feature-settings: normal; /* 5 */\n  font-variation-settings: normal; /* 6 */\n}\n\n/*\n1. Remove the margin in all browsers.\n2. Inherit line-height from `html` so users can set them as a class directly on the `html` element.\n*/\n\nbody {\n  margin: 0; /* 1 */\n  line-height: inherit; /* 2 */\n}\n\n/*\n1. Add the correct height in Firefox.\n2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)\n3. Ensure horizontal rules are visible by default.\n*/\n\nhr {\n  height: 0; /* 1 */\n  color: inherit; /* 2 */\n  border-top-width: 1px; /* 3 */\n}\n\n/*\nAdd the correct text decoration in Chrome, Edge, and Safari.\n*/\n\nabbr:where([title]) {\n  -webkit-text-decoration: underline dotted;\n          text-decoration: underline dotted;\n}\n\n/*\nRemove the default font size and weight for headings.\n*/\n\nh1,\nh2,\nh3,\nh4,\nh5,\nh6 {\n  font-size: inherit;\n  font-weight: inherit;\n}\n\n/*\nReset links to optimize for opt-in styling instead of opt-out.\n*/\n\na {\n  color: inherit;\n  text-decoration: inherit;\n}\n\n/*\nAdd the correct font weight in Edge and Safari.\n*/\n\nb,\nstrong {\n  font-weight: bolder;\n}\n\n/*\n1. Use the user's configured `mono` font family by default.\n2. Correct the odd `em` font sizing in all browsers.\n*/\n\ncode,\nkbd,\nsamp,\npre {\n  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace; /* 1 */\n  font-size: 1em; /* 2 */\n}\n\n/*\nAdd the correct font size in all browsers.\n*/\n\nsmall {\n  font-size: 80%;\n}\n\n/*\nPrevent `sub` and `sup` elements from affecting the line height in all browsers.\n*/\n\nsub,\nsup {\n  font-size: 75%;\n  line-height: 0;\n  position: relative;\n  vertical-align: baseline;\n}\n\nsub {\n  bottom: -0.25em;\n}\n\nsup {\n  top: -0.5em;\n}\n\n/*\n1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)\n2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)\n3. Remove gaps between table borders by default.\n*/\n\ntable {\n  text-indent: 0; /* 1 */\n  border-color: inherit; /* 2 */\n  border-collapse: collapse; /* 3 */\n}\n\n/*\n1. Change the font styles in all browsers.\n2. Remove the margin in Firefox and Safari.\n3. Remove default padding in all browsers.\n*/\n\nbutton,\ninput,\noptgroup,\nselect,\ntextarea {\n  font-family: inherit; /* 1 */\n  font-feature-settings: inherit; /* 1 */\n  font-variation-settings: inherit; /* 1 */\n  font-size: 100%; /* 1 */\n  font-weight: inherit; /* 1 */\n  line-height: inherit; /* 1 */\n  color: inherit; /* 1 */\n  margin: 0; /* 2 */\n  padding: 0; /* 3 */\n}\n\n/*\nRemove the inheritance of text transform in Edge and Firefox.\n*/\n\nbutton,\nselect {\n  text-transform: none;\n}\n\n/*\n1. Correct the inability to style clickable types in iOS and Safari.\n2. Remove default button styles.\n*/\n\nbutton,\n[type='button'],\n[type='reset'],\n[type='submit'] {\n  -webkit-appearance: button; /* 1 */\n  background-color: transparent; /* 2 */\n  background-image: none; /* 2 */\n}\n\n/*\nUse the modern Firefox focus style for all focusable elements.\n*/\n\n:-moz-focusring {\n  outline: auto;\n}\n\n/*\nRemove the additional `:invalid` styles in Firefox. (https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737)\n*/\n\n:-moz-ui-invalid {\n  box-shadow: none;\n}\n\n/*\nAdd the correct vertical alignment in Chrome and Firefox.\n*/\n\nprogress {\n  vertical-align: baseline;\n}\n\n/*\nCorrect the cursor style of increment and decrement buttons in Safari.\n*/\n\n::-webkit-inner-spin-button,\n::-webkit-outer-spin-button {\n  height: auto;\n}\n\n/*\n1. Correct the odd appearance in Chrome and Safari.\n2. Correct the outline style in Safari.\n*/\n\n[type='search'] {\n  -webkit-appearance: textfield; /* 1 */\n  outline-offset: -2px; /* 2 */\n}\n\n/*\nRemove the inner padding in Chrome and Safari on macOS.\n*/\n\n::-webkit-search-decoration {\n  -webkit-appearance: none;\n}\n\n/*\n1. Correct the inability to style clickable types in iOS and Safari.\n2. Change font properties to `inherit` in Safari.\n*/\n\n::-webkit-file-upload-button {\n  -webkit-appearance: button; /* 1 */\n  font: inherit; /* 2 */\n}\n\n/*\nAdd the correct display in Chrome and Safari.\n*/\n\nsummary {\n  display: list-item;\n}\n\n/*\nRemoves the default spacing and border for appropriate elements.\n*/\n\nblockquote,\ndl,\ndd,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\nhr,\nfigure,\np,\npre {\n  margin: 0;\n}\n\nfieldset {\n  margin: 0;\n  padding: 0;\n}\n\nlegend {\n  padding: 0;\n}\n\nol,\nul,\nmenu {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n\n/*\nReset default styling for dialogs.\n*/\ndialog {\n  padding: 0;\n}\n\n/*\nPrevent resizing textareas horizontally by default.\n*/\n\ntextarea {\n  resize: vertical;\n}\n\n/*\n1. Reset the default placeholder opacity in Firefox. (https://github.com/tailwindlabs/tailwindcss/issues/3300)\n2. Set the default placeholder color to the user's configured gray 400 color.\n*/\n\ninput::-moz-placeholder, textarea::-moz-placeholder {\n  opacity: 1; /* 1 */\n  color: #9ca3af; /* 2 */\n}\n\ninput::placeholder,\ntextarea::placeholder {\n  opacity: 1; /* 1 */\n  color: #9ca3af; /* 2 */\n}\n\n/*\nSet the default cursor for buttons.\n*/\n\nbutton,\n[role=\"button\"] {\n  cursor: pointer;\n}\n\n/*\nMake sure disabled buttons don't get the pointer cursor.\n*/\n:disabled {\n  cursor: default;\n}\n\n/*\n1. Make replaced elements `display: block` by default. (https://github.com/mozdevs/cssremedy/issues/14)\n2. Add `vertical-align: middle` to align replaced elements more sensibly by default. (https://github.com/jensimmons/cssremedy/issues/14#issuecomment-634934210)\n   This can trigger a poorly considered lint error in some tools but is included by design.\n*/\n\nimg,\nsvg,\nvideo,\ncanvas,\naudio,\niframe,\nembed,\nobject {\n  display: block; /* 1 */\n  vertical-align: middle; /* 2 */\n}\n\n/*\nConstrain images and videos to the parent width and preserve their intrinsic aspect ratio. (https://github.com/mozdevs/cssremedy/issues/14)\n*/\n\nimg,\nvideo {\n  max-width: 100%;\n  height: auto;\n}\n\n/* Make elements with the HTML hidden attribute stay hidden by default */\n[hidden] {\n  display: none;\n}\n\n*, ::before, ::after {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x:  ;\n  --tw-pan-y:  ;\n  --tw-pinch-zoom:  ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position:  ;\n  --tw-gradient-via-position:  ;\n  --tw-gradient-to-position:  ;\n  --tw-ordinal:  ;\n  --tw-slashed-zero:  ;\n  --tw-numeric-figure:  ;\n  --tw-numeric-spacing:  ;\n  --tw-numeric-fraction:  ;\n  --tw-ring-inset:  ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur:  ;\n  --tw-brightness:  ;\n  --tw-contrast:  ;\n  --tw-grayscale:  ;\n  --tw-hue-rotate:  ;\n  --tw-invert:  ;\n  --tw-saturate:  ;\n  --tw-sepia:  ;\n  --tw-drop-shadow:  ;\n  --tw-backdrop-blur:  ;\n  --tw-backdrop-brightness:  ;\n  --tw-backdrop-contrast:  ;\n  --tw-backdrop-grayscale:  ;\n  --tw-backdrop-hue-rotate:  ;\n  --tw-backdrop-invert:  ;\n  --tw-backdrop-opacity:  ;\n  --tw-backdrop-saturate:  ;\n  --tw-backdrop-sepia:  ;\n}\n\n::backdrop {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x:  ;\n  --tw-pan-y:  ;\n  --tw-pinch-zoom:  ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position:  ;\n  --tw-gradient-via-position:  ;\n  --tw-gradient-to-position:  ;\n  --tw-ordinal:  ;\n  --tw-slashed-zero:  ;\n  --tw-numeric-figure:  ;\n  --tw-numeric-spacing:  ;\n  --tw-numeric-fraction:  ;\n  --tw-ring-inset:  ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur:  ;\n  --tw-brightness:  ;\n  --tw-contrast:  ;\n  --tw-grayscale:  ;\n  --tw-hue-rotate:  ;\n  --tw-invert:  ;\n  --tw-saturate:  ;\n  --tw-sepia:  ;\n  --tw-drop-shadow:  ;\n  --tw-backdrop-blur:  ;\n  --tw-backdrop-brightness:  ;\n  --tw-backdrop-contrast:  ;\n  --tw-backdrop-grayscale:  ;\n  --tw-backdrop-hue-rotate:  ;\n  --tw-backdrop-invert:  ;\n  --tw-backdrop-opacity:  ;\n  --tw-backdrop-saturate:  ;\n  --tw-backdrop-sepia:  ;\n}\n.collapse {\n  visibility: collapse;\n}\n.fixed {\n  position: fixed;\n}\n.absolute {\n  position: absolute;\n}\n.relative {\n  position: relative;\n}\n.ml-4 {\n  margin-left: 1rem;\n}\n.mr-2 {\n  margin-right: 0.5rem;\n}\n.mt-8 {\n  margin-top: 2rem;\n}\n.block {\n  display: block;\n}\n.flex {\n  display: flex;\n}\n.inline-flex {\n  display: inline-flex;\n}\n.table {\n  display: table;\n}\n.h-8 {\n  height: 2rem;\n}\n.w-8 {\n  width: 2rem;\n}\n.w-full {\n  width: 100%;\n}\n.shrink-0 {\n  flex-shrink: 0;\n}\n.border-collapse {\n  border-collapse: collapse;\n}\n.flex-row {\n  flex-direction: row;\n}\n.flex-col {\n  flex-direction: column;\n}\n.flex-wrap {\n  flex-wrap: wrap;\n}\n.items-center {\n  align-items: center;\n}\n.justify-center {\n  justify-content: center;\n}\n.space-x-2 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-x-reverse: 0;\n  margin-right: calc(0.5rem * var(--tw-space-x-reverse));\n  margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));\n}\n.rounded-lg {\n  border-radius: 0.5rem;\n}\n.rounded-md {\n  border-radius: 0.375rem;\n}\n.rounded-t-lg {\n  border-top-left-radius: 0.5rem;\n  border-top-right-radius: 0.5rem;\n}\n.border {\n  border-width: 1px;\n}\n.border-white {\n  --tw-border-opacity: 1;\n  border-color: rgb(255 255 255 / var(--tw-border-opacity));\n}\n.bg-blue-200 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(191 219 254 / var(--tw-bg-opacity));\n}\n.bg-white {\n  --tw-bg-opacity: 1;\n  background-color: rgb(255 255 255 / var(--tw-bg-opacity));\n}\n.px-2 {\n  padding-left: 0.5rem;\n  padding-right: 0.5rem;\n}\n.italic {\n  font-style: italic;\n}\n.text-blue-800 {\n  --tw-text-opacity: 1;\n  color: rgb(30 64 175 / var(--tw-text-opacity));\n}\n.text-gray-600 {\n  --tw-text-opacity: 1;\n  color: rgb(75 85 99 / var(--tw-text-opacity));\n}\n.underline {\n  text-decoration-line: underline;\n}\n.outline {\n  outline-style: solid;\n}\n.filter {\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.transition {\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-backdrop-filter;\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-backdrop-filter;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.hover\\:bg-blue-50:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(239 246 255 / var(--tw-bg-opacity));\n}\n.hover\\:bg-opacity-80:hover {\n  --tw-bg-opacity: 0.8;\n}\n.disabled\\:bg-transparent:disabled {\n  background-color: transparent;\n}\n.disabled\\:text-gray-300:disabled {\n  --tw-text-opacity: 1;\n  color: rgb(209 213 219 / var(--tw-text-opacity));\n}\n";
 n(css$2,{});
 
+const _hoisted_1$k = {
+  xmlns: "http://www.w3.org/2000/svg",
+  viewBox: "0 0 24 24",
+  width: "24",
+  height: "24"
+};
+const _hoisted_2$i = /*#__PURE__*/createElementVNode("path", { d: "M8 11h4.5a2.5 2.5 0 1 0 0-5H8v5zm10 4.5a4.5 4.5 0 0 1-4.5 4.5H6V4h6.5a4.5 4.5 0 0 1 3.256 7.606A4.498 4.498 0 0 1 18 15.5zM8 13v5h5.5a2.5 2.5 0 1 0 0-5H8z" }, null, -1 /* HOISTED */);
+const _hoisted_3$h = [
+  _hoisted_2$i
+];
+
+function render$j(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$k, [..._hoisted_3$h]))
+}
+
+const script$k = {};
+
+
+script$k.render = render$j;
+script$k.__file = "src/icons/bold.vue";
+
 const _hoisted_1$j = {
   xmlns: "http://www.w3.org/2000/svg",
   viewBox: "0 0 24 24",
   width: "24",
   height: "24"
 };
-const _hoisted_2$h = /*#__PURE__*/createElementVNode("path", { d: "M8 11h4.5a2.5 2.5 0 1 0 0-5H8v5zm10 4.5a4.5 4.5 0 0 1-4.5 4.5H6V4h6.5a4.5 4.5 0 0 1 3.256 7.606A4.498 4.498 0 0 1 18 15.5zM8 13v5h5.5a2.5 2.5 0 1 0 0-5H8z" }, null, -1 /* HOISTED */);
+const _hoisted_2$h = /*#__PURE__*/createElementVNode("path", { d: "M5.59567 5L10.5 10.9283L15.4043 5H18L11.7978 12.4971L18 19.9943V20H15.4091L10.5 14.0659L5.59092 20H3V19.9943L9.20216 12.4971L3 5H5.59567ZM21.5507 6.5803C21.7042 6.43453 21.8 6.22845 21.8 6C21.8 5.55817 21.4418 5.2 21 5.2C20.5582 5.2 20.2 5.55817 20.2 6C20.2 6.07624 20.2107 6.14999 20.2306 6.21983L19.0765 6.54958C19.0267 6.37497 19 6.1906 19 6C19 4.89543 19.8954 4 21 4C22.1046 4 23 4.89543 23 6C23 6.57273 22.7593 7.08923 22.3735 7.45384L20.7441 9H23V10H19V9L21.5507 6.5803V6.5803Z" }, null, -1 /* HOISTED */);
 const _hoisted_3$g = [
   _hoisted_2$h
 ];
@@ -28194,7 +28263,7 @@ const script$j = {};
 
 
 script$j.render = render$i;
-script$j.__file = "src/icons/bold.vue";
+script$j.__file = "src/icons/superscript.vue";
 
 const _hoisted_1$i = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -28650,8 +28719,9 @@ script$1.__file = "src/editor/components/ImportDocument.vue";
 var script = {
   components: {
     EditorContent,
-    BoldIcon: script$j,
+    BoldIcon: script$k,
     ItalicIcon: script$i,
+    SuperscriptIcon: script$j,
     BlockquoteIcon: script$h,
     FootnoteIcon: script$g,
     H3Icon: script$a,
@@ -28686,6 +28756,7 @@ var script = {
         TextAlign.configure({
           types: ["heading", "paragraph", "blockquote"],
         }),
+        Superscript,
         footnoteNode,
         FontVariant,
         TextStyle,
@@ -28711,7 +28782,7 @@ var script = {
           editor.value?.commands.setContent(value);
           unwatch();
         }
-      }
+      },
     );
     const isActive = (type, options) => {
       return editor.value?.isActive(type, options);
@@ -28742,8 +28813,9 @@ var script = {
     }
     const setContentAndEmit = (content) =>
       editor.value?.commands.setContent(content, true);
-    
-    console.log("est-ce que ça build");
+
+    console.log("Plugin v2.0.1");
+
     return {
       editor,
       isActive,
@@ -28761,6 +28833,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
   const _component_BoldIcon = resolveComponent("BoldIcon");
   const _component_ToolbarButton = resolveComponent("ToolbarButton");
   const _component_ItalicIcon = resolveComponent("ItalicIcon");
+  const _component_SuperscriptIcon = resolveComponent("SuperscriptIcon");
   const _component_BlockquoteIcon = resolveComponent("BlockquoteIcon");
   const _component_H3Icon = resolveComponent("H3Icon");
   const _component_H4Icon = resolveComponent("H4Icon");
@@ -28802,7 +28875,17 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             _: 1 /* STABLE */
           }, 8 /* PROPS */, ["label", "isActive"]),
           createVNode(_component_ToolbarButton, {
-            onClick: _cache[2] || (_cache[2] = $event => ($setup.editor.chain().focus().toggleBlockquote().run())),
+            onClick: _cache[2] || (_cache[2] = $event => ($setup.editor.chain().focus().toggleSuperscript().run())),
+            label: _ctx.superscript,
+            isActive: $setup.isActive('superscript')
+          }, {
+            default: withCtx(() => [
+              createVNode(_component_SuperscriptIcon)
+            ]),
+            _: 1 /* STABLE */
+          }, 8 /* PROPS */, ["label", "isActive"]),
+          createVNode(_component_ToolbarButton, {
+            onClick: _cache[3] || (_cache[3] = $event => ($setup.editor.chain().focus().toggleBlockquote().run())),
             label: _ctx.blockquote,
             isActive: $setup.isActive('blockquote')
           }, {
@@ -28812,7 +28895,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             _: 1 /* STABLE */
           }, 8 /* PROPS */, ["label", "isActive"]),
           createVNode(_component_ToolbarButton, {
-            onClick: _cache[3] || (_cache[3] = $event => ($setup.editor.chain().focus().toggleHeading({ level: 3 }).run())),
+            onClick: _cache[4] || (_cache[4] = $event => ($setup.editor.chain().focus().toggleHeading({ level: 3 }).run())),
             label: _ctx.h3,
             isActive: $setup.isActive('heading', { level: 3 })
           }, {
@@ -28822,7 +28905,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             _: 1 /* STABLE */
           }, 8 /* PROPS */, ["label", "isActive"]),
           createVNode(_component_ToolbarButton, {
-            onClick: _cache[4] || (_cache[4] = $event => ($setup.editor.chain().focus().toggleHeading({ level: 4 }).run())),
+            onClick: _cache[5] || (_cache[5] = $event => ($setup.editor.chain().focus().toggleHeading({ level: 4 }).run())),
             label: _ctx.h4,
             isActive: $setup.isActive('heading', { level: 4 })
           }, {
@@ -28832,8 +28915,8 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             _: 1 /* STABLE */
           }, 8 /* PROPS */, ["label", "isActive"]),
           createVNode(_component_ToolbarButton, {
-            onClick: _cache[5] || (_cache[5] = $event => (
-        $setup.editor.chain().focus().insertContent({ type: 'footnote' }).run()
+            onClick: _cache[6] || (_cache[6] = $event => (
+          $setup.editor.chain().focus().insertContent({ type: 'footnote' }).run()
         )),
             label: _ctx.footnote,
             isActive: $setup.isActive('footnote')
@@ -28844,7 +28927,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             _: 1 /* STABLE */
           }, 8 /* PROPS */, ["label", "isActive"]),
           createVNode(_component_ToolbarButton, {
-            onClick: _cache[6] || (_cache[6] = $event => ($setup.editor.chain().focus().unsetAllMarks().run())),
+            onClick: _cache[7] || (_cache[7] = $event => ($setup.editor.chain().focus().unsetAllMarks().run())),
             label: _ctx.clearFormatting
           }, {
             default: withCtx(() => [
@@ -28853,7 +28936,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             _: 1 /* STABLE */
           }, 8 /* PROPS */, ["label"]),
           createVNode(_component_ToolbarButton, {
-            onClick: _cache[7] || (_cache[7] = $event => ($setup.setLink())),
+            onClick: _cache[8] || (_cache[8] = $event => ($setup.setLink())),
             label: _ctx.link
           }, {
             default: withCtx(() => [
@@ -28862,7 +28945,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             _: 1 /* STABLE */
           }, 8 /* PROPS */, ["label"]),
           createVNode(_component_ToolbarButton, {
-            onClick: _cache[8] || (_cache[8] = $event => ($setup.editor.commands.setTextAlign('left'))),
+            onClick: _cache[9] || (_cache[9] = $event => ($setup.editor.commands.setTextAlign('left'))),
             label: _ctx.alignLeft,
             isActive: $setup.isActive({ textAlign: 'left' })
           }, {
@@ -28872,7 +28955,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             _: 1 /* STABLE */
           }, 8 /* PROPS */, ["label", "isActive"]),
           createVNode(_component_ToolbarButton, {
-            onClick: _cache[9] || (_cache[9] = $event => ($setup.editor.commands.setTextAlign('center'))),
+            onClick: _cache[10] || (_cache[10] = $event => ($setup.editor.commands.setTextAlign('center'))),
             label: _ctx.alignCenter,
             isActive: $setup.isActive({ textAlign: 'center' })
           }, {
@@ -28882,7 +28965,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             _: 1 /* STABLE */
           }, 8 /* PROPS */, ["label", "isActive"]),
           createVNode(_component_ToolbarButton, {
-            onClick: _cache[10] || (_cache[10] = $event => ($setup.editor.commands.setTextAlign('justify'))),
+            onClick: _cache[11] || (_cache[11] = $event => ($setup.editor.commands.setTextAlign('justify'))),
             label: _ctx.alignJustify,
             isActive: $setup.isActive({ textAlign: 'justify' })
           }, {
@@ -28892,7 +28975,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             _: 1 /* STABLE */
           }, 8 /* PROPS */, ["label", "isActive"]),
           createVNode(_component_ToolbarButton, {
-            onClick: _cache[11] || (_cache[11] = $event => ($setup.editor.commands.toggleBulletList())),
+            onClick: _cache[12] || (_cache[12] = $event => ($setup.editor.commands.toggleBulletList())),
             label: _ctx.bulletList,
             isActive: $setup.isActive('bulletList')
           }, {
@@ -28902,7 +28985,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             _: 1 /* STABLE */
           }, 8 /* PROPS */, ["label", "isActive"]),
           createVNode(_component_ToolbarButton, {
-            onClick: _cache[12] || (_cache[12] = $event => ($setup.editor.chain().focus().toggleSmallCaps().run())),
+            onClick: _cache[13] || (_cache[13] = $event => ($setup.editor.chain().focus().toggleSmallCaps().run())),
             label: _ctx.smallCaps,
             isActive: $setup.isActive('textStyle', { fontVariant: 'small-caps' })
           }, {
@@ -28912,7 +28995,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             _: 1 /* STABLE */
           }, 8 /* PROPS */, ["label", "isActive"]),
           createVNode(_component_ToolbarButton, {
-            onClick: _cache[13] || (_cache[13] = $event => ($setup.editor.chain().focus().toggleDropCap().run())),
+            onClick: _cache[14] || (_cache[14] = $event => ($setup.editor.chain().focus().toggleDropCap().run())),
             label: _ctx.dropCap
           }, {
             default: withCtx(() => [
@@ -28921,7 +29004,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             _: 1 /* STABLE */
           }, 8 /* PROPS */, ["label"]),
           createVNode(_component_ToolbarButton, {
-            onClick: _cache[14] || (_cache[14] = $event => ($setup.editor.chain().focus().undo().run())),
+            onClick: _cache[15] || (_cache[15] = $event => ($setup.editor.chain().focus().undo().run())),
             label: _ctx.undo
           }, {
             default: withCtx(() => [
@@ -28930,7 +29013,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
             _: 1 /* STABLE */
           }, 8 /* PROPS */, ["label"]),
           createVNode(_component_ToolbarButton, {
-            onClick: _cache[15] || (_cache[15] = $event => ($setup.editor.chain().focus().redo().run())),
+            onClick: _cache[16] || (_cache[16] = $event => ($setup.editor.chain().focus().redo().run())),
             label: _ctx.redo
           }, {
             default: withCtx(() => [

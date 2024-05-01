@@ -2,6 +2,7 @@ import { generateHTML } from "@tiptap/html";
 import * as htmlparser2 from "htmlparser2";
 import render from "dom-serializer";
 import StarterKit from "@tiptap/starter-kit";
+import SuperScript from "@tiptap/extension-superscript";
 import Footnote, { FontVariant } from "tiptap-extension-footnote";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
@@ -169,6 +170,7 @@ function generateHTMLFromJSON(articleContent) {
 
   articleContent = generateHTML(articleContent, [
     StarterKit,
+    SuperScript,
     Link,
     TextAlign.configure({
       types: ["paragraph", "heading", "blockquote"],

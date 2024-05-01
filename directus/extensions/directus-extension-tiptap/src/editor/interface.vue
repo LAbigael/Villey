@@ -1,58 +1,105 @@
 <template>
   <div class="rounded-lg border border-white">
     <Toolbar>
-      <ToolbarButton @click="editor.chain().focus().toggleBold().run()" :label="bold" :isActive="isActive('bold')">
+      <ToolbarButton
+        @click="editor.chain().focus().toggleBold().run()"
+        :label="bold"
+        :isActive="isActive('bold')"
+      >
         <BoldIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.chain().focus().toggleItalic().run()" :label="italic" :isActive="isActive('italic')">
+      <ToolbarButton
+        @click="editor.chain().focus().toggleItalic().run()"
+        :label="italic"
+        :isActive="isActive('italic')"
+      >
         <ItalicIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.chain().focus().setSuperscript().run()" :label="superscript" :isActive="isActive('superscript')">
+      <ToolbarButton
+        @click="editor.chain().focus().toggleSuperscript().run()"
+        :label="superscript"
+        :isActive="isActive('superscript')"
+      >
         <SuperscriptIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.chain().focus().toggleBlockquote().run()" :label="blockquote"
-        :isActive="isActive('blockquote')">
+      <ToolbarButton
+        @click="editor.chain().focus().toggleBlockquote().run()"
+        :label="blockquote"
+        :isActive="isActive('blockquote')"
+      >
         <BlockquoteIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.chain().focus().toggleHeading({ level: 3 }).run()" :label="h3"
-        :isActive="isActive('heading', { level: 3 })">
+      <ToolbarButton
+        @click="editor.chain().focus().toggleHeading({ level: 3 }).run()"
+        :label="h3"
+        :isActive="isActive('heading', { level: 3 })"
+      >
         <H3Icon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.chain().focus().toggleHeading({ level: 4 }).run()" :label="h4"
-        :isActive="isActive('heading', { level: 4 })">
+      <ToolbarButton
+        @click="editor.chain().focus().toggleHeading({ level: 4 }).run()"
+        :label="h4"
+        :isActive="isActive('heading', { level: 4 })"
+      >
         <H4Icon />
       </ToolbarButton>
-      <ToolbarButton @click="
-        editor.chain().focus().insertContent({ type: 'footnote' }).run()
-        " :label="footnote" :isActive="isActive('footnote')">
+      <ToolbarButton
+        @click="
+          editor.chain().focus().insertContent({ type: 'footnote' }).run()
+        "
+        :label="footnote"
+        :isActive="isActive('footnote')"
+      >
         <FootnoteIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.chain().focus().unsetAllMarks().run()" :label="clearFormatting">
+      <ToolbarButton
+        @click="editor.chain().focus().unsetAllMarks().run()"
+        :label="clearFormatting"
+      >
         <ClearFormattingIcon />
       </ToolbarButton>
       <ToolbarButton @click="setLink()" :label="link">
         <LinkIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.commands.setTextAlign('left')" :label="alignLeft"
-        :isActive="isActive({ textAlign: 'left' })">
+      <ToolbarButton
+        @click="editor.commands.setTextAlign('left')"
+        :label="alignLeft"
+        :isActive="isActive({ textAlign: 'left' })"
+      >
         <AlignLeftIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.commands.setTextAlign('center')" :label="alignCenter"
-        :isActive="isActive({ textAlign: 'center' })">
+      <ToolbarButton
+        @click="editor.commands.setTextAlign('center')"
+        :label="alignCenter"
+        :isActive="isActive({ textAlign: 'center' })"
+      >
         <AlignCenterIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.commands.setTextAlign('justify')" :label="alignJustify"
-        :isActive="isActive({ textAlign: 'justify' })">
+      <ToolbarButton
+        @click="editor.commands.setTextAlign('justify')"
+        :label="alignJustify"
+        :isActive="isActive({ textAlign: 'justify' })"
+      >
         <AlignJustifyIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.commands.toggleBulletList()" :label="bulletList" :isActive="isActive('bulletList')">
+      <ToolbarButton
+        @click="editor.commands.toggleBulletList()"
+        :label="bulletList"
+        :isActive="isActive('bulletList')"
+      >
         <BulletListIcon />
       </ToolbarButton>
-      <ToolbarButton @click="editor.chain().focus().toggleSmallCaps().run()" :label="smallCaps"
-        :isActive="isActive('textStyle', { fontVariant: 'small-caps' })">
+      <ToolbarButton
+        @click="editor.chain().focus().toggleSmallCaps().run()"
+        :label="smallCaps"
+        :isActive="isActive('textStyle', { fontVariant: 'small-caps' })"
+      >
         <span class="small-caps bold">A</span>
       </ToolbarButton>
-      <ToolbarButton @click="editor.chain().focus().toggleDropCap().run()" :label="dropCap">
+      <ToolbarButton
+        @click="editor.chain().focus().toggleDropCap().run()"
+        :label="dropCap"
+      >
         <span class="drop-cap bold">L</span>
       </ToolbarButton>
       <ToolbarButton @click="editor.chain().focus().undo().run()" :label="undo">
@@ -80,7 +127,7 @@ import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
 import Superscript from "@tiptap/extension-superscript";
 import DropCap from "../extensions/drop-cap";
-import { watch ,onMounted } from "vue";
+import { watch, onMounted } from "vue";
 import "./style.css";
 import BoldIcon from "../icons/bold.vue";
 import SuperscriptIcon from "../icons/superscript.vue";
@@ -103,7 +150,6 @@ import BulletListIcon from "../icons/list-unordered.vue";
 import Toolbar from "./components/ToolbarGroup.vue";
 import ToolbarButton from "./components/ToolbarButton.vue";
 import ImportDocument from "./components/ImportDocument.vue";
-
 
 export default {
   components: {
@@ -171,7 +217,7 @@ export default {
           editor.value?.commands.setContent(value);
           unwatch();
         }
-      }
+      },
     );
     const isActive = (type, options) => {
       return editor.value?.isActive(type, options);
@@ -202,8 +248,9 @@ export default {
     }
     const setContentAndEmit = (content) =>
       editor.value?.commands.setContent(content, true);
-    
-    console.log("Plugin v2.0.1")
+
+    console.log("Plugin v2.0.1");
+
     return {
       editor,
       isActive,
@@ -257,7 +304,6 @@ export default {
 
 .toolbar .drop-cap {
   font-size: 1.5em;
-  
 }
 
 .footnote-tooltip {
@@ -313,7 +359,6 @@ export default {
   color: #aaa;
   font-style: italic;
 }
-
 
 .ProseMirror h1 {
   font-size: 1.5em;
@@ -412,4 +457,3 @@ export default {
   display: block;
 }
 </style>
-

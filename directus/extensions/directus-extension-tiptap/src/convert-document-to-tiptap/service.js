@@ -3,6 +3,7 @@ import render from "dom-serializer";
 import { uid } from "uid";
 import { generateJSON } from "@tiptap/html";
 import StarterKit from "@tiptap/starter-kit";
+import SuperScript from "@tiptap/extension-superscript";
 import Footnote, { FontVariant } from "tiptap-extension-footnote";
 import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
@@ -16,6 +17,7 @@ import Image from "@tiptap/extension-image";
 export const htmlToTiptap = (html) => {
   const articleContent = generateJSON(html, [
     StarterKit,
+    SuperScript,
     Link,
     TextAlign.configure({
       types: ["paragraph", "heading", "blockquote"],
