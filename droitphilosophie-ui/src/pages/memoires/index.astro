@@ -30,6 +30,8 @@ const memoires = await directus.request(
             _eq: "1",
           },
         },
+
+        { active: { _eq: true } },
       ],
     },
   }),

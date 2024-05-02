@@ -32,6 +32,7 @@ const articles = await directus.request(
             _eq: "1",
           },
         },
+        { active: { _eq: true } },
       ],
     },
   }),
@@ -91,8 +92,8 @@ const volumes = await directus.request(
             year: "numeric",
             month: "long",
             day: "numeric",
-          })})
-
+          })}
+          )
         </li>
       ))
     }

@@ -27,6 +27,11 @@ const recensions = await directus.request(
             _eq: "recension",
           },
         },
+        {
+          active: {
+            _eq: true,
+          },
+        },
       ],
     },
   }),

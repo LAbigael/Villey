@@ -21,6 +21,9 @@ async function getData() {
         site_id: {
           _eq: "1",
         },
+        active: {
+          _eq: true,
+        },
       },
     }),
   );

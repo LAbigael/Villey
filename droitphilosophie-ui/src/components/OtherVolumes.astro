@@ -11,9 +11,18 @@ let volumes = await directus.request(
     fields: ["slug", "title", "number", "published_at"],
     sort: ["-id"],
     filter: {
-      site_id: {
-        _eq: "1",
-      },
+      _and: [
+        {
+          site_id: {
+            _eq: "1",
+          },
+        },
+        {
+          active: {
+            _eq: true,
+          },
+        },
+      ],
     },
   }),
 );

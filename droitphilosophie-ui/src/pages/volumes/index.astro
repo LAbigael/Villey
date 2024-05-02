@@ -13,11 +13,22 @@ const volumes = await directus.request(
       "title",
       "number",
       "published_at",
+      "active",
       {
         sections: [
           "title",
           {
-          chapters: ["title", "position", {articles: ["title", "slug", { authors: ["author_id.fullname"] }]}],
+            chapters: [
+              "title",
+              "position",
+              {
+                articles: [
+                  "title",
+                  "slug",
+                  { authors: ["author_id.fullname"] },
+                ],
+              },
+            ],
           },
           {
             articles: ["title", "slug", { authors: ["author_id.fullname"] }],
@@ -27,12 +38,18 @@ const volumes = await directus.request(
     ],
     sort: ["-id"],
     filter: {
-      site_id: {
-        _eq: "1",
-      },
-      active: {
-        _eq: "1",
-      },
+      _and: [
+        {
+          site_id: {
+            _eq: "1",
+          },
+        },
+        {
+          active: {
+            _eq: true,
+          },
+        },
+      ],
     },
   }),
 );
