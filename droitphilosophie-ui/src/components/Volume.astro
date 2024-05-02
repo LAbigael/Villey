@@ -14,12 +14,16 @@ const { volume } = Astro.props;
             <h2 class="chapter_title" id={section.id}>
               {section.title}
             </h2>
-            {section?.chapters?.map((chapter) => (
+            {section?.chapters
+            ?.sort((a, b) => a.position - b.position)
+            .map((chapter) => (
               <h4 class="chapter_title" id={chapter.id}>
                 {chapter.title}
               </h4>
               <ul>
-                {chapter?.articles.map((article) => (
+                {chapter?.articles
+                  ?.sort((a, b) => a.position - b.position)
+                .map((article) => (
                   <li class="">
                     <span class="mr-1 ">
                       {article.authors
@@ -35,7 +39,9 @@ const { volume } = Astro.props;
               </ul>
             ))}
             <ul>
-              {section.articles.map((article) => (
+              {section.articles
+                ?.sort((a, b) => a.position - b.position)
+              .map((article) => (
               <li class="">
                     <span class="mr-1 ">
                       {article.authors
