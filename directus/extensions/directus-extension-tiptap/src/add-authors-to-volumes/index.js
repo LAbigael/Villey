@@ -15,9 +15,9 @@ export default ({ filter }) => {
                 article.authors
                   .filter(
                     (author) =>
-                      author.author_id.fullname !== "Droit & Philosophie"
+                      author.author_id?.fullname !== "Droit & Philosophie"
                   )
-                  .map((author) => author.author_id.fullname)
+                  .map((author) => author.author_id?.fullname)
               );
             }, [])
         );

@@ -41,19 +41,18 @@ const { volume } = Astro.props;
             <ul>
               {section.articles
                 ?.sort((a, b) => a.position - b.position)
-              .map((article) => (
+                .map((article) => {
+                const authors = article.authors.map((a) => a.author_id?.fullname)
+                return (
               <li class="">
                     <span class="mr-1 ">
-                      {article.authors
-                        .map((a) => a.author_id.fullname)
-                        .join(", ")}{" "}
-                      :
+                      {authors.join(", ")} {authors.length > 0 ? ":" : ""}{" "}
                     </span>
                     <span class="article_title ">
                       <a href={`/articles/${article.slug}`}>{article.title}</a>
                     </span>
                 </li>
-              ))}
+                )})}
             </ul>
           </>
         ))
