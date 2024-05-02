@@ -56,17 +56,17 @@ authors = authors.filter((author) => author.articles.length > 0);
             <ul class="ml-6 list-disc list-inside">
               {author.articles.map((article) => (
                 <li>
-                  {article.article_id.section_id?.volume_id?.title && (
+                  {article.article_id?.section_id?.volume_id?.title && (
                     <a
                       class="volume_title"
                       href={`/volumes/${article.article_id.section_id.volume_id.slug}`}
                     >
-                      {article.article_id.section_id.volume_id.title}
+                      {article.article_id.section_id.volume_id?.title}
                     </a>
                   )}{" "}
                   :{" "}
-                  <a href={`/articles/${article.article_id.slug}`}>
-                    {article.article_id.title}
+                  <a href={`/articles/${article.article_id?.slug}`}>
+                    {article.article_id?.title}
                   </a>
                 </li>
               ))}
