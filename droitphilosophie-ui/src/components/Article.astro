@@ -16,24 +16,15 @@ import Download from "./Download.astro";
       {
         article.authors.map(({ author_id: author }) => (
           <div class="article_author">
-            <a href={`/auteurs/${author.slug}`}>{author.fullname}</a>
+            <a href={`/auteurs/${author?.slug}`}>{author?.fullname}</a>
           </div>
         ))
       }
     </div>
   </div>
   <div
-    class="main-content relative flex lg:flex-row justify-end flex-col-reverse"
+    class="main-content relative flex lg:flex-row justify-start flex-col-reverse"
   >
-    <div id="sidebar" class="w-1/4 sidebar-1 flex flex-col">
-      <div class="sidebar__inner sidebar__inner-1">
-        {article.type === "recension" && <OtherRecensions article={article} />}
-        <Chapters article={article} currentArticle={article.title} />
-      </div>
-    </div>
-    <div class="relative w-full lg:w-2/4 article_column" title="Agrandir">
-      <div class="article_content" set:html={article.content} />
-    </div>
     <div id="sidebar-2" class="w-full lg:w-1/4 lg:mx-3 sidebar-2 flex flex-col">
       <div class="sidebar__inner sidebar__inner-2">
         <ToggleFullscreen />
@@ -41,6 +32,15 @@ import Download from "./Download.astro";
         <Download article={article} />
         <TableOfContent />
         <Footnotes />
+      </div>
+    </div>
+    <div class="relative w-full lg:w-2/4 article_column" title="Agrandir">
+      <div class="article_content" set:html={article.content} />
+    </div>
+    <div id="sidebar" class="w-1/4 sidebar-1 flex flex-col">
+      <div class="sidebar__inner sidebar__inner-1">
+        {article.type === "recension" && <OtherRecensions article={article} />}
+        <Chapters article={article} currentArticle={article.title} />
       </div>
     </div>
   </div>
@@ -93,12 +93,15 @@ import Download from "./Download.astro";
     .is-affixed .sidebar__inner-2 {
       background-color: rgba(var(--background));
       color: rgba(var(--accent));
+      }
+    .sidebar__inner {
+      height: 100vh;
+      z-index: 100;
     }
   }
 
   .sidebar {
     @apply w-full lg:w-1/4 border-none;
-
     will-change: min-height;
   }
 
@@ -106,9 +109,10 @@ import Download from "./Download.astro";
     transform: translate(0, 0); /* For browsers don't support translate3d. */
     transform: translate3d(0, 0, 0);
     will-change: position, transform;
-    overflow-y: scroll;
-    height: 100vh;
+    @apply overflow-hidden lg:overflow-y-scroll h-auto ;
   }
+
+  
 
   blockquote {
     @apply italic pl-6 my-4;
