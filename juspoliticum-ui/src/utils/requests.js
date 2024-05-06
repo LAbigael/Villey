@@ -34,6 +34,7 @@ const volumeFields = [
         articles: [
           "title",
           "slug",
+          "position",
           { authors: ["author_id.fullname"] },
           "subtitle",
           { abstracts: ["language", "content_bis"] },
@@ -48,6 +49,7 @@ const volumeFields = [
             articles: [
               "title",
               "slug",
+              "position",
               { authors: ["author_id.fullname"] },
               "subtitle",
               { abstracts: ["language", "content_bis"] },
