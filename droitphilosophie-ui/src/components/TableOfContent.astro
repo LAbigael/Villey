@@ -13,7 +13,9 @@ import Collapse from "./Collapse.astro";
  // Ensure the DOM is fully loaded before executing
 document.addEventListener("DOMContentLoaded", () => {
   const toc = document.querySelector(".table_of_content_list");
-  const headings = document.querySelectorAll("h3, h4");
+  const articleContent = document.querySelector(".article_content")
+
+  const headings = articleContent.querySelectorAll("h3, h4");
 
   if (headings.length === 0) {
     document.querySelector("#toc")?.setAttribute("style", "display: none;");
