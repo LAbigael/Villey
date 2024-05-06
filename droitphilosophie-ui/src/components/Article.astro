@@ -25,7 +25,7 @@ import Download from "./Download.astro";
   <div
     class="main-content relative flex lg:flex-row justify-start flex-col-reverse"
   >
-    <div id="sidebar-2" class="w-full lg:w-1/4 lg:mx-3 sidebar-2 flex flex-col">
+    <div id="sidebar-2" class="w-full lg:w-1/4 lg:mr-3 sidebar-2 flex flex-col">
       <div class="sidebar__inner sidebar__inner-2">
         <ToggleFullscreen />
         <FontSize />
@@ -37,7 +37,7 @@ import Download from "./Download.astro";
     <div class="relative w-full lg:w-2/4 article_column" title="Agrandir">
       <div class="article_content" set:html={article.content} />
     </div>
-    <div id="sidebar" class="w-1/4 sidebar-1 flex flex-col">
+    <div id="sidebar" class="w-1/4 sidebar-1 ml-3 flex flex-col">
       <div class="sidebar__inner sidebar__inner-1">
         {article.type === "recension" && <OtherRecensions article={article} />}
         <Chapters article={article} currentArticle={article.title} />

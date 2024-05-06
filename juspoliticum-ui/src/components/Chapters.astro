@@ -1,19 +1,54 @@
 ---
 import Link from "./icons/Link.astro";
-const { article } = Astro.props;
+const { article ,currentArticle} = Astro.props;
+import Collapse from "./Collapse.astro";
+
+import { Debug } from "astro:components";
 ---
 
+<!-- <Collapse summary={article.volume.title}> -->
+<!--   <div class="sidebar_content"> -->
+<!--   { -->
+<!--     article.sections.map((section) => ( -->
+<!--       <div> -->
+<!--         <h2>{section.title}</h2> -->
+<!--         <ul> -->
+<!--           {section.articles.map((article) => ( -->
+<!--             <li> -->
+<!--               <a href={`/articles/${article.slug}`}>{article.title}</a> -->
+<!--             </li> -->
+<!--           ))} -->
+<!--         </ul> -->
+<!--       </div> -->
+<!--     )) -->
+<!--   } -->
+<!--   </div> -->
+<!-- </Collapse> -->
 <div class="lg:block hidden">
+
   <h1 class="sidebar_title">
     <a href={`/volumes/${article.volume.slug}`}>{article.volume.title}</a>
   </h1>
+  <div class="sidebar_content">
   {
     article.sections.map((section) => (
       <div>
         <h2>{section.title}</h2>
+        {section.chapters?.map((chapter) => (
+          <div>
+            <h4>{chapter.title}</h3>
+            <ul>
+              {chapter.articles.map((section) => (
+                <li>
+                  <a href={`/articles/${section.slug}`}>{section.title}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
         <ul>
           {section.articles.map((article) => (
-            <li>
+          <li className={`${article.title == currentArticle ? "highlight" : ""}`}>
               <a href={`/articles/${article.slug}`}>{article.title}</a>
             </li>
           ))}
@@ -21,19 +56,31 @@ const { article } = Astro.props;
       </div>
     ))
   }
+  </div>
 </div>
 
 <style>
+  .highlight {
+    @apply rounded-md bg-accent-light dark:bg-accent-dark px-2 py-1 bg-opacity-30;
+  }
+  .highlight a {
+    @apply dark:text-color-light text-accent;
+
+  }
   h2 {
-    @apply text-2xl mt-4 text-secondary-alt;
+    @apply text-2xl mt-4;
+    color: rgba(var(--secondary));
   }
   ul {
-    @apply list-disc my-2;
+    @apply list-disc my-2 list-none;
   }
   li {
     @apply text-lg mb-2 ml-4;
   }
   li a:hover {
-    @apply text-accent-dark
+    color: rgba(var(--accent-dark));
+  }
+  .sidebar_title {
+    @apply bg-opacity-0
   }
 </style>

@@ -23,7 +23,7 @@
 }
 
 .sidebar_title {
-  @apply text-2xl p-4 text-center w-full flex justify-center dark:bg-accent-light dark:text-accent-dark bg-accent text-color-light;
+  @apply text-2xl p-4 text-center w-full flex justify-center dark:bg-accent-light text-accent-dark bg-accent dark:text-color-light;
 }
 
 .sidebar_title a {
