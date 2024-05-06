@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const toc = document.querySelector(".table_of_content_list");
   const articleContent = document.querySelector(".article_content")
 
-  const headings = articleContent.querySelectorAll("h3, h4");
+  const headings = articleContent.querySelectorAll("h3, h4, h5, h6");
 
   if (headings.length === 0) {
     document.querySelector("#toc")?.setAttribute("style", "display: none;");
@@ -72,6 +72,18 @@ document.addEventListener("DOMContentLoaded", () => {
     font-weight: 400;
     text-decoration: none;
     padding-left: 5px;
+  }
+  #toc li a.heading_level_5 {
+    font-size: 0.9rem;
+    font-weight: 300;
+    text-decoration: none;
+    padding-left: 10px;
+  }
+  #toc li a.heading_level_6 {
+    font-size: 0.8rem;
+    font-weight: 200;
+    text-decoration: none;
+    padding-left: 15px;
   }
   .is-affixed #toc {
     @apply lg:block hidden lg:h-auto h-0;

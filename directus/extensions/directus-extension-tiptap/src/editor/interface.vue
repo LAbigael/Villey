@@ -44,6 +44,20 @@
         <H4Icon />
       </ToolbarButton>
       <ToolbarButton
+        @click="editor.chain().focus().toggleHeading({ level: 5 }).run()"
+        :label="h5"
+        :isActive="isActive('heading', { level: 5 })"
+      >
+        <H5Icon />
+      </ToolbarButton>
+      <ToolbarButton
+        @click="editor.chain().focus().toggleHeading({ level: 6 }).run()"
+        :label="h6"
+        :isActive="isActive('heading', { level: 6 })"
+      >
+        <H6Icon />
+      </ToolbarButton>
+      <ToolbarButton
         @click="
           editor.chain().focus().insertContent({ type: 'footnote' }).run()
         "
@@ -141,6 +155,8 @@ import UndoIcon from "../icons/arrow-go-back-line.vue";
 import RedoIcon from "../icons/arrow-go-forward-line.vue";
 import H3Icon from "../icons/h3.vue";
 import H4Icon from "../icons/h4.vue";
+import H5Icon from "../icons/h5.vue";
+import H6Icon from "../icons/h6.vue";
 import AlignLeftIcon from "../icons/align-left.vue";
 import AlignCenterIcon from "../icons/align-center.vue";
 import AlignJustifyIcon from "../icons/align-justify.vue";
@@ -161,6 +177,8 @@ export default {
     FootnoteIcon,
     H3Icon,
     H4Icon,
+    H5Icon,
+    H6Icon,
     ClearFormattingIcon,
     LinkIcon,
     ParagraphIcon,
@@ -395,6 +413,18 @@ export default {
 .ProseMirror h4 {
   margin: 20px 0;
   font-size: 1em;
+  font-weight: bold;
+}
+
+.ProseMirror h5 {
+  margin: 15px 0;
+  font-size: 0.9em;
+  font-weight: bold;
+}
+
+.ProseMirror h6 {
+  margin: 10px 0;
+  font-size: 0.8em;
   font-weight: bold;
 }
 
