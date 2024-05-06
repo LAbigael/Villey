@@ -133,12 +133,12 @@ const { article } = Astro.props;
       content: "[*]";
     }
 
-    .article_content .footnote-link::after {
+    .article_content a.footnote-link::after {
       /* font-size: 1.3rem; /1* Maintain relative font-size in browsers that support it *1/ */
       letter-spacing: normal;
       /* display: inline-block; */
       /* vertical-align: super; */
-      @apply text-secondary-alt dark:text-secondary-alt-light;
+      @apply text-sky-700 dark:text-sky-400 opacity-100 font-semibold dark:font-normal;
     }
 
     .article_author {
