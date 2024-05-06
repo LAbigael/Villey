@@ -33,7 +33,7 @@ async function getData() {
       slug: article.slug,
       title: article.title,
       volumeTitle: article.section_id?.volume_id?.title,
-      authors: article.authors?.map((author) => author.author_id.fullname),
+      authors: article.authors?.map((author) => author.author_id?.fullname),
     })),
   ];
 }
