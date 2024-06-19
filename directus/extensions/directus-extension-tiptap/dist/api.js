@@ -1,11 +1,11 @@
-import require$$0$3 from 'stream';
-import require$$3 from 'path';
+import require$$0$1 from 'stream';
 import require$$2 from 'events';
-import require$$0$4 from 'buffer';
-import require$$0$5 from 'util';
-import require$$0$6 from 'fs';
-import require$$1$2 from 'url';
+import require$$0$2 from 'buffer';
+import require$$0$3 from 'util';
+import require$$0$4 from 'fs';
+import require$$1 from 'url';
 import require$$2$1 from 'os';
+import require$$3 from 'path';
 
 // ::- Persistent data structure representing an ordered mapping from
 // strings to values, with some convenient update methods.
@@ -248,25 +248,20 @@ class Fragment {
     [`Node`](https://prosemirror.net/docs/ref/#model.Node.textBetween).
     */
     textBetween(from, to, blockSeparator, leafText) {
-        let text = "", separated = true;
+        let text = "", first = true;
         this.nodesBetween(from, to, (node, pos) => {
-            if (node.isText) {
-                text += node.text.slice(Math.max(from, pos) - pos, to - pos);
-                separated = !blockSeparator;
+            let nodeText = node.isText ? node.text.slice(Math.max(from, pos) - pos, to - pos)
+                : !node.isLeaf ? ""
+                    : leafText ? (typeof leafText === "function" ? leafText(node) : leafText)
+                        : node.type.spec.leafText ? node.type.spec.leafText(node)
+                            : "";
+            if (node.isBlock && (node.isLeaf && nodeText || node.isTextblock) && blockSeparator) {
+                if (first)
+                    first = false;
+                else
+                    text += blockSeparator;
             }
-            else if (node.isLeaf) {
-                if (leafText) {
-                    text += typeof leafText === "function" ? leafText(node) : leafText;
-                }
-                else if (node.type.spec.leafText) {
-                    text += node.type.spec.leafText(node);
-                }
-                separated = !blockSeparator;
-            }
-            else if (!separated && node.isBlock) {
-                text += blockSeparator;
-                separated = true;
-            }
+            text += nodeText;
         }, 0);
         return text;
     }
@@ -2323,7 +2318,7 @@ let NodeType$2 = class NodeType {
     }
     /**
     Returns true if the given fragment is valid content for this node
-    type with the given attributes.
+    type.
     */
     validContent(content) {
         let result = this.contentMatch.matchFragment(content);
@@ -2502,6 +2497,12 @@ class Schema {
     */
     constructor(spec) {
         /**
+        The [linebreak
+        replacement](https://prosemirror.net/docs/ref/#model.NodeSpec.linebreakReplacement) node defined
+        in this schema, if any.
+        */
+        this.linebreakReplacement = null;
+        /**
         An object for storing whatever values modules may want to
         compute and cache per schema. (If you want to store something
         in it, try to use property names unlikely to clash.)
@@ -2522,6 +2523,13 @@ class Schema {
             type.contentMatch = contentExprCache[contentExpr] ||
                 (contentExprCache[contentExpr] = ContentMatch.parse(contentExpr, this.nodes));
             type.inlineContent = type.contentMatch.inlineContent;
+            if (type.spec.linebreakReplacement) {
+                if (this.linebreakReplacement)
+                    throw new RangeError("Multiple linebreak nodes defined");
+                if (!type.isInline || !type.isLeaf)
+                    throw new RangeError("Linebreak replacement nodes must be inline leaf nodes");
+                this.linebreakReplacement = type;
+            }
             type.markSet = markExpr == "_" ? null :
                 markExpr ? gatherMarks(this, markExpr.split(" ")) :
                     markExpr == "" || !type.inlineContent ? [] : null;
@@ -2610,6 +2618,8 @@ function gatherMarks(schema, marks) {
     return found;
 }
 
+function isTagRule(rule) { return rule.tag != null; }
+function isStyleRule(rule) { return rule.style != null; }
 /**
 A DOM parser represents a strategy for parsing DOM content into a
 ProseMirror document conforming to a given schema. Its behavior is
@@ -2641,9 +2651,9 @@ let DOMParser$1 = class DOMParser {
         */
         this.styles = [];
         rules.forEach(rule => {
-            if (rule.tag)
+            if (isTagRule(rule))
                 this.tags.push(rule);
-            else if (rule.style)
+            else if (isStyleRule(rule))
                 this.styles.push(rule);
         });
         // Only normalize list elements when lists in the schema can't directly contain themselves
@@ -2735,7 +2745,7 @@ let DOMParser$1 = class DOMParser {
             let rules = schema.marks[name].spec.parseDOM;
             if (rules)
                 rules.forEach(rule => {
-                    insert(rule = copy$3(rule));
+                    insert(rule = copy$1(rule));
                     if (!(rule.mark || rule.ignore || rule.clearMark))
                         rule.mark = name;
                 });
@@ -2744,7 +2754,7 @@ let DOMParser$1 = class DOMParser {
             let rules = schema.nodes[name].spec.parseDOM;
             if (rules)
                 rules.forEach(rule => {
-                    insert(rule = copy$3(rule));
+                    insert(rule = copy$1(rule));
                     if (!(rule.node || rule.ignore || rule.mark))
                         rule.node = name;
                 });
@@ -2894,10 +2904,10 @@ class ParseContext {
             this.addElement(dom);
     }
     withStyleRules(dom, f) {
-        let style = dom.getAttribute("style");
-        if (!style)
+        let style = dom.style;
+        if (!style || !style.length)
             return f();
-        let marks = this.readStyles(parseStyles(style));
+        let marks = this.readStyles(dom.style);
         if (!marks)
             return; // A style with ignore: true
         let [addMarks, removeMarks] = marks, top = this.top;
@@ -3006,9 +3016,10 @@ class ParseContext {
     // had a rule with `ignore` set.
     readStyles(styles) {
         let add = Mark$1.none, remove = Mark$1.none;
-        for (let i = 0; i < styles.length; i += 2) {
+        for (let i = 0, l = styles.length; i < l; i++) {
+            let name = styles.item(i);
             for (let after = undefined;;) {
-                let rule = this.parser.matchStyle(styles[i], styles[i + 1], this, after);
+                let rule = this.parser.matchStyle(name, styles.getPropertyValue(name), this, after);
                 if (!rule)
                     break;
                 if (rule.ignore)
@@ -3311,14 +3322,7 @@ function normalizeList(dom) {
 function matches(dom, selector) {
     return (dom.matches || dom.msMatchesSelector || dom.webkitMatchesSelector || dom.mozMatchesSelector).call(dom, selector);
 }
-// Tokenize a style attribute into property/value pairs.
-function parseStyles(style) {
-    let re = /\s*([\w-]+)\s*:\s*([^;]+)/g, m, result = [];
-    while (m = re.exec(style))
-        result.push(m[1], m[2].trim());
-    return result;
-}
-function copy$3(obj) {
+function copy$1(obj) {
     let copy = {};
     for (let prop in obj)
         copy[prop] = obj[prop];
@@ -4369,7 +4373,8 @@ class ReplaceAroundStep extends Step {
     }
     map(mapping) {
         let from = mapping.mapResult(this.from, 1), to = mapping.mapResult(this.to, -1);
-        let gapFrom = mapping.map(this.gapFrom, -1), gapTo = mapping.map(this.gapTo, 1);
+        let gapFrom = this.from == this.gapFrom ? from.pos : mapping.map(this.gapFrom, -1);
+        let gapTo = this.to == this.gapTo ? to.pos : mapping.map(this.gapTo, 1);
         if ((from.deletedAcross && to.deletedAcross) || gapFrom < from.pos || gapTo > to.pos)
             return null;
         return new ReplaceAroundStep(from.pos, to.pos, gapFrom, gapTo, this.slice, this.insert, this.structure);
@@ -4481,7 +4486,7 @@ function removeMark(tr, from, to, mark) {
     });
     matched.forEach(m => tr.step(new RemoveMarkStep(m.from, m.to, m.style)));
 }
-function clearIncompatible(tr, pos, parentType, match = parentType.contentMatch) {
+function clearIncompatible(tr, pos, parentType, match = parentType.contentMatch, clearNewlines = true) {
     let node = tr.doc.nodeAt(pos);
     let replSteps = [], cur = pos + 1;
     for (let i = 0; i < node.childCount; i++) {
@@ -4495,7 +4500,7 @@ function clearIncompatible(tr, pos, parentType, match = parentType.contentMatch)
             for (let j = 0; j < child.marks.length; j++)
                 if (!parentType.allowsMarkType(child.marks[j].type))
                     tr.step(new RemoveMarkStep(cur, end, child.marks[j]));
-            if (child.isText && !parentType.spec.code) {
+            if (clearNewlines && child.isText && parentType.whitespace != "pre") {
                 let m, newline = /\r?\n|\r/g, slice;
                 while (m = newline.exec(child.text)) {
                     if (!slice)
@@ -4620,12 +4625,43 @@ function setBlockType$1(tr, from, to, type, attrs) {
     let mapFrom = tr.steps.length;
     tr.doc.nodesBetween(from, to, (node, pos) => {
         if (node.isTextblock && !node.hasMarkup(type, attrs) && canChangeType(tr.doc, tr.mapping.slice(mapFrom).map(pos), type)) {
+            let convertNewlines = null;
+            if (type.schema.linebreakReplacement) {
+                let pre = type.whitespace == "pre", supportLinebreak = !!type.contentMatch.matchType(type.schema.linebreakReplacement);
+                if (pre && !supportLinebreak)
+                    convertNewlines = false;
+                else if (!pre && supportLinebreak)
+                    convertNewlines = true;
+            }
             // Ensure all markup that isn't allowed in the new node type is cleared
-            tr.clearIncompatible(tr.mapping.slice(mapFrom).map(pos, 1), type);
+            if (convertNewlines === false)
+                replaceLinebreaks(tr, node, pos, mapFrom);
+            clearIncompatible(tr, tr.mapping.slice(mapFrom).map(pos, 1), type, undefined, convertNewlines === null);
             let mapping = tr.mapping.slice(mapFrom);
             let startM = mapping.map(pos, 1), endM = mapping.map(pos + node.nodeSize, 1);
             tr.step(new ReplaceAroundStep(startM, endM, startM + 1, endM - 1, new Slice(Fragment.from(type.create(attrs, null, node.marks)), 0, 0), 1, true));
+            if (convertNewlines === true)
+                replaceNewlines(tr, node, pos, mapFrom);
             return false;
+        }
+    });
+}
+function replaceNewlines(tr, node, pos, mapFrom) {
+    node.forEach((child, offset) => {
+        if (child.isText) {
+            let m, newline = /\r?\n|\r/g;
+            while (m = newline.exec(child.text)) {
+                let start = tr.mapping.slice(mapFrom).map(pos + 1 + offset + m.index);
+                tr.replaceWith(start, start + 1, node.type.schema.linebreakReplacement.create());
+            }
+        }
+    });
+}
+function replaceLinebreaks(tr, node, pos, mapFrom) {
+    node.forEach((child, offset) => {
+        if (child.type == child.type.schema.linebreakReplacement) {
+            let start = tr.mapping.slice(mapFrom).map(pos + 1 + offset);
+            tr.replaceWith(start, start + 1, node.type.schema.text("\n"));
         }
     });
 }
@@ -6637,6 +6673,9 @@ const textRange = function (node, from, to) {
     range.setStart(node, from || 0);
     return range;
 };
+const clearReusedRange = function () {
+    reusedRange = null;
+};
 // Scans forward and backward through DOM positions equivalent to the
 // given one to see if the two are in the same place (i.e. after a
 // text node vs at the end of that text node)
@@ -6670,6 +6709,44 @@ function scanFor(node, off, targetNode, targetOff, dir) {
 }
 function nodeSize(node) {
     return node.nodeType == 3 ? node.nodeValue.length : node.childNodes.length;
+}
+function textNodeBefore$1(node, offset) {
+    for (;;) {
+        if (node.nodeType == 3 && offset)
+            return node;
+        if (node.nodeType == 1 && offset > 0) {
+            if (node.contentEditable == "false")
+                return null;
+            node = node.childNodes[offset - 1];
+            offset = nodeSize(node);
+        }
+        else if (node.parentNode && !hasBlockDesc(node)) {
+            offset = domIndex(node);
+            node = node.parentNode;
+        }
+        else {
+            return null;
+        }
+    }
+}
+function textNodeAfter$1(node, offset) {
+    for (;;) {
+        if (node.nodeType == 3 && offset < node.nodeValue.length)
+            return node;
+        if (node.nodeType == 1 && offset < node.childNodes.length) {
+            if (node.contentEditable == "false")
+                return null;
+            node = node.childNodes[offset];
+            offset = 0;
+        }
+        else if (node.parentNode && !hasBlockDesc(node)) {
+            offset = domIndex(node) + 1;
+            node = node.parentNode;
+        }
+        else {
+            return null;
+        }
+    }
 }
 function isOnEdge(node, offset, parent) {
     for (let atStart = offset == 0, atEnd = offset == nodeSize(node); atStart || atEnd;) {
@@ -6747,6 +6824,12 @@ const webkit = !!doc && "webkitFontSmoothing" in doc.documentElement.style;
 const webkit_version = webkit ? +(/\bAppleWebKit\/(\d+)/.exec(navigator.userAgent) || [0, 0])[1] : 0;
 
 function windowRect(doc) {
+    let vp = doc.defaultView && doc.defaultView.visualViewport;
+    if (vp)
+        return {
+            left: 0, right: vp.width,
+            top: 0, bottom: vp.height
+        };
     return { left: 0, right: doc.documentElement.clientWidth,
         top: 0, bottom: doc.documentElement.clientHeight };
 }
@@ -6963,14 +7046,15 @@ function posFromCaret(view, node, offset, coords) {
         let desc = view.docView.nearestDesc(cur, true);
         if (!desc)
             return null;
-        if (desc.dom.nodeType == 1 && (desc.node.isBlock && desc.parent && !sawBlock || !desc.contentDOM)) {
+        if (desc.dom.nodeType == 1 && (desc.node.isBlock && desc.parent || !desc.contentDOM)) {
             let rect = desc.dom.getBoundingClientRect();
-            if (desc.node.isBlock && desc.parent && !sawBlock) {
-                sawBlock = true;
-                if (rect.left > coords.left || rect.top > coords.top)
+            if (desc.node.isBlock && desc.parent) {
+                // Only apply the horizontal test to the innermost block. Vertical for any parent.
+                if (!sawBlock && rect.left > coords.left || rect.top > coords.top)
                     outsideBlock = desc.posBefore;
-                else if (rect.right < coords.left || rect.bottom < coords.top)
+                else if (!sawBlock && rect.right < coords.left || rect.bottom < coords.top)
                     outsideBlock = desc.posAfter;
+                sawBlock = true;
             }
             if (!desc.contentDOM && outsideBlock < 0 && !desc.node.isText) {
                 // If we are inside a leaf, return the side of the leaf closer to the coords
@@ -7682,6 +7766,7 @@ class ViewDesc {
     }
     get domAtom() { return false; }
     get ignoreForCoords() { return false; }
+    isText(text) { return false; }
 }
 // A widget desc represents a widget decoration, which is a DOM node
 // drawn between the document nodes.
@@ -7944,8 +8029,7 @@ class NodeViewDesc extends ViewDesc {
         let { from, to } = view.state.selection;
         if (!(view.state.selection instanceof TextSelection) || from < pos || to > pos + this.node.content.size)
             return null;
-        let sel = view.domSelectionRange();
-        let textNode = nearbyTextNode(sel.focusNode, sel.focusOffset);
+        let textNode = view.input.compositionNode;
         if (!textNode || !this.dom.contains(textNode.parentNode))
             return null;
         if (this.node.inlineContent) {
@@ -8019,10 +8103,11 @@ class NodeViewDesc extends ViewDesc {
     }
     // Remove selected node marking from this node.
     deselectNode() {
-        if (this.nodeDOM.nodeType == 1)
+        if (this.nodeDOM.nodeType == 1) {
             this.nodeDOM.classList.remove("ProseMirror-selectednode");
-        if (this.contentDOM || !this.node.type.spec.draggable)
-            this.dom.removeAttribute("draggable");
+            if (this.contentDOM || !this.node.type.spec.draggable)
+                this.dom.removeAttribute("draggable");
+        }
     }
     get domAtom() { return this.node.isAtom; }
 }
@@ -8087,6 +8172,7 @@ class TextViewDesc extends NodeViewDesc {
             this.dirty = NODE_DIRTY;
     }
     get domAtom() { return false; }
+    isText(text) { return this.node.text == text; }
 }
 // A dummy desc used to tag trailing BR or IMG nodes created to work
 // around contentEditable terribleness.
@@ -8637,6 +8723,10 @@ function iterDeco(parent, deco, onWidget, onNode) {
                 index = -1;
             }
         }
+        else {
+            while (decoIndex < locals.length && locals[decoIndex].to < end)
+                decoIndex++;
+        }
         let outerDeco = child.isInline && !child.isLeaf ? active.filter(d => !d.inline) : active.slice();
         onNode(child, outerDeco, deco.forChild(offset, child), index);
         offset = end;
@@ -8650,25 +8740,6 @@ function iosHacks(dom) {
         dom.style.cssText = oldCSS + "; list-style: square !important";
         window.getComputedStyle(dom).listStyle;
         dom.style.cssText = oldCSS;
-    }
-}
-function nearbyTextNode(node, offset) {
-    for (;;) {
-        if (node.nodeType == 3)
-            return node;
-        if (node.nodeType == 1 && offset > 0) {
-            if (node.childNodes.length > offset && node.childNodes[offset].nodeType == 3)
-                return node.childNodes[offset];
-            node = node.childNodes[offset - 1];
-            offset = nodeSize(node);
-        }
-        else if (node.nodeType == 1 && offset < node.childNodes.length) {
-            node = node.childNodes[offset];
-            offset = 0;
-        }
-        else {
-            return null;
-        }
     }
 }
 // Find a piece of text in an inline fragment, overlapping from-to
@@ -9334,7 +9405,7 @@ function serializeForClipboard(view, slice) {
         firstChild.setAttribute("data-pm-slice", `${openStart} ${openEnd}${wrappers ? ` -${wrappers}` : ""} ${JSON.stringify(context)}`);
     let text = view.someProp("clipboardTextSerializer", f => f(slice, view)) ||
         slice.content.textBetween(0, slice.content.size, "\n\n");
-    return { dom: wrap, text };
+    return { dom: wrap, text, slice };
 }
 // Read a slice of content from the clipboard (or drop data).
 function parseFromClipboard(view, text, html, plainText, $context) {
@@ -9575,6 +9646,7 @@ class InputState {
         this.lastTouch = 0;
         this.lastAndroidDelete = 0;
         this.composing = false;
+        this.compositionNode = null;
         this.composingTimeout = -1;
         this.compositionNodes = [];
         this.compositionEndedAt = -2e8;
@@ -9850,7 +9922,7 @@ class MouseDown {
         }
         const target = flushed ? null : event.target;
         const targetDesc = target ? view.docView.nearestDesc(target, true) : null;
-        this.target = targetDesc ? targetDesc.dom : null;
+        this.target = targetDesc && targetDesc.dom.nodeType == 1 ? targetDesc.dom : null;
         let { selection } = view.state;
         if (event.button == 0 &&
             targetNode.type.spec.draggable && targetNode.type.spec.selectable !== false ||
@@ -10011,6 +10083,7 @@ editHandlers.compositionend = (view, event) => {
         view.input.composing = false;
         view.input.compositionEndedAt = event.timeStamp;
         view.input.compositionPendingChanges = view.domObserver.pendingRecords().length ? view.input.compositionID : 0;
+        view.input.compositionNode = null;
         if (view.input.compositionPendingChanges)
             Promise.resolve().then(() => view.domObserver.flush());
         view.input.compositionID++;
@@ -10029,6 +10102,27 @@ function clearComposition(view) {
     }
     while (view.input.compositionNodes.length > 0)
         view.input.compositionNodes.pop().markParentsDirty();
+}
+function findCompositionNode(view) {
+    let sel = view.domSelectionRange();
+    if (!sel.focusNode)
+        return null;
+    let textBefore = textNodeBefore$1(sel.focusNode, sel.focusOffset);
+    let textAfter = textNodeAfter$1(sel.focusNode, sel.focusOffset);
+    if (textBefore && textAfter && textBefore != textAfter) {
+        let descAfter = textAfter.pmViewDesc, lastChanged = view.domObserver.lastChangedTextNode;
+        if (textBefore == lastChanged || textAfter == lastChanged)
+            return lastChanged;
+        if (!descAfter || !descAfter.isText(textAfter.nodeValue)) {
+            return textAfter;
+        }
+        else if (view.input.compositionNode == textAfter) {
+            let descBefore = textBefore.pmViewDesc;
+            if (!(!descBefore || !descBefore.isText(textBefore.nodeValue)))
+                return textAfter;
+        }
+    }
+    return textBefore || textAfter;
 }
 function timestampFromCustomEvent() {
     let event = document.createEvent("Event");
@@ -10185,7 +10279,8 @@ handlers.dragstart = (view, _event) => {
         if (desc && desc.node.type.spec.draggable && desc != view.docView)
             node = NodeSelection.create(view.state.doc, desc.posBefore);
     }
-    let slice = (node || view.state.selection).content(), { dom, text } = serializeForClipboard(view, slice);
+    let draggedSlice = (node || view.state.selection).content();
+    let { dom, text, slice } = serializeForClipboard(view, draggedSlice);
     event.dataTransfer.clearData();
     event.dataTransfer.setData(brokenClipboardAPI ? "Text" : "text/html", dom.innerHTML);
     // See https://github.com/ProseMirror/prosemirror/issues/1156
@@ -10495,7 +10590,7 @@ class DecorationSet {
     you must make a copy if you want need to preserve that.
     */
     static create(doc, decorations) {
-        return decorations.length ? buildTree(decorations, doc, 0, noSpec) : empty$1;
+        return decorations.length ? buildTree(decorations, doc, 0, noSpec) : empty;
     }
     /**
     Find all decorations in this set which touch the given range
@@ -10528,7 +10623,7 @@ class DecorationSet {
     document.
     */
     map(mapping, doc, options) {
-        if (this == empty$1 || mapping.maps.length == 0)
+        if (this == empty || mapping.maps.length == 0)
             return this;
         return this.mapInner(mapping, doc, 0, 0, options || noSpec);
     }
@@ -10547,7 +10642,7 @@ class DecorationSet {
         if (this.children.length)
             return mapChildren(this.children, newLocal || [], mapping, node, offset, oldOffset, options);
         else
-            return newLocal ? new DecorationSet(newLocal.sort(byPos), none) : empty$1;
+            return newLocal ? new DecorationSet(newLocal.sort(byPos), none) : empty;
     }
     /**
     Add the given array of decorations to the ones in the set,
@@ -10558,7 +10653,7 @@ class DecorationSet {
     add(doc, decorations) {
         if (!decorations.length)
             return this;
-        if (this == empty$1)
+        if (this == empty)
             return DecorationSet.create(doc, decorations);
         return this.addInner(doc, decorations, 0);
     }
@@ -10589,7 +10684,7 @@ class DecorationSet {
     the ones in the given array.
     */
     remove(decorations) {
-        if (decorations.length == 0 || this == empty$1)
+        if (decorations.length == 0 || this == empty)
             return this;
         return this.removeInner(decorations, 0);
     }
@@ -10610,7 +10705,7 @@ class DecorationSet {
             if (children == this.children)
                 children = this.children.slice();
             let removed = children[i + 2].removeInner(found, from + 1);
-            if (removed != empty$1) {
+            if (removed != empty) {
                 children[i + 2] = removed;
             }
             else {
@@ -10630,13 +10725,10 @@ class DecorationSet {
                 }
         if (children == this.children && local == this.local)
             return this;
-        return local.length || children.length ? new DecorationSet(local, children) : empty$1;
+        return local.length || children.length ? new DecorationSet(local, children) : empty;
     }
-    /**
-    @internal
-    */
     forChild(offset, node) {
-        if (this == empty$1)
+        if (this == empty)
             return this;
         if (node.isLeaf)
             return DecorationSet.empty;
@@ -10660,7 +10752,7 @@ class DecorationSet {
             let localSet = new DecorationSet(local.sort(byPos), none);
             return child ? new DecorationGroup([localSet, child]) : localSet;
         }
-        return child || empty$1;
+        return child || empty;
     }
     /**
     @internal
@@ -10692,7 +10784,7 @@ class DecorationSet {
     @internal
     */
     localsInner(node) {
-        if (this == empty$1)
+        if (this == empty)
             return none;
         if (node.inlineContent || !this.local.some(InlineType.is))
             return this.local;
@@ -10712,7 +10804,7 @@ DecorationSet.empty = new DecorationSet([], []);
 @internal
 */
 DecorationSet.removeOverlap = removeOverlap;
-const empty$1 = DecorationSet.empty;
+const empty = DecorationSet.empty;
 // An abstraction that allows the code dealing with decorations to
 // treat multiple DecorationSet objects as if it were a single object
 // with (a subset of) the same interface.
@@ -10730,7 +10822,7 @@ class DecorationGroup {
         let found = [];
         for (let i = 0; i < this.members.length; i++) {
             let result = this.members[i].forChild(offset, child);
-            if (result == empty$1)
+            if (result == empty)
                 continue;
             if (result instanceof DecorationGroup)
                 found = found.concat(result.members);
@@ -10772,7 +10864,7 @@ class DecorationGroup {
     // a single set when possible.
     static from(members) {
         switch (members.length) {
-            case 0: return empty$1;
+            case 0: return empty;
             case 1: return members[0];
             default: return new DecorationGroup(members.every(m => m instanceof DecorationSet) ? members :
                 members.reduce((r, m) => r.concat(m instanceof DecorationSet ? m : m.members), []));
@@ -10795,7 +10887,7 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset, op
                 if (oldEnd >= start) {
                     children[i + 1] = oldStart <= start ? -2 : -1;
                 }
-                else if (newStart >= offset && dSize) {
+                else if (oldStart >= baseOffset && dSize) {
                     children[i] += dSize;
                     children[i + 1] += dSize;
                 }
@@ -10826,7 +10918,7 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset, op
             if (childNode && childOffset == fromLocal && childOffset + childNode.nodeSize == toLocal) {
                 let mapped = children[i + 2]
                     .mapInner(mapping, childNode, from + 1, oldChildren[i] + oldOffset + 1, options);
-                if (mapped != empty$1) {
+                if (mapped != empty) {
                     children[i] = fromLocal;
                     children[i + 1] = toLocal;
                     children[i + 2] = mapped;
@@ -10917,7 +11009,7 @@ function buildTree(spans, node, offset, options) {
         if (found) {
             hasNulls = true;
             let subtree = buildTree(found, childNode, offset + localStart + 1, options);
-            if (subtree != empty$1)
+            if (subtree != empty)
                 children.push(localStart, localStart + childNode.nodeSize, subtree);
         }
     });
@@ -10928,7 +11020,7 @@ function buildTree(spans, node, offset, options) {
                 options.onRemove(locals[i].spec);
             locals.splice(i--, 1);
         }
-    return locals.length || children.length ? new DecorationSet(locals, children) : empty$1;
+    return locals.length || children.length ? new DecorationSet(locals, children) : empty;
 }
 // Used to sort decorations so that ones with a low start position
 // come first, and within a set with the same start position, those
@@ -10983,7 +11075,7 @@ function viewDecorations(view) {
     let found = [];
     view.someProp("decorations", f => {
         let result = f(view.state);
-        if (result && result != empty$1)
+        if (result && result != empty)
             found.push(result);
     });
     if (view.cursorWrapper)
@@ -11032,6 +11124,7 @@ class DOMObserver {
         this.currentSelection = new SelectionState;
         this.onCharData = null;
         this.suppressingSelectionUpdates = false;
+        this.lastChangedTextNode = null;
         this.observer = window.MutationObserver &&
             new window.MutationObserver(mutations => {
                 for (let i = 0; i < mutations.length; i++)
@@ -11164,14 +11257,22 @@ class DOMObserver {
                 }
             }
         }
-        if (gecko && added.length > 1) {
+        if (gecko && added.length) {
             let brs = added.filter(n => n.nodeName == "BR");
             if (brs.length == 2) {
-                let a = brs[0], b = brs[1];
+                let [a, b] = brs;
                 if (a.parentNode && a.parentNode.parentNode == b.parentNode)
                     b.remove();
                 else
                     a.remove();
+            }
+            else {
+                let { focusNode } = this.currentSelection;
+                for (let br of brs) {
+                    let parent = br.parentNode;
+                    if (parent && parent.nodeName == "LI" && (!focusNode || blockParent(view, focusNode) != parent))
+                        br.remove();
+                }
             }
         }
         let readSel = null;
@@ -11213,8 +11314,12 @@ class DOMObserver {
         if (!desc || desc.ignoreMutation(mut))
             return null;
         if (mut.type == "childList") {
-            for (let i = 0; i < mut.addedNodes.length; i++)
-                added.push(mut.addedNodes[i]);
+            for (let i = 0; i < mut.addedNodes.length; i++) {
+                let node = mut.addedNodes[i];
+                added.push(node);
+                if (node.nodeType == 3)
+                    this.lastChangedTextNode = node;
+            }
             if (desc.contentDOM && desc.contentDOM != desc.dom && !desc.contentDOM.contains(mut.target))
                 return { from: desc.posBefore, to: desc.posAfter };
             let prev = mut.previousSibling, next = mut.nextSibling;
@@ -11241,6 +11346,7 @@ class DOMObserver {
             return { from: desc.posAtStart - desc.border, to: desc.posAtEnd + desc.border };
         }
         else { // "characterData"
+            this.lastChangedTextNode = mut.target;
             return {
                 from: desc.posAtStart,
                 to: desc.posAtEnd,
@@ -11267,9 +11373,25 @@ function checkCSS(view) {
         cssCheckWarned = true;
     }
 }
+function rangeToSelectionRange(view, range) {
+    let anchorNode = range.startContainer, anchorOffset = range.startOffset;
+    let focusNode = range.endContainer, focusOffset = range.endOffset;
+    let currentAnchor = view.domAtPos(view.state.selection.anchor);
+    // Since such a range doesn't distinguish between anchor and head,
+    // use a heuristic that flips it around if its end matches the
+    // current anchor.
+    if (isEquivalentPosition(currentAnchor.node, currentAnchor.offset, focusNode, focusOffset))
+        [anchorNode, anchorOffset, focusNode, focusOffset] = [focusNode, focusOffset, anchorNode, anchorOffset];
+    return { anchorNode, anchorOffset, focusNode, focusOffset };
+}
 // Used to work around a Safari Selection/shadow DOM bug
 // Based on https://github.com/codemirror/dev/issues/414 fix
-function safariShadowSelectionRange(view) {
+function safariShadowSelectionRange(view, selection) {
+    if (selection.getComposedRanges) {
+        let range = selection.getComposedRanges(view.root)[0];
+        if (range)
+            return rangeToSelectionRange(view, range);
+    }
     let found;
     function read(event) {
         event.preventDefault();
@@ -11284,15 +11406,15 @@ function safariShadowSelectionRange(view) {
     view.dom.addEventListener("beforeinput", read, true);
     document.execCommand("indent");
     view.dom.removeEventListener("beforeinput", read, true);
-    let anchorNode = found.startContainer, anchorOffset = found.startOffset;
-    let focusNode = found.endContainer, focusOffset = found.endOffset;
-    let currentAnchor = view.domAtPos(view.state.selection.anchor);
-    // Since such a range doesn't distinguish between anchor and head,
-    // use a heuristic that flips it around if its end matches the
-    // current anchor.
-    if (isEquivalentPosition(currentAnchor.node, currentAnchor.offset, focusNode, focusOffset))
-        [anchorNode, anchorOffset, focusNode, focusOffset] = [focusNode, focusOffset, anchorNode, anchorOffset];
-    return { anchorNode, anchorOffset, focusNode, focusOffset };
+    return found ? rangeToSelectionRange(view, found) : null;
+}
+function blockParent(view, node) {
+    for (let p = node.parentNode; p && p != view.dom; p = p.parentNode) {
+        let desc = view.docView.nearestDesc(p, true);
+        if (desc && desc.node.isBlock)
+            return p;
+    }
+    return null;
 }
 
 // Note that all referencing and parsing is done with the
@@ -11435,13 +11557,6 @@ function readDOMChange(view, from, to, typeOver, addedNodes) {
             return;
         }
     }
-    // Chrome sometimes leaves the cursor before the inserted text when
-    // composing after a cursor wrapper. This moves it forward.
-    if (chrome$1 && view.cursorWrapper && parse.sel && parse.sel.anchor == view.cursorWrapper.deco.from &&
-        parse.sel.head == parse.sel.anchor) {
-        let size = change.endB - change.start;
-        parse.sel = { anchor: parse.sel.anchor + size, head: parse.sel.anchor + size };
-    }
     view.input.domChangeCount++;
     // Handle the case where overwriting a selection by typing matches
     // the start or end of the selected content, creating a change
@@ -11487,7 +11602,7 @@ function readDOMChange(view, from, to, typeOver, addedNodes) {
     }
     // Same for backspace
     if (view.state.selection.anchor > change.start &&
-        looksLikeJoin(doc, change.start, change.endA, $from, $to) &&
+        looksLikeBackspace(doc, change.start, change.endA, $from, $to) &&
         view.someProp("handleKeyDown", f => f(view, keyEvent(8, "Backspace")))) {
         if (android && chrome$1)
             view.domObserver.suppressSelectionUpdates(); // #820
@@ -11599,14 +11714,18 @@ function isMarkChange(cur, prev) {
     if (Fragment.from(updated).eq(cur))
         return { mark, type };
 }
-function looksLikeJoin(old, start, end, $newStart, $newEnd) {
-    if (!$newStart.parent.isTextblock ||
-        // The content must have shrunk
-        end - start <= $newEnd.pos - $newStart.pos ||
+function looksLikeBackspace(old, start, end, $newStart, $newEnd) {
+    if ( // The content must have shrunk
+    end - start <= $newEnd.pos - $newStart.pos ||
         // newEnd must point directly at or after the end of the block that newStart points into
         skipClosingAndOpening($newStart, true, false) < $newEnd.pos)
         return false;
     let $start = old.resolve(start);
+    // Handle the case where, rather than joining blocks, the change just removed an entire block
+    if (!$newStart.parent.isTextblock) {
+        let after = $start.nodeAfter;
+        return after != null && end == start + after.nodeSize;
+    }
     // Start must be at the end of a block
     if ($start.parentOffset < $start.parent.content.size || !$start.parent.isTextblock)
         return false;
@@ -11844,8 +11963,10 @@ class EditorView {
                 // tracks that and forces a selection reset when our update
                 // did write to the node.
                 let chromeKludge = chrome$1 ? (this.trackWrites = this.domSelectionRange().focusNode) : null;
+                if (this.composing)
+                    this.input.compositionNode = findCompositionNode(this);
                 if (redraw || !this.docView.update(state.doc, outerDeco, innerDeco, this)) {
-                    this.docView.updateOuterDeco([]);
+                    this.docView.updateOuterDeco(outerDeco);
                     this.docView.destroy();
                     this.docView = docViewDesc(state.doc, outerDeco, innerDeco, this.dom, this);
                 }
@@ -12122,6 +12243,7 @@ class EditorView {
         }
         this.docView.destroy();
         this.docView = null;
+        clearReusedRange();
     }
     /**
     This is true when the view has been
@@ -12157,8 +12279,9 @@ class EditorView {
     @internal
     */
     domSelectionRange() {
-        return safari && this.root.nodeType === 11 && deepActiveElement(this.dom.ownerDocument) == this.dom
-            ? safariShadowSelectionRange(this) : this.domSelection();
+        let sel = this.domSelection();
+        return safari && this.root.nodeType === 11 &&
+            deepActiveElement(this.dom.ownerDocument) == this.dom && safariShadowSelectionRange(this, sel) || sel;
     }
     /**
     @internal
@@ -12542,6 +12665,60 @@ const joinBackward$1 = (state, dispatch, view) => {
     }
     return false;
 };
+/**
+A more limited form of [`joinBackward`]($commands.joinBackward)
+that only tries to join the current textblock to the one before
+it, if the cursor is at the start of a textblock.
+*/
+const joinTextblockBackward$1 = (state, dispatch, view) => {
+    let $cursor = atBlockStart(state, view);
+    if (!$cursor)
+        return false;
+    let $cut = findCutBefore($cursor);
+    return $cut ? joinTextblocksAround(state, $cut, dispatch) : false;
+};
+/**
+A more limited form of [`joinForward`]($commands.joinForward)
+that only tries to join the current textblock to the one after
+it, if the cursor is at the end of a textblock.
+*/
+const joinTextblockForward$1 = (state, dispatch, view) => {
+    let $cursor = atBlockEnd(state, view);
+    if (!$cursor)
+        return false;
+    let $cut = findCutAfter($cursor);
+    return $cut ? joinTextblocksAround(state, $cut, dispatch) : false;
+};
+function joinTextblocksAround(state, $cut, dispatch) {
+    let before = $cut.nodeBefore, beforeText = before, beforePos = $cut.pos - 1;
+    for (; !beforeText.isTextblock; beforePos--) {
+        if (beforeText.type.spec.isolating)
+            return false;
+        let child = beforeText.lastChild;
+        if (!child)
+            return false;
+        beforeText = child;
+    }
+    let after = $cut.nodeAfter, afterText = after, afterPos = $cut.pos + 1;
+    for (; !afterText.isTextblock; afterPos++) {
+        if (afterText.type.spec.isolating)
+            return false;
+        let child = afterText.firstChild;
+        if (!child)
+            return false;
+        afterText = child;
+    }
+    let step = replaceStep(state.doc, beforePos, afterPos, Slice.empty);
+    if (!step || step.from != beforePos ||
+        step instanceof ReplaceStep && step.slice.size >= afterPos - beforePos)
+        return false;
+    if (dispatch) {
+        let tr = state.tr.step(step);
+        tr.setSelection(TextSelection.create(tr.doc, beforePos));
+        dispatch(tr.scrollIntoView());
+    }
+    return true;
+}
 function textblockAt(node, side, only = false) {
     for (let scan = node; scan; scan = (side == "start" ? scan.firstChild : scan.lastChild)) {
         if (scan.isTextblock)
@@ -13113,6 +13290,11 @@ function sinkListItem$1(itemType) {
     };
 }
 
+/**
+ * Takes a Transaction & Editor State and turns it into a chainable state object
+ * @param config The transaction and state to create the chainable state from
+ * @returns A chainable Editor state object
+ */
 function createChainableState(config) {
     const { state, transaction } = config;
     let { selection } = transaction;
@@ -13122,7 +13304,6 @@ function createChainableState(config) {
         ...state,
         apply: state.apply.bind(state),
         applyTransaction: state.applyTransaction.bind(state),
-        filterTransaction: state.filterTransaction,
         plugins: state.plugins,
         schema: state.schema,
         reconfigure: state.reconfigure.bind(state),
@@ -13280,6 +13461,13 @@ class EventEmitter {
     }
 }
 
+/**
+ * Returns a field from an extension
+ * @param extension The Tiptap extension
+ * @param field The field, for example `renderHTML` or `priority`
+ * @param context The context object that should be passed as `this` into the function
+ * @returns The field value
+ */
 function getExtensionField(extension, field, context) {
     if (extension.config[field] === undefined && extension.parent) {
         return getExtensionField(extension.parent, field, context);
@@ -13524,6 +13712,12 @@ function cleanUpSchemaItem(data) {
         return value !== null && value !== undefined;
     }));
 }
+/**
+ * Creates a new Prosemirror schema based on the given extensions.
+ * @param extensions An array of Tiptap extensions
+ * @param editor The editor instance
+ * @returns A Prosemirror schema
+ */
 function getSchemaByResolvedExtensions(extensions, editor) {
     var _a;
     const allAttributes = getAttributesFromExtensions(extensions);
@@ -13625,6 +13819,12 @@ function getSchemaByResolvedExtensions(extensions, editor) {
     });
 }
 
+/**
+ * Tries to get a node or mark type by its name.
+ * @param name The name of the node or mark type
+ * @param schema The Prosemiror schema to search in
+ * @returns The node or mark type, or null if it doesn't exist
+ */
 function getSchemaTypeByName(name, schema) {
     return schema.nodes[name] || schema.marks[name] || null;
 }
@@ -13641,6 +13841,12 @@ function isExtensionRulesEnabled(extension, enabled) {
     return enabled;
 }
 
+/**
+ * Returns the text content of a resolved prosemirror position
+ * @param $from The resolved position to get the text content from
+ * @param maxMatch The maximum number of characters to match
+ * @returns The text content
+ */
 const getTextContentFromNodes = ($from, maxMatch = 500) => {
     let textBefore = '';
     const sliceEndPos = $from.parentOffset;
@@ -13769,6 +13975,23 @@ function inputRulesPlugin(props) {
                 if (stored) {
                     return stored;
                 }
+                // if InputRule is triggered by insertContent()
+                const simulatedInputMeta = tr.getMeta('applyInputRules');
+                const isSimulatedInput = !!simulatedInputMeta;
+                if (isSimulatedInput) {
+                    setTimeout(() => {
+                        const { from, text } = simulatedInputMeta;
+                        const to = from + text.length;
+                        run$1$2({
+                            editor,
+                            from,
+                            to,
+                            text,
+                            rules,
+                            plugin,
+                        });
+                    });
+                }
                 return tr.selectionSet || tr.docChanged ? null : prev;
             },
         },
@@ -13831,17 +14054,21 @@ function isNumber$2(value) {
     return typeof value === 'number';
 }
 
+/**
+ * Paste rules are used to react to pasted content.
+ * @see https://tiptap.dev/guide/custom-extensions/#paste-rules
+ */
 class PasteRule {
     constructor(config) {
         this.find = config.find;
         this.handler = config.handler;
     }
 }
-const pasteRuleMatcherHandler = (text, find) => {
+const pasteRuleMatcherHandler = (text, find, event) => {
     if (isRegExp$2(find)) {
         return [...text.matchAll(find)];
     }
-    const matches = find(text);
+    const matches = find(text, event);
     if (!matches) {
         return [];
     }
@@ -13873,7 +14100,7 @@ function run$3(config) {
         const resolvedFrom = Math.max(from, pos);
         const resolvedTo = Math.min(to, pos + node.content.size);
         const textToMatch = node.textBetween(resolvedFrom - pos, resolvedTo - pos, undefined, '\ufffc');
-        const matches = pasteRuleMatcherHandler(textToMatch, rule.find);
+        const matches = pasteRuleMatcherHandler(textToMatch, rule.find, pasteEvent);
         matches.forEach(match => {
             if (match.index === undefined) {
                 return;
@@ -13900,6 +14127,14 @@ function run$3(config) {
     const success = handlers.every(handler => handler !== null);
     return success;
 }
+const createClipboardPasteEvent = (text) => {
+    var _a;
+    const event = new ClipboardEvent('paste', {
+        clipboardData: new DataTransfer(),
+    });
+    (_a = event.clipboardData) === null || _a === void 0 ? void 0 : _a.setData('text/html', text);
+    return event;
+};
 /**
  * Create an paste rules plugin. When enabled, it will cause pasted
  * text that matches any of the given rules to trigger the rule’s
@@ -13910,8 +14145,30 @@ function pasteRulesPlugin(props) {
     let dragSourceElement = null;
     let isPastedFromProseMirror = false;
     let isDroppedFromProseMirror = false;
-    let pasteEvent = new ClipboardEvent('paste');
-    let dropEvent = new DragEvent('drop');
+    let pasteEvent = typeof ClipboardEvent !== 'undefined' ? new ClipboardEvent('paste') : null;
+    let dropEvent = typeof DragEvent !== 'undefined' ? new DragEvent('drop') : null;
+    const processEvent = ({ state, from, to, rule, pasteEvt, }) => {
+        const tr = state.tr;
+        const chainableState = createChainableState({
+            state,
+            transaction: tr,
+        });
+        const handler = run$3({
+            editor,
+            state: chainableState,
+            from: Math.max(from - 1, 0),
+            to: to.b - 1,
+            rule,
+            pasteEvent: pasteEvt,
+            dropEvent,
+        });
+        if (!handler || !tr.steps.length) {
+            return;
+        }
+        dropEvent = typeof DragEvent !== 'undefined' ? new DragEvent('drop') : null;
+        pasteEvent = typeof ClipboardEvent !== 'undefined' ? new ClipboardEvent('paste') : null;
+        return tr;
+    };
     const plugins = rules.map(rule => {
         return new Plugin({
             // we register a global drag handler to track the current drag source element
@@ -13949,38 +14206,39 @@ function pasteRulesPlugin(props) {
                 const transaction = transactions[0];
                 const isPaste = transaction.getMeta('uiEvent') === 'paste' && !isPastedFromProseMirror;
                 const isDrop = transaction.getMeta('uiEvent') === 'drop' && !isDroppedFromProseMirror;
-                if (!isPaste && !isDrop) {
+                // if PasteRule is triggered by insertContent()
+                const simulatedPasteMeta = transaction.getMeta('applyPasteRules');
+                const isSimulatedPaste = !!simulatedPasteMeta;
+                if (!isPaste && !isDrop && !isSimulatedPaste) {
                     return;
                 }
-                // stop if there is no changed range
+                // Handle simulated paste
+                if (isSimulatedPaste) {
+                    const { from, text } = simulatedPasteMeta;
+                    const to = from + text.length;
+                    const pasteEvt = createClipboardPasteEvent(text);
+                    return processEvent({
+                        rule,
+                        state,
+                        from,
+                        to: { b: to },
+                        pasteEvt,
+                    });
+                }
+                // handle actual paste/drop
                 const from = oldState.doc.content.findDiffStart(state.doc.content);
                 const to = oldState.doc.content.findDiffEnd(state.doc.content);
+                // stop if there is no changed range
                 if (!isNumber$2(from) || !to || from === to.b) {
                     return;
                 }
-                // build a chainable state
-                // so we can use a single transaction for all paste rules
-                const tr = state.tr;
-                const chainableState = createChainableState({
-                    state,
-                    transaction: tr,
-                });
-                const handler = run$3({
-                    editor,
-                    state: chainableState,
-                    from: Math.max(from - 1, 0),
-                    to: to.b - 1,
+                return processEvent({
                     rule,
-                    pasteEvent,
-                    dropEvent,
+                    state,
+                    from,
+                    to,
+                    pasteEvt: pasteEvent,
                 });
-                // stop if there are no changes
-                if (!handler || !tr.steps.length) {
-                    return;
-                }
-                dropEvent = new DragEvent('drop');
-                pasteEvent = new ClipboardEvent('paste');
-                return tr;
             },
         });
     });
@@ -13998,57 +14256,14 @@ class ExtensionManager {
         this.editor = editor;
         this.extensions = ExtensionManager.resolve(extensions);
         this.schema = getSchemaByResolvedExtensions(this.extensions, editor);
-        this.extensions.forEach(extension => {
-            var _a;
-            // store extension storage in editor
-            this.editor.extensionStorage[extension.name] = extension.storage;
-            const context = {
-                name: extension.name,
-                options: extension.options,
-                storage: extension.storage,
-                editor: this.editor,
-                type: getSchemaTypeByName(extension.name, this.schema),
-            };
-            if (extension.type === 'mark') {
-                const keepOnSplit = (_a = callOrReturn(getExtensionField(extension, 'keepOnSplit', context))) !== null && _a !== void 0 ? _a : true;
-                if (keepOnSplit) {
-                    this.splittableMarks.push(extension.name);
-                }
-            }
-            const onBeforeCreate = getExtensionField(extension, 'onBeforeCreate', context);
-            if (onBeforeCreate) {
-                this.editor.on('beforeCreate', onBeforeCreate);
-            }
-            const onCreate = getExtensionField(extension, 'onCreate', context);
-            if (onCreate) {
-                this.editor.on('create', onCreate);
-            }
-            const onUpdate = getExtensionField(extension, 'onUpdate', context);
-            if (onUpdate) {
-                this.editor.on('update', onUpdate);
-            }
-            const onSelectionUpdate = getExtensionField(extension, 'onSelectionUpdate', context);
-            if (onSelectionUpdate) {
-                this.editor.on('selectionUpdate', onSelectionUpdate);
-            }
-            const onTransaction = getExtensionField(extension, 'onTransaction', context);
-            if (onTransaction) {
-                this.editor.on('transaction', onTransaction);
-            }
-            const onFocus = getExtensionField(extension, 'onFocus', context);
-            if (onFocus) {
-                this.editor.on('focus', onFocus);
-            }
-            const onBlur = getExtensionField(extension, 'onBlur', context);
-            if (onBlur) {
-                this.editor.on('blur', onBlur);
-            }
-            const onDestroy = getExtensionField(extension, 'onDestroy', context);
-            if (onDestroy) {
-                this.editor.on('destroy', onDestroy);
-            }
-        });
+        this.setupExtensions();
     }
+    /**
+     * Returns a flattened and sorted extension list while
+     * also checking for duplicated extensions and warns the user.
+     * @param extensions An array of Tiptap extensions
+     * @returns An flattened and sorted array of Tiptap extensions
+     */
     static resolve(extensions) {
         const resolvedExtensions = ExtensionManager.sort(ExtensionManager.flatten(extensions));
         const duplicatedNames = findDuplicates(resolvedExtensions.map(extension => extension.name));
@@ -14059,6 +14274,11 @@ class ExtensionManager {
         }
         return resolvedExtensions;
     }
+    /**
+     * Create a flattened array of extensions by traversing the `addExtensions` field.
+     * @param extensions An array of Tiptap extensions
+     * @returns A flattened array of Tiptap extensions
+     */
     static flatten(extensions) {
         return (extensions
             .map(extension => {
@@ -14076,6 +14296,11 @@ class ExtensionManager {
             // `Infinity` will break TypeScript so we set a number that is probably high enough
             .flat(10));
     }
+    /**
+     * Sort extensions by priority.
+     * @param extensions An array of Tiptap extensions
+     * @returns A sorted array of Tiptap extensions by priority
+     */
     static sort(extensions) {
         const defaultPriority = 100;
         return extensions.sort((a, b) => {
@@ -14090,6 +14315,10 @@ class ExtensionManager {
             return 0;
         });
     }
+    /**
+     * Get all commands from the extensions.
+     * @returns An object with all commands where the key is the command name and the value is the command function
+     */
     get commands() {
         return this.extensions.reduce((commands, extension) => {
             const context = {
@@ -14109,6 +14338,10 @@ class ExtensionManager {
             };
         }, {});
     }
+    /**
+     * Get all registered Prosemirror plugins from the extensions.
+     * @returns An array of Prosemirror plugins
+     */
     get plugins() {
         const { editor } = this;
         // With ProseMirror, first plugins within an array are executed first.
@@ -14171,9 +14404,17 @@ class ExtensionManager {
             ...allPlugins,
         ];
     }
+    /**
+     * Get all attributes from the extensions.
+     * @returns An array of attributes
+     */
     get attributes() {
         return getAttributesFromExtensions(this.extensions);
     }
+    /**
+     * Get all node views from the extensions.
+     * @returns An object with all node views where the key is the node name and the value is the node view function
+     */
     get nodeViews() {
         const { editor } = this;
         const { nodeExtensions } = splitExtensions(this.extensions);
@@ -14205,6 +14446,62 @@ class ExtensionManager {
             };
             return [extension.name, nodeview];
         }));
+    }
+    /**
+     * Go through all extensions, create extension storages & setup marks
+     * & bind editor event listener.
+     */
+    setupExtensions() {
+        this.extensions.forEach(extension => {
+            var _a;
+            // store extension storage in editor
+            this.editor.extensionStorage[extension.name] = extension.storage;
+            const context = {
+                name: extension.name,
+                options: extension.options,
+                storage: extension.storage,
+                editor: this.editor,
+                type: getSchemaTypeByName(extension.name, this.schema),
+            };
+            if (extension.type === 'mark') {
+                const keepOnSplit = (_a = callOrReturn(getExtensionField(extension, 'keepOnSplit', context))) !== null && _a !== void 0 ? _a : true;
+                if (keepOnSplit) {
+                    this.splittableMarks.push(extension.name);
+                }
+            }
+            const onBeforeCreate = getExtensionField(extension, 'onBeforeCreate', context);
+            const onCreate = getExtensionField(extension, 'onCreate', context);
+            const onUpdate = getExtensionField(extension, 'onUpdate', context);
+            const onSelectionUpdate = getExtensionField(extension, 'onSelectionUpdate', context);
+            const onTransaction = getExtensionField(extension, 'onTransaction', context);
+            const onFocus = getExtensionField(extension, 'onFocus', context);
+            const onBlur = getExtensionField(extension, 'onBlur', context);
+            const onDestroy = getExtensionField(extension, 'onDestroy', context);
+            if (onBeforeCreate) {
+                this.editor.on('beforeCreate', onBeforeCreate);
+            }
+            if (onCreate) {
+                this.editor.on('create', onCreate);
+            }
+            if (onUpdate) {
+                this.editor.on('update', onUpdate);
+            }
+            if (onSelectionUpdate) {
+                this.editor.on('selectionUpdate', onSelectionUpdate);
+            }
+            if (onTransaction) {
+                this.editor.on('transaction', onTransaction);
+            }
+            if (onFocus) {
+                this.editor.on('focus', onFocus);
+            }
+            if (onBlur) {
+                this.editor.on('blur', onBlur);
+            }
+            if (onDestroy) {
+                this.editor.on('destroy', onDestroy);
+            }
+        });
     }
 }
 
@@ -14239,6 +14536,10 @@ function mergeDeep(target, source) {
     return output;
 }
 
+/**
+ * The Extension class is the base class for all extensions.
+ * @see https://tiptap.dev/api/extensions#create-a-new-extension
+ */
 class Extension {
     constructor(config = {}) {
         this.type = 'extension';
@@ -14254,7 +14555,7 @@ class Extension {
             ...config,
         };
         this.name = this.config.name;
-        if (config.defaultOptions) {
+        if (config.defaultOptions && Object.keys(config.defaultOptions).length > 0) {
             console.warn(`[tiptap warn]: BREAKING CHANGE: "defaultOptions" is deprecated. Please use "addOptions" instead. Found in extension: "${this.name}".`);
         }
         // TODO: remove `addOptions` fallback
@@ -14276,6 +14577,7 @@ class Extension {
         // return a new instance so we can use the same extension
         // with different calls of `configure`
         const extension = this.extend();
+        extension.parent = this.parent;
         extension.options = mergeDeep(this.options, options);
         extension.storage = callOrReturn(getExtensionField(extension, 'addStorage', {
             name: extension.name,
@@ -14284,7 +14586,7 @@ class Extension {
         return extension;
     }
     extend(extendedConfig = {}) {
-        const extension = new Extension(extendedConfig);
+        const extension = new Extension({ ...this.config, ...extendedConfig });
         extension.parent = this;
         this.child = extension;
         extension.name = extendedConfig.name ? extendedConfig.name : extension.parent.name;
@@ -14302,19 +14604,25 @@ class Extension {
     }
 }
 
+/**
+ * Gets the text between two positions in a Prosemirror node
+ * and serializes it using the given text serializers and block separator (see getText)
+ * @param startNode The Prosemirror node to start from
+ * @param range The range of the text to get
+ * @param options Options for the text serializer & block separator
+ * @returns The text between the two positions
+ */
 function getTextBetween(startNode, range, options) {
     const { from, to } = range;
     const { blockSeparator = '\n\n', textSerializers = {} } = options || {};
     let text = '';
-    let separated = true;
     startNode.nodesBetween(from, to, (node, pos, parent, index) => {
         var _a;
+        if (node.isBlock && pos > from) {
+            text += blockSeparator;
+        }
         const textSerializer = textSerializers === null || textSerializers === void 0 ? void 0 : textSerializers[node.type.name];
         if (textSerializer) {
-            if (node.isBlock && !separated) {
-                text += blockSeparator;
-                separated = true;
-            }
             if (parent) {
                 text += textSerializer({
                     node,
@@ -14324,19 +14632,21 @@ function getTextBetween(startNode, range, options) {
                     range,
                 });
             }
+            // do not descend into child nodes when there exists a serializer
+            return false;
         }
-        else if (node.isText) {
+        if (node.isText) {
             text += (_a = node === null || node === void 0 ? void 0 : node.text) === null || _a === void 0 ? void 0 : _a.slice(Math.max(from, pos) - pos, to - pos); // eslint-disable-line
-            separated = false;
-        }
-        else if (node.isBlock && !separated) {
-            text += blockSeparator;
-            separated = true;
         }
     });
     return text;
 }
 
+/**
+ * Find text serializers `toText` in a Prosemirror schema
+ * @param schema The Prosemirror schema to search in
+ * @returns A record of text serializers by node name
+ */
 function getTextSerializersFromSchema(schema) {
     return Object.fromEntries(Object.entries(schema.nodes)
         .filter(([, node]) => node.spec.toText)
@@ -14345,6 +14655,11 @@ function getTextSerializersFromSchema(schema) {
 
 const ClipboardTextSerializer = Extension.create({
     name: 'clipboardTextSerializer',
+    addOptions() {
+        return {
+            blockSeparator: undefined,
+        };
+    },
     addProseMirrorPlugins() {
         return [
             new Plugin({
@@ -14360,6 +14675,9 @@ const ClipboardTextSerializer = Extension.create({
                         const textSerializers = getTextSerializersFromSchema(schema);
                         const range = { from, to };
                         return getTextBetween(doc, range, {
+                            ...(this.options.blockSeparator !== undefined
+                                ? { blockSeparator: this.options.blockSeparator }
+                                : {}),
                             textSerializers,
                         });
                     },
@@ -14691,21 +15009,46 @@ const insertContent = (value, options) => ({ tr, commands }) => {
     return commands.insertContentAt({ from: tr.selection.from, to: tr.selection.to }, value, options);
 };
 
+const removeWhitespaces = (node) => {
+    const children = node.childNodes;
+    for (let i = children.length - 1; i >= 0; i -= 1) {
+        const child = children[i];
+        if (child.nodeType === 3 && child.nodeValue && /^(\n\s\s|\n)$/.test(child.nodeValue)) {
+            node.removeChild(child);
+        }
+        else if (child.nodeType === 1) {
+            removeWhitespaces(child);
+        }
+    }
+    return node;
+};
 function elementFromString(value) {
     // add a wrapper to preserve leading and trailing whitespace
     const wrappedValue = `<body>${value}</body>`;
-    return new window.DOMParser().parseFromString(wrappedValue, 'text/html').body;
+    const html = new window.DOMParser().parseFromString(wrappedValue, 'text/html').body;
+    return removeWhitespaces(html);
 }
 
+/**
+ * Takes a JSON or HTML content and creates a Prosemirror node or fragment from it.
+ * @param content The JSON or HTML content to create the node from
+ * @param schema The Prosemirror schema to use for the node
+ * @param options Options for the parser
+ * @returns The created Prosemirror node or fragment
+ */
 function createNodeFromContent(content, schema, options) {
     options = {
         slice: true,
         parseOptions: {},
         ...options,
     };
-    if (typeof content === 'object' && content !== null) {
+    const isJSONContent = typeof content === 'object' && content !== null;
+    const isTextContent = typeof content === 'string';
+    if (isJSONContent) {
         try {
-            if (Array.isArray(content) && content.length > 0) {
+            const isArrayContent = Array.isArray(content) && content.length > 0;
+            // if the JSON Content is an array of nodes, create a fragment for each node
+            if (isArrayContent) {
                 return Fragment.fromArray(content.map(item => schema.nodeFromJSON(item)));
             }
             return schema.nodeFromJSON(content);
@@ -14715,7 +15058,7 @@ function createNodeFromContent(content, schema, options) {
             return createNodeFromContent('', schema, options);
         }
     }
-    if (typeof content === 'string') {
+    if (isTextContent) {
         const parser = DOMParser$1.fromSchema(schema);
         return options.slice
             ? parser.parseSlice(elementFromString(content), options.parseOptions).content
@@ -14752,6 +15095,8 @@ const insertContentAt = (position, value, options) => ({ tr, dispatch, editor })
         options = {
             parseOptions: {},
             updateSelection: true,
+            applyInputRules: false,
+            applyPasteRules: false,
             ...options,
         };
         const content = createNodeFromContent(value, editor.schema, {
@@ -14787,27 +15132,36 @@ const insertContentAt = (position, value, options) => ({ tr, dispatch, editor })
                 to += 1;
             }
         }
+        let newContent;
         // if there is only plain text we have to use `insertText`
         // because this will keep the current marks
         if (isOnlyTextContent) {
             // if value is string, we can use it directly
             // otherwise if it is an array, we have to join it
             if (Array.isArray(value)) {
-                tr.insertText(value.map(v => v.text || '').join(''), from, to);
+                newContent = value.map(v => v.text || '').join('');
             }
             else if (typeof value === 'object' && !!value && !!value.text) {
-                tr.insertText(value.text, from, to);
+                newContent = value.text;
             }
             else {
-                tr.insertText(value, from, to);
+                newContent = value;
             }
+            tr.insertText(newContent, from, to);
         }
         else {
-            tr.replaceWith(from, to, content);
+            newContent = content;
+            tr.replaceWith(from, to, newContent);
         }
         // set cursor at end of inserted content
         if (options.updateSelection) {
             selectionToInsertionEnd(tr, tr.steps.length - 1, -1);
+        }
+        if (options.applyInputRules) {
+            tr.setMeta('applyInputRules', { from, text: newContent });
+        }
+        if (options.applyPasteRules) {
+            tr.setMeta('applyPasteRules', { from, text: newContent });
         }
     }
     return true;
@@ -14858,6 +15212,14 @@ const joinItemForward = () => ({ state, dispatch, tr, }) => {
     catch (e) {
         return false;
     }
+};
+
+const joinTextblockBackward = () => ({ state, dispatch }) => {
+    return joinTextblockBackward$1(state, dispatch);
+};
+
+const joinTextblockForward = () => ({ state, dispatch }) => {
+    return joinTextblockForward$1(state, dispatch);
 };
 
 function isMacOS() {
@@ -14996,6 +15358,12 @@ const newlineInCode = () => ({ state, dispatch }) => {
     return newlineInCode$1(state, dispatch);
 };
 
+/**
+ * Get the type of a schema item by its name.
+ * @param name The name of the schema item
+ * @param schema The Prosemiror schema to search in
+ * @returns The type of the schema item (`node` or `mark`), or null if it doesn't exist
+ */
 function getSchemaTypeNameByName(name, schema) {
     if (schema.nodes[name]) {
         return 'node';
@@ -15093,6 +15461,13 @@ const selectTextblockStart = () => ({ state, dispatch }) => {
     return selectTextblockStart$1(state, dispatch);
 };
 
+/**
+ * Create a new Prosemirror document node from content.
+ * @param content The JSON or HTML content to create the document from
+ * @param schema The Prosemirror schema to use for the document
+ * @param parseOptions Options for the parser
+ * @returns The created Prosemirror document node
+ */
 function createDocument$1(content, schema, parseOptions = {}) {
     return createNodeFromContent(content, schema, { slice: false, parseOptions });
 }
@@ -15130,6 +15505,9 @@ function getMarkAttributes(state, typeOrName) {
 
 /**
  * Returns a new `Transform` based on all steps of the passed transactions.
+ * @param oldDoc The Prosemirror node to start from
+ * @param transactions The transactions to combine
+ * @returns A new `Transform` with all steps of the passed transactions
  */
 function combineTransactionSteps(oldDoc, transactions) {
     const transform = new Transform(oldDoc);
@@ -15141,6 +15519,11 @@ function combineTransactionSteps(oldDoc, transactions) {
     return transform;
 }
 
+/**
+ * Gets the default block type at a given match
+ * @param match The content match to get the default block type from
+ * @returns The default block type or null
+ */
 function defaultBlockAt(match) {
     for (let i = 0; i < match.edgeCount; i += 1) {
         const { type } = match.edge(i);
@@ -15153,6 +15536,10 @@ function defaultBlockAt(match) {
 
 /**
  * Same as `findChildren` but searches only within a `range`.
+ * @param node The Prosemirror node to search in
+ * @param range The range to search in
+ * @param predicate The predicate to match
+ * @returns An array of nodes with their positions
  */
 function findChildrenInRange(node, range, predicate) {
     const nodesWithPos = [];
@@ -15176,6 +15563,15 @@ function findChildrenInRange(node, range, predicate) {
     return nodesWithPos;
 }
 
+/**
+ * Finds the closest parent node to a resolved position that matches a predicate.
+ * @param $pos The resolved position to search from
+ * @param predicate The predicate to match
+ * @returns The closest parent node to the resolved position that matches the predicate
+ * @example ```js
+ * findParentNodeClosestToPos($from, node => node.type.name === 'paragraph')
+ * ```
+ */
 function findParentNodeClosestToPos($pos, predicate) {
     for (let i = $pos.depth; i > 0; i -= 1) {
         const node = $pos.node(i);
@@ -15190,6 +15586,14 @@ function findParentNodeClosestToPos($pos, predicate) {
     }
 }
 
+/**
+ * Finds the closest parent node to the current selection that matches a predicate.
+ * @param predicate The predicate to match
+ * @returns A command that finds the closest parent node to the current selection that matches the predicate
+ * @example ```js
+ * findParentNode(node => node.type.name === 'paragraph')
+ * ```
+ */
 function findParentNode(predicate) {
     return (selection) => findParentNodeClosestToPos(selection.$from, predicate);
 }
@@ -15207,6 +15611,15 @@ function getSchema(extensions, editor) {
     return getSchemaByResolvedExtensions(resolvedExtensions, editor);
 }
 
+/**
+ * Gets the text of a Prosemirror node
+ * @param node The Prosemirror node
+ * @param options Options for the text serializer & block separator
+ * @returns The text of the node
+ * @example ```js
+ * const text = getText(node, { blockSeparator: '\n' })
+ * ```
+ */
 function getText(node, options) {
     const range = {
         from: 0,
@@ -15229,6 +15642,12 @@ function getNodeAttributes(state, typeOrName) {
     return { ...node.attrs };
 }
 
+/**
+ * Get node or mark attributes by type or name on the current editor state
+ * @param state The current editor state
+ * @param typeOrName The node or mark type or name
+ * @returns The attributes of the node or mark or an empty object
+ */
 function getAttributes(state, typeOrName) {
     const schemaType = getSchemaTypeNameByName(typeof typeOrName === 'string' ? typeOrName : typeOrName.name, state.schema);
     if (schemaType === 'node') {
@@ -15337,6 +15756,9 @@ function getMarksBetween(from, to, doc) {
     }
     else {
         doc.nodesBetween(from, to, (node, pos) => {
+            if (!node || (node === null || node === void 0 ? void 0 : node.nodeSize) === undefined) {
+                return;
+            }
             marks.push(...node.marks.map(mark => ({
                 from: pos,
                 to: pos + node.nodeSize,
@@ -15347,6 +15769,13 @@ function getMarksBetween(from, to, doc) {
     return marks;
 }
 
+/**
+ * Return attributes of an extension that should be splitted by keepOnSplit flag
+ * @param extensionAttributes Array of extension attributes
+ * @param typeName The type of the extension
+ * @param attributes The attributes of the extension
+ * @returns The splitted attributes
+ */
 function getSplittedAttributes(extensionAttributes, typeName, attributes) {
     return Object.fromEntries(Object
         .entries(attributes)
@@ -16028,6 +16457,8 @@ var commands = /*#__PURE__*/Object.freeze({
   joinForward: joinForward,
   joinItemBackward: joinItemBackward,
   joinItemForward: joinItemForward,
+  joinTextblockBackward: joinTextblockBackward,
+  joinTextblockForward: joinTextblockForward,
   keyboardShortcut: keyboardShortcut,
   lift: lift,
   liftEmptyBlock: liftEmptyBlock,
@@ -16127,13 +16558,18 @@ const Keymap = Extension.create({
                 const { selection, doc } = tr;
                 const { empty, $anchor } = selection;
                 const { pos, parent } = $anchor;
-                const $parentPos = $anchor.parent.isTextblock ? tr.doc.resolve(pos - 1) : $anchor;
+                const $parentPos = $anchor.parent.isTextblock && pos > 0 ? tr.doc.resolve(pos - 1) : $anchor;
                 const parentIsIsolating = $parentPos.parent.type.spec.isolating;
                 const parentPos = $anchor.pos - $anchor.parentOffset;
                 const isAtStart = (parentIsIsolating && $parentPos.parent.childCount === 1)
                     ? parentPos === $anchor.pos
                     : Selection.atStart(doc).from === pos;
-                if (!empty || !isAtStart || !parent.type.isTextblock || parent.textContent.length) {
+                if (!empty
+                    || !parent.type.isTextblock
+                    || parent.textContent.length
+                    || !isAtStart
+                    || (isAtStart && $anchor.parent.type.name === 'paragraph') // prevent clearNodes when no nodes to clear, otherwise history stack is appended
+                ) {
                     return false;
                 }
                 return commands.clearNodes();
@@ -16243,15 +16679,181 @@ const Tabindex = Extension.create({
     },
 });
 
-var extensions = /*#__PURE__*/Object.freeze({
-  __proto__: null,
-  ClipboardTextSerializer: ClipboardTextSerializer,
-  Commands: Commands,
-  Editable: Editable,
-  FocusEvents: FocusEvents,
-  Keymap: Keymap,
-  Tabindex: Tabindex
-});
+class NodePos {
+    constructor(pos, editor, isBlock = false, node = null) {
+        this.currentNode = null;
+        this.actualDepth = null;
+        this.isBlock = isBlock;
+        this.resolvedPos = pos;
+        this.editor = editor;
+        this.currentNode = node;
+    }
+    get name() {
+        return this.node.type.name;
+    }
+    get node() {
+        return this.currentNode || this.resolvedPos.node();
+    }
+    get element() {
+        return this.editor.view.domAtPos(this.pos).node;
+    }
+    get depth() {
+        var _a;
+        return (_a = this.actualDepth) !== null && _a !== void 0 ? _a : this.resolvedPos.depth;
+    }
+    get pos() {
+        return this.resolvedPos.pos;
+    }
+    get content() {
+        return this.node.content;
+    }
+    set content(content) {
+        let from = this.from;
+        let to = this.to;
+        if (this.isBlock) {
+            if (this.content.size === 0) {
+                console.error(`You can’t set content on a block node. Tried to set content on ${this.name} at ${this.pos}`);
+                return;
+            }
+            from = this.from + 1;
+            to = this.to - 1;
+        }
+        this.editor.commands.insertContentAt({ from, to }, content);
+    }
+    get attributes() {
+        return this.node.attrs;
+    }
+    get textContent() {
+        return this.node.textContent;
+    }
+    get size() {
+        return this.node.nodeSize;
+    }
+    get from() {
+        if (this.isBlock) {
+            return this.pos;
+        }
+        return this.resolvedPos.start(this.resolvedPos.depth);
+    }
+    get range() {
+        return {
+            from: this.from,
+            to: this.to,
+        };
+    }
+    get to() {
+        if (this.isBlock) {
+            return this.pos + this.size;
+        }
+        return this.resolvedPos.end(this.resolvedPos.depth) + (this.node.isText ? 0 : 1);
+    }
+    get parent() {
+        if (this.depth === 0) {
+            return null;
+        }
+        const parentPos = this.resolvedPos.start(this.resolvedPos.depth - 1);
+        const $pos = this.resolvedPos.doc.resolve(parentPos);
+        return new NodePos($pos, this.editor);
+    }
+    get before() {
+        let $pos = this.resolvedPos.doc.resolve(this.from - (this.isBlock ? 1 : 2));
+        if ($pos.depth !== this.depth) {
+            $pos = this.resolvedPos.doc.resolve(this.from - 3);
+        }
+        return new NodePos($pos, this.editor);
+    }
+    get after() {
+        let $pos = this.resolvedPos.doc.resolve(this.to + (this.isBlock ? 2 : 1));
+        if ($pos.depth !== this.depth) {
+            $pos = this.resolvedPos.doc.resolve(this.to + 3);
+        }
+        return new NodePos($pos, this.editor);
+    }
+    get children() {
+        const children = [];
+        this.node.content.forEach((node, offset) => {
+            const isBlock = node.isBlock && !node.isTextblock;
+            const targetPos = this.pos + offset + 1;
+            const $pos = this.resolvedPos.doc.resolve(targetPos);
+            if (!isBlock && $pos.depth <= this.depth) {
+                return;
+            }
+            const childNodePos = new NodePos($pos, this.editor, isBlock, isBlock ? node : null);
+            if (isBlock) {
+                childNodePos.actualDepth = this.depth + 1;
+            }
+            children.push(new NodePos($pos, this.editor, isBlock, isBlock ? node : null));
+        });
+        return children;
+    }
+    get firstChild() {
+        return this.children[0] || null;
+    }
+    get lastChild() {
+        const children = this.children;
+        return children[children.length - 1] || null;
+    }
+    closest(selector, attributes = {}) {
+        let node = null;
+        let currentNode = this.parent;
+        while (currentNode && !node) {
+            if (currentNode.node.type.name === selector) {
+                if (Object.keys(attributes).length > 0) {
+                    const nodeAttributes = currentNode.node.attrs;
+                    const attrKeys = Object.keys(attributes);
+                    for (let index = 0; index < attrKeys.length; index += 1) {
+                        const key = attrKeys[index];
+                        if (nodeAttributes[key] !== attributes[key]) {
+                            break;
+                        }
+                    }
+                }
+                else {
+                    node = currentNode;
+                }
+            }
+            currentNode = currentNode.parent;
+        }
+        return node;
+    }
+    querySelector(selector, attributes = {}) {
+        return this.querySelectorAll(selector, attributes, true)[0] || null;
+    }
+    querySelectorAll(selector, attributes = {}, firstItemOnly = false) {
+        let nodes = [];
+        if (!this.children || this.children.length === 0) {
+            return nodes;
+        }
+        const attrKeys = Object.keys(attributes);
+        /**
+         * Finds all children recursively that match the selector and attributes
+         * If firstItemOnly is true, it will return the first item found
+         */
+        this.children.forEach(childPos => {
+            // If we already found a node and we only want the first item, we dont need to keep going
+            if (firstItemOnly && nodes.length > 0) {
+                return;
+            }
+            if (childPos.node.type.name === selector) {
+                const doesAllAttributesMatch = attrKeys.every(key => attributes[key] === childPos.node.attrs[key]);
+                if (doesAllAttributesMatch) {
+                    nodes.push(childPos);
+                }
+            }
+            // If we already found a node and we only want the first item, we can stop here and skip the recursion
+            if (firstItemOnly && nodes.length > 0) {
+                return;
+            }
+            nodes = nodes.concat(childPos.querySelectorAll(selector, attributes, firstItemOnly));
+        });
+        return nodes;
+    }
+    setAttribute(attributes) {
+        const oldSelection = this.editor.state.selection;
+        this.editor.chain().setTextSelection(this.from).updateAttributes(this.node.type.name, attributes).setTextSelection(oldSelection.from)
+            .run();
+    }
+}
 
 const style = `.ProseMirror {
   position: relative;
@@ -16359,6 +16961,7 @@ class Editor extends EventEmitter {
             editable: true,
             editorProps: {},
             parseOptions: {},
+            coreExtensionOptions: {},
             enableInputRules: true,
             enablePasteRules: true,
             enableCoreExtensions: true,
@@ -16504,7 +17107,17 @@ class Editor extends EventEmitter {
      * Creates an extension manager.
      */
     createExtensionManager() {
-        const coreExtensions = this.options.enableCoreExtensions ? Object.values(extensions) : [];
+        var _a, _b;
+        const coreExtensions = this.options.enableCoreExtensions ? [
+            Editable,
+            ClipboardTextSerializer.configure({
+                blockSeparator: (_b = (_a = this.options.coreExtensionOptions) === null || _a === void 0 ? void 0 : _a.clipboardTextSerializer) === null || _b === void 0 ? void 0 : _b.blockSeparator,
+            }),
+            Commands,
+            FocusEvents,
+            Keymap,
+            Tabindex,
+        ] : [];
         const allExtensions = [...coreExtensions, ...this.options.extensions].filter(extension => {
             return ['extension', 'node', 'mark'].includes(extension === null || extension === void 0 ? void 0 : extension.type);
         });
@@ -16698,11 +17311,27 @@ class Editor extends EventEmitter {
         // @ts-ignore
         return !((_a = this.view) === null || _a === void 0 ? void 0 : _a.docView);
     }
+    $node(selector, attributes) {
+        var _a;
+        return ((_a = this.$doc) === null || _a === void 0 ? void 0 : _a.querySelector(selector, attributes)) || null;
+    }
+    $nodes(selector, attributes) {
+        var _a;
+        return ((_a = this.$doc) === null || _a === void 0 ? void 0 : _a.querySelectorAll(selector, attributes)) || null;
+    }
+    $pos(pos) {
+        const $pos = this.state.doc.resolve(pos);
+        return new NodePos($pos, this);
+    }
+    get $doc() {
+        return this.$pos(0);
+    }
 }
 
 /**
  * Build an input rule that adds a mark when the
  * matched text is typed into it.
+ * @see https://tiptap.dev/guide/custom-extensions/#input-rules
  */
 function markInputRule(config) {
     return new InputRule({
@@ -16746,6 +17375,7 @@ function markInputRule(config) {
 /**
  * Build an input rule that adds a node when the
  * matched text is typed into it.
+ * @see https://tiptap.dev/guide/custom-extensions/#input-rules
  */
 function nodeInputRule(config) {
     return new InputRule({
@@ -16784,6 +17414,7 @@ function nodeInputRule(config) {
  * matched text is typed into it. When using a regular expresion you’ll
  * probably want the regexp to start with `^`, so that the pattern can
  * only occur at the start of a textblock.
+ * @see https://tiptap.dev/guide/custom-extensions/#input-rules
  */
 function textblockTypeInputRule(config) {
     return new InputRule({
@@ -16814,6 +17445,7 @@ function textblockTypeInputRule(config) {
  * two nodes. You can pass a join predicate, which takes a regular
  * expression match and the node before the wrapped node, and can
  * return a boolean to indicate whether a join should happen.
+ * @see https://tiptap.dev/guide/custom-extensions/#input-rules
  */
 function wrappingInputRule(config) {
     return new InputRule({
@@ -16853,6 +17485,10 @@ function wrappingInputRule(config) {
     });
 }
 
+/**
+ * The Mark class is used to create custom mark extensions.
+ * @see https://tiptap.dev/api/extensions#create-a-new-extension
+ */
 class Mark {
     constructor(config = {}) {
         this.type = 'mark';
@@ -16868,7 +17504,7 @@ class Mark {
             ...config,
         };
         this.name = this.config.name;
-        if (config.defaultOptions) {
+        if (config.defaultOptions && Object.keys(config.defaultOptions).length > 0) {
             console.warn(`[tiptap warn]: BREAKING CHANGE: "defaultOptions" is deprecated. Please use "addOptions" instead. Found in extension: "${this.name}".`);
         }
         // TODO: remove `addOptions` fallback
@@ -16898,7 +17534,7 @@ class Mark {
         return extension;
     }
     extend(extendedConfig = {}) {
-        const extension = new Mark(extendedConfig);
+        const extension = new Mark({ ...this.config, ...extendedConfig });
         extension.parent = this;
         this.child = extension;
         extension.name = extendedConfig.name ? extendedConfig.name : extension.parent.name;
@@ -16936,6 +17572,10 @@ class Mark {
     }
 }
 
+/**
+ * The Node class is used to create custom node extensions.
+ * @see https://tiptap.dev/api/extensions#create-a-new-extension
+ */
 let Node$3 = class Node {
     constructor(config = {}) {
         this.type = 'node';
@@ -16951,7 +17591,7 @@ let Node$3 = class Node {
             ...config,
         };
         this.name = this.config.name;
-        if (config.defaultOptions) {
+        if (config.defaultOptions && Object.keys(config.defaultOptions).length > 0) {
             console.warn(`[tiptap warn]: BREAKING CHANGE: "defaultOptions" is deprecated. Please use "addOptions" instead. Found in extension: "${this.name}".`);
         }
         // TODO: remove `addOptions` fallback
@@ -16981,7 +17621,7 @@ let Node$3 = class Node {
         return extension;
     }
     extend(extendedConfig = {}) {
-        const extension = new Node(extendedConfig);
+        const extension = new Node({ ...this.config, ...extendedConfig });
         extension.parent = this;
         this.child = extension;
         extension.name = extendedConfig.name ? extendedConfig.name : extension.parent.name;
@@ -17002,6 +17642,7 @@ let Node$3 = class Node {
 /**
  * Build an paste rule that adds a mark when the
  * matched text is pasted into it.
+ * @see https://tiptap.dev/guide/custom-extensions/#paste-rules
  */
 function markPasteRule(config) {
     return new PasteRule({
@@ -17041,6 +17682,453 @@ function markPasteRule(config) {
             }
         },
     });
+}
+
+var SelectorType;
+(function (SelectorType) {
+    SelectorType["Attribute"] = "attribute";
+    SelectorType["Pseudo"] = "pseudo";
+    SelectorType["PseudoElement"] = "pseudo-element";
+    SelectorType["Tag"] = "tag";
+    SelectorType["Universal"] = "universal";
+    // Traversals
+    SelectorType["Adjacent"] = "adjacent";
+    SelectorType["Child"] = "child";
+    SelectorType["Descendant"] = "descendant";
+    SelectorType["Parent"] = "parent";
+    SelectorType["Sibling"] = "sibling";
+    SelectorType["ColumnCombinator"] = "column-combinator";
+})(SelectorType || (SelectorType = {}));
+var AttributeAction;
+(function (AttributeAction) {
+    AttributeAction["Any"] = "any";
+    AttributeAction["Element"] = "element";
+    AttributeAction["End"] = "end";
+    AttributeAction["Equals"] = "equals";
+    AttributeAction["Exists"] = "exists";
+    AttributeAction["Hyphen"] = "hyphen";
+    AttributeAction["Not"] = "not";
+    AttributeAction["Start"] = "start";
+})(AttributeAction || (AttributeAction = {}));
+
+const reName = /^[^\\#]?(?:\\(?:[\da-f]{1,6}\s?|.)|[\w\-\u00b0-\uFFFF])+/;
+const reEscape = /\\([\da-f]{1,6}\s?|(\s)|.)/gi;
+const actionTypes = new Map([
+    [126 /* Tilde */, AttributeAction.Element],
+    [94 /* Circumflex */, AttributeAction.Start],
+    [36 /* Dollar */, AttributeAction.End],
+    [42 /* Asterisk */, AttributeAction.Any],
+    [33 /* ExclamationMark */, AttributeAction.Not],
+    [124 /* Pipe */, AttributeAction.Hyphen],
+]);
+// Pseudos, whose data property is parsed as well.
+const unpackPseudos = new Set([
+    "has",
+    "not",
+    "matches",
+    "is",
+    "where",
+    "host",
+    "host-context",
+]);
+/**
+ * Checks whether a specific selector is a traversal.
+ * This is useful eg. in swapping the order of elements that
+ * are not traversals.
+ *
+ * @param selector Selector to check.
+ */
+function isTraversal(selector) {
+    switch (selector.type) {
+        case SelectorType.Adjacent:
+        case SelectorType.Child:
+        case SelectorType.Descendant:
+        case SelectorType.Parent:
+        case SelectorType.Sibling:
+        case SelectorType.ColumnCombinator:
+            return true;
+        default:
+            return false;
+    }
+}
+const stripQuotesFromPseudos = new Set(["contains", "icontains"]);
+// Unescape function taken from https://github.com/jquery/sizzle/blob/master/src/sizzle.js#L152
+function funescape(_, escaped, escapedWhitespace) {
+    const high = parseInt(escaped, 16) - 0x10000;
+    // NaN means non-codepoint
+    return high !== high || escapedWhitespace
+        ? escaped
+        : high < 0
+            ? // BMP codepoint
+                String.fromCharCode(high + 0x10000)
+            : // Supplemental Plane codepoint (surrogate pair)
+                String.fromCharCode((high >> 10) | 0xd800, (high & 0x3ff) | 0xdc00);
+}
+function unescapeCSS(str) {
+    return str.replace(reEscape, funescape);
+}
+function isQuote(c) {
+    return c === 39 /* SingleQuote */ || c === 34 /* DoubleQuote */;
+}
+function isWhitespace$1(c) {
+    return (c === 32 /* Space */ ||
+        c === 9 /* Tab */ ||
+        c === 10 /* NewLine */ ||
+        c === 12 /* FormFeed */ ||
+        c === 13 /* CarriageReturn */);
+}
+/**
+ * Parses `selector`, optionally with the passed `options`.
+ *
+ * @param selector Selector to parse.
+ * @param options Options for parsing.
+ * @returns Returns a two-dimensional array.
+ * The first dimension represents selectors separated by commas (eg. `sub1, sub2`),
+ * the second contains the relevant tokens for that selector.
+ */
+function parse$1(selector) {
+    const subselects = [];
+    const endIndex = parseSelector$1(subselects, `${selector}`, 0);
+    if (endIndex < selector.length) {
+        throw new Error(`Unmatched selector: ${selector.slice(endIndex)}`);
+    }
+    return subselects;
+}
+function parseSelector$1(subselects, selector, selectorIndex) {
+    let tokens = [];
+    function getName(offset) {
+        const match = selector.slice(selectorIndex + offset).match(reName);
+        if (!match) {
+            throw new Error(`Expected name, found ${selector.slice(selectorIndex)}`);
+        }
+        const [name] = match;
+        selectorIndex += offset + name.length;
+        return unescapeCSS(name);
+    }
+    function stripWhitespace(offset) {
+        selectorIndex += offset;
+        while (selectorIndex < selector.length &&
+            isWhitespace$1(selector.charCodeAt(selectorIndex))) {
+            selectorIndex++;
+        }
+    }
+    function readValueWithParenthesis() {
+        selectorIndex += 1;
+        const start = selectorIndex;
+        let counter = 1;
+        for (; counter > 0 && selectorIndex < selector.length; selectorIndex++) {
+            if (selector.charCodeAt(selectorIndex) ===
+                40 /* LeftParenthesis */ &&
+                !isEscaped(selectorIndex)) {
+                counter++;
+            }
+            else if (selector.charCodeAt(selectorIndex) ===
+                41 /* RightParenthesis */ &&
+                !isEscaped(selectorIndex)) {
+                counter--;
+            }
+        }
+        if (counter) {
+            throw new Error("Parenthesis not matched");
+        }
+        return unescapeCSS(selector.slice(start, selectorIndex - 1));
+    }
+    function isEscaped(pos) {
+        let slashCount = 0;
+        while (selector.charCodeAt(--pos) === 92 /* BackSlash */)
+            slashCount++;
+        return (slashCount & 1) === 1;
+    }
+    function ensureNotTraversal() {
+        if (tokens.length > 0 && isTraversal(tokens[tokens.length - 1])) {
+            throw new Error("Did not expect successive traversals.");
+        }
+    }
+    function addTraversal(type) {
+        if (tokens.length > 0 &&
+            tokens[tokens.length - 1].type === SelectorType.Descendant) {
+            tokens[tokens.length - 1].type = type;
+            return;
+        }
+        ensureNotTraversal();
+        tokens.push({ type });
+    }
+    function addSpecialAttribute(name, action) {
+        tokens.push({
+            type: SelectorType.Attribute,
+            name,
+            action,
+            value: getName(1),
+            namespace: null,
+            ignoreCase: "quirks",
+        });
+    }
+    /**
+     * We have finished parsing the current part of the selector.
+     *
+     * Remove descendant tokens at the end if they exist,
+     * and return the last index, so that parsing can be
+     * picked up from here.
+     */
+    function finalizeSubselector() {
+        if (tokens.length &&
+            tokens[tokens.length - 1].type === SelectorType.Descendant) {
+            tokens.pop();
+        }
+        if (tokens.length === 0) {
+            throw new Error("Empty sub-selector");
+        }
+        subselects.push(tokens);
+    }
+    stripWhitespace(0);
+    if (selector.length === selectorIndex) {
+        return selectorIndex;
+    }
+    loop: while (selectorIndex < selector.length) {
+        const firstChar = selector.charCodeAt(selectorIndex);
+        switch (firstChar) {
+            // Whitespace
+            case 32 /* Space */:
+            case 9 /* Tab */:
+            case 10 /* NewLine */:
+            case 12 /* FormFeed */:
+            case 13 /* CarriageReturn */: {
+                if (tokens.length === 0 ||
+                    tokens[0].type !== SelectorType.Descendant) {
+                    ensureNotTraversal();
+                    tokens.push({ type: SelectorType.Descendant });
+                }
+                stripWhitespace(1);
+                break;
+            }
+            // Traversals
+            case 62 /* GreaterThan */: {
+                addTraversal(SelectorType.Child);
+                stripWhitespace(1);
+                break;
+            }
+            case 60 /* LessThan */: {
+                addTraversal(SelectorType.Parent);
+                stripWhitespace(1);
+                break;
+            }
+            case 126 /* Tilde */: {
+                addTraversal(SelectorType.Sibling);
+                stripWhitespace(1);
+                break;
+            }
+            case 43 /* Plus */: {
+                addTraversal(SelectorType.Adjacent);
+                stripWhitespace(1);
+                break;
+            }
+            // Special attribute selectors: .class, #id
+            case 46 /* Period */: {
+                addSpecialAttribute("class", AttributeAction.Element);
+                break;
+            }
+            case 35 /* Hash */: {
+                addSpecialAttribute("id", AttributeAction.Equals);
+                break;
+            }
+            case 91 /* LeftSquareBracket */: {
+                stripWhitespace(1);
+                // Determine attribute name and namespace
+                let name;
+                let namespace = null;
+                if (selector.charCodeAt(selectorIndex) === 124 /* Pipe */) {
+                    // Equivalent to no namespace
+                    name = getName(1);
+                }
+                else if (selector.startsWith("*|", selectorIndex)) {
+                    namespace = "*";
+                    name = getName(2);
+                }
+                else {
+                    name = getName(0);
+                    if (selector.charCodeAt(selectorIndex) === 124 /* Pipe */ &&
+                        selector.charCodeAt(selectorIndex + 1) !==
+                            61 /* Equal */) {
+                        namespace = name;
+                        name = getName(1);
+                    }
+                }
+                stripWhitespace(0);
+                // Determine comparison operation
+                let action = AttributeAction.Exists;
+                const possibleAction = actionTypes.get(selector.charCodeAt(selectorIndex));
+                if (possibleAction) {
+                    action = possibleAction;
+                    if (selector.charCodeAt(selectorIndex + 1) !==
+                        61 /* Equal */) {
+                        throw new Error("Expected `=`");
+                    }
+                    stripWhitespace(2);
+                }
+                else if (selector.charCodeAt(selectorIndex) === 61 /* Equal */) {
+                    action = AttributeAction.Equals;
+                    stripWhitespace(1);
+                }
+                // Determine value
+                let value = "";
+                let ignoreCase = null;
+                if (action !== "exists") {
+                    if (isQuote(selector.charCodeAt(selectorIndex))) {
+                        const quote = selector.charCodeAt(selectorIndex);
+                        let sectionEnd = selectorIndex + 1;
+                        while (sectionEnd < selector.length &&
+                            (selector.charCodeAt(sectionEnd) !== quote ||
+                                isEscaped(sectionEnd))) {
+                            sectionEnd += 1;
+                        }
+                        if (selector.charCodeAt(sectionEnd) !== quote) {
+                            throw new Error("Attribute value didn't end");
+                        }
+                        value = unescapeCSS(selector.slice(selectorIndex + 1, sectionEnd));
+                        selectorIndex = sectionEnd + 1;
+                    }
+                    else {
+                        const valueStart = selectorIndex;
+                        while (selectorIndex < selector.length &&
+                            ((!isWhitespace$1(selector.charCodeAt(selectorIndex)) &&
+                                selector.charCodeAt(selectorIndex) !==
+                                    93 /* RightSquareBracket */) ||
+                                isEscaped(selectorIndex))) {
+                            selectorIndex += 1;
+                        }
+                        value = unescapeCSS(selector.slice(valueStart, selectorIndex));
+                    }
+                    stripWhitespace(0);
+                    // See if we have a force ignore flag
+                    const forceIgnore = selector.charCodeAt(selectorIndex) | 0x20;
+                    // If the forceIgnore flag is set (either `i` or `s`), use that value
+                    if (forceIgnore === 115 /* LowerS */) {
+                        ignoreCase = false;
+                        stripWhitespace(1);
+                    }
+                    else if (forceIgnore === 105 /* LowerI */) {
+                        ignoreCase = true;
+                        stripWhitespace(1);
+                    }
+                }
+                if (selector.charCodeAt(selectorIndex) !==
+                    93 /* RightSquareBracket */) {
+                    throw new Error("Attribute selector didn't terminate");
+                }
+                selectorIndex += 1;
+                const attributeSelector = {
+                    type: SelectorType.Attribute,
+                    name,
+                    action,
+                    value,
+                    namespace,
+                    ignoreCase,
+                };
+                tokens.push(attributeSelector);
+                break;
+            }
+            case 58 /* Colon */: {
+                if (selector.charCodeAt(selectorIndex + 1) === 58 /* Colon */) {
+                    tokens.push({
+                        type: SelectorType.PseudoElement,
+                        name: getName(2).toLowerCase(),
+                        data: selector.charCodeAt(selectorIndex) ===
+                            40 /* LeftParenthesis */
+                            ? readValueWithParenthesis()
+                            : null,
+                    });
+                    continue;
+                }
+                const name = getName(1).toLowerCase();
+                let data = null;
+                if (selector.charCodeAt(selectorIndex) ===
+                    40 /* LeftParenthesis */) {
+                    if (unpackPseudos.has(name)) {
+                        if (isQuote(selector.charCodeAt(selectorIndex + 1))) {
+                            throw new Error(`Pseudo-selector ${name} cannot be quoted`);
+                        }
+                        data = [];
+                        selectorIndex = parseSelector$1(data, selector, selectorIndex + 1);
+                        if (selector.charCodeAt(selectorIndex) !==
+                            41 /* RightParenthesis */) {
+                            throw new Error(`Missing closing parenthesis in :${name} (${selector})`);
+                        }
+                        selectorIndex += 1;
+                    }
+                    else {
+                        data = readValueWithParenthesis();
+                        if (stripQuotesFromPseudos.has(name)) {
+                            const quot = data.charCodeAt(0);
+                            if (quot === data.charCodeAt(data.length - 1) &&
+                                isQuote(quot)) {
+                                data = data.slice(1, -1);
+                            }
+                        }
+                        data = unescapeCSS(data);
+                    }
+                }
+                tokens.push({ type: SelectorType.Pseudo, name, data });
+                break;
+            }
+            case 44 /* Comma */: {
+                finalizeSubselector();
+                tokens = [];
+                stripWhitespace(1);
+                break;
+            }
+            default: {
+                if (selector.startsWith("/*", selectorIndex)) {
+                    const endIndex = selector.indexOf("*/", selectorIndex + 2);
+                    if (endIndex < 0) {
+                        throw new Error("Comment was not terminated");
+                    }
+                    selectorIndex = endIndex + 2;
+                    // Remove leading whitespace
+                    if (tokens.length === 0) {
+                        stripWhitespace(0);
+                    }
+                    break;
+                }
+                let namespace = null;
+                let name;
+                if (firstChar === 42 /* Asterisk */) {
+                    selectorIndex += 1;
+                    name = "*";
+                }
+                else if (firstChar === 124 /* Pipe */) {
+                    name = "";
+                    if (selector.charCodeAt(selectorIndex + 1) === 124 /* Pipe */) {
+                        addTraversal(SelectorType.ColumnCombinator);
+                        stripWhitespace(2);
+                        break;
+                    }
+                }
+                else if (reName.test(selector.slice(selectorIndex))) {
+                    name = getName(0);
+                }
+                else {
+                    break loop;
+                }
+                if (selector.charCodeAt(selectorIndex) === 124 /* Pipe */ &&
+                    selector.charCodeAt(selectorIndex + 1) !== 124 /* Pipe */) {
+                    namespace = name;
+                    if (selector.charCodeAt(selectorIndex + 1) ===
+                        42 /* Asterisk */) {
+                        name = "*";
+                        selectorIndex += 2;
+                    }
+                    else {
+                        name = getName(1);
+                    }
+                }
+                tokens.push(name === "*"
+                    ? { type: SelectorType.Universal, namespace }
+                    : { type: SelectorType.Tag, name, namespace });
+            }
+        }
+    }
+    finalizeSubselector();
+    return selectorIndex;
 }
 
 // src/encoding-he.ts
@@ -19282,34 +20370,34 @@ var decodeMapLegacy = {
   yuml: "\xFF"
 };
 var decodeMapNumeric = {
-  "0": "\uFFFD",
-  "128": "\u20AC",
-  "130": "\u201A",
-  "131": "\u0192",
-  "132": "\u201E",
-  "133": "\u2026",
-  "134": "\u2020",
-  "135": "\u2021",
-  "136": "\u02C6",
-  "137": "\u2030",
-  "138": "\u0160",
-  "139": "\u2039",
-  "140": "\u0152",
-  "142": "\u017D",
-  "145": "\u2018",
-  "146": "\u2019",
-  "147": "\u201C",
-  "148": "\u201D",
-  "149": "\u2022",
-  "150": "\u2013",
-  "151": "\u2014",
-  "152": "\u02DC",
-  "153": "\u2122",
-  "154": "\u0161",
-  "155": "\u203A",
-  "156": "\u0153",
-  "158": "\u017E",
-  "159": "\u0178"
+  0: "\uFFFD",
+  128: "\u20AC",
+  130: "\u201A",
+  131: "\u0192",
+  132: "\u201E",
+  133: "\u2026",
+  134: "\u2020",
+  135: "\u2021",
+  136: "\u02C6",
+  137: "\u2030",
+  138: "\u0160",
+  139: "\u2039",
+  140: "\u0152",
+  142: "\u017D",
+  145: "\u2018",
+  146: "\u2019",
+  147: "\u201C",
+  148: "\u201D",
+  149: "\u2022",
+  150: "\u2013",
+  151: "\u2014",
+  152: "\u02DC",
+  153: "\u2122",
+  154: "\u0161",
+  155: "\u203A",
+  156: "\u0153",
+  158: "\u017E",
+  159: "\u0178"
 };
 var invalidReferenceCodePoints = [
   1,
@@ -19441,49 +20529,39 @@ var invalidReferenceCodePoints = [
   1114111
 ];
 var stringFromCharCode = String.fromCharCode;
-var object$2 = {};
-var hasOwnProperty$1 = object$2.hasOwnProperty;
-var has$2 = function(object2, propertyName) {
-  return hasOwnProperty$1.call(object2, propertyName);
-};
 var contains$1 = function(array, value) {
-  var index = -1;
-  var length = array.length;
+  let index = -1;
+  const length = array.length;
   while (++index < length) {
-    if (array[index] == value) {
+    if (array[index] === value)
       return true;
-    }
   }
   return false;
 };
-var merge = function(options, defaults) {
-  if (!options) {
+function merge(options, defaults) {
+  if (!options)
     return defaults;
-  }
-  var result = {};
-  var key;
+  const result = {};
+  let key;
   for (key in defaults) {
-    result[key] = has$2(options, key) ? options[key] : defaults[key];
+    result[key] = hasOwn(options, key) ? options[key] : defaults[key];
   }
   return result;
-};
+}
 var codePointToSymbol = function(codePoint, strict) {
-  var output = "";
+  let output = "";
   if (codePoint >= 55296 && codePoint <= 57343 || codePoint > 1114111) {
-    if (strict) {
+    if (strict)
       parseError("character reference outside the permissible Unicode range");
-    }
     return "\uFFFD";
   }
-  if (has$2(decodeMapNumeric, codePoint)) {
-    if (strict) {
+  if (hasOwn(decodeMapNumeric, codePoint)) {
+    if (strict)
       parseError("disallowed character reference");
-    }
     return decodeMapNumeric[codePoint];
   }
-  if (strict && contains$1(invalidReferenceCodePoints, codePoint)) {
+  if (strict && contains$1(invalidReferenceCodePoints, codePoint))
     parseError("disallowed character reference");
-  }
   if (codePoint > 65535) {
     codePoint -= 65536;
     output += stringFromCharCode(codePoint >>> 10 & 1023 | 55296);
@@ -19492,24 +20570,23 @@ var codePointToSymbol = function(codePoint, strict) {
   output += stringFromCharCode(codePoint);
   return output;
 };
-var parseError = function(message) {
-  throw Error("Parse error: " + message);
-};
-var decode$1 = function(html2, options) {
-  options = merge(options, decode$1.options);
-  var strict = options.strict;
-  if (strict && regexInvalidEntity.test(html2)) {
+function parseError(message) {
+  throw new Error(`Parse error: ${message}`);
+}
+function decode(html2, options) {
+  options = merge(options, decode.options);
+  const strict = options.strict;
+  if (strict && regexInvalidEntity.test(html2))
     parseError("malformed character reference");
-  }
   return html2.replace(
     regexDecode,
-    function($0, $1, $2, $3, $4, $5, $6, $7, $8) {
-      var codePoint;
-      var semicolon;
-      var decDigits;
-      var hexDigits;
-      var reference;
-      var next;
+    ($0, $1, $2, $3, $4, $5, $6, $7, _$8) => {
+      let codePoint;
+      let semicolon;
+      let decDigits;
+      let hexDigits;
+      let reference;
+      let next;
       if ($1) {
         reference = $1;
         return decodeMap$1[reference];
@@ -19518,9 +20595,8 @@ var decode$1 = function(html2, options) {
         reference = $2;
         next = $3;
         if (next && options.isAttributeValue) {
-          if (strict && next == "=") {
+          if (strict && next === "=")
             parseError("`&` did not start a character reference");
-          }
           return $0;
         } else {
           if (strict) {
@@ -19534,19 +20610,17 @@ var decode$1 = function(html2, options) {
       if ($4) {
         decDigits = $4;
         semicolon = $5;
-        if (strict && !semicolon) {
+        if (strict && !semicolon)
           parseError("character reference was not terminated by a semicolon");
-        }
-        codePoint = parseInt(decDigits, 10);
+        codePoint = Number.parseInt(decDigits, 10);
         return codePointToSymbol(codePoint, strict);
       }
       if ($6) {
         hexDigits = $6;
         semicolon = $7;
-        if (strict && !semicolon) {
+        if (strict && !semicolon)
           parseError("character reference was not terminated by a semicolon");
-        }
-        codePoint = parseInt(hexDigits, 16);
+        codePoint = Number.parseInt(hexDigits, 16);
         return codePointToSymbol(codePoint, strict);
       }
       if (strict) {
@@ -19557,20 +20631,22 @@ var decode$1 = function(html2, options) {
       return $0;
     }
   );
-};
-decode$1.options = {
+}
+decode.options = {
   isAttributeValue: false,
   strict: false
 };
 
 // src/encoding.ts
-var escapeHTML = (text) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&apos;").replace(/"/g, "&quot;");
-var unescapeHTML = (html2) => decode$1(html2);
+function escapeHTML(text) {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+}
+var unescapeHTML = (html2) => decode(html2);
 
 // src/h.ts
 function _h(context, tag, attrs, children) {
   if (typeof tag === "function") {
-    return tag.call(null, {
+    return tag({
       props: { ...attrs, children },
       attrs,
       children,
@@ -19578,39 +20654,41 @@ function _h(context, tag, attrs, children) {
       context
     });
   } else {
+    let isElement = true;
     let el;
     if (tag) {
       if (tag.toLowerCase() === "fragment") {
         el = context.document.createDocumentFragment();
+        isElement = false;
       } else {
         el = context.document.createElement(tag);
       }
     } else {
       el = context.document.createElement("div");
     }
-    if (attrs) {
+    if (attrs && isElement) {
+      const element = el;
       for (let [key, value] of Object.entries(attrs)) {
         key = key.toString();
         const compareKey = key.toLowerCase();
         if (compareKey === "classname") {
-          el.className = value;
+          element.className = value;
         } else if (compareKey === "on") {
           Object.entries(value).forEach(([name, value2]) => {
-            el.setAttribute("on" + name, value2);
+            element.setAttribute(`on${name}`, String(value2));
           });
         } else if (value !== false && value != null) {
-          if (value === true) {
-            el.setAttribute(key, key);
-          } else {
-            el.setAttribute(key, value.toString());
-          }
+          if (value === true)
+            element.setAttribute(key, key);
+          else
+            element.setAttribute(key, value.toString());
         }
       }
     }
     if (children) {
       for (const childOuter of children) {
-        let cc = Array.isArray(childOuter) ? [...childOuter] : [childOuter];
-        for (let child of cc) {
+        const cc = Array.isArray(childOuter) ? [...childOuter] : [childOuter];
+        for (const child of cc) {
           if (child) {
             if (child !== false && child != null) {
               if (typeof child !== "object") {
@@ -19648,12 +20726,12 @@ function hArgumentParser(tag, attrs, ...children) {
   return {
     tag,
     attrs,
-    children: typeof children[0] === "string" ? children : children.flat(Infinity)
+    children: typeof children[0] === "string" ? children : children.flat(Number.POSITIVE_INFINITY)
   };
 }
 function hFactory(context) {
-  context.h = function h2(itag, iattrs, ...ichildren) {
-    let { tag, attrs, children } = hArgumentParser(itag, iattrs, ichildren);
+  context.h = function h3(itag, iattrs, ...ichildren) {
+    const { tag, attrs, children } = hArgumentParser(itag, iattrs, ichildren);
     return _h(context, tag, attrs, children);
   };
   return context.h;
@@ -19680,23 +20758,20 @@ var SELF_CLOSING_TAGS = [
 ];
 function markup(xmlMode, tag, attrs = {}, children) {
   const hasChildren = !(typeof children === "string" && children === "" || Array.isArray(children) && (children.length === 0 || children.length === 1 && children[0] === "") || children == null);
-  let parts = [];
+  const parts = [];
   tag = tag.replace(/__/g, ":");
   if (tag !== "noop" && tag !== "") {
-    if (tag !== "cdata") {
+    if (tag !== "cdata")
       parts.push(`<${tag}`);
-    } else {
+    else
       parts.push("<![CDATA[");
-    }
     for (let name in attrs) {
-      if (name && attrs.hasOwnProperty(name)) {
-        let v = attrs[name];
-        if (name === "html") {
+      if (name && hasOwn(attrs, name)) {
+        const v = attrs[name];
+        if (name === "html")
           continue;
-        }
-        if (name.toLowerCase() === "classname") {
+        if (name.toLowerCase() === "classname")
           name = "class";
-        }
         name = name.replace(/__/g, ":");
         if (v === true) {
           parts.push(` ${name}`);
@@ -19704,7 +20779,7 @@ function markup(xmlMode, tag, attrs = {}, children) {
           parts.push(
             ` ${name}="${Object.keys(v).filter((k) => v[k] != null).map((k) => {
               let vv = v[k];
-              vv = typeof vv === "number" ? vv + "px" : vv;
+              vv = typeof vv === "number" ? `${vv}px` : vv;
               return `${k.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()}:${vv}`;
             }).join(";")}"`
           );
@@ -19721,9 +20796,8 @@ function markup(xmlMode, tag, attrs = {}, children) {
         parts.push(">");
       }
     }
-    if (!xmlMode && SELF_CLOSING_TAGS.includes(tag)) {
+    if (!xmlMode && SELF_CLOSING_TAGS.includes(tag))
       return parts.join("");
-    }
   }
   if (hasChildren) {
     if (typeof children === "string") {
@@ -19731,488 +20805,35 @@ function markup(xmlMode, tag, attrs = {}, children) {
     } else if (children && children.length > 0) {
       for (let child of children) {
         if (child != null && child !== false) {
-          if (!Array.isArray(child)) {
+          if (!Array.isArray(child))
             child = [child];
-          }
-          for (let c of child) {
-            if (c.startsWith("<") && c.endsWith(">") || tag === "script" || tag === "style") {
+          for (const c of child) {
+            if (c.startsWith("<") && c.endsWith(">") || tag === "script" || tag === "style")
               parts.push(c);
-            } else {
+            else
               parts.push(escapeHTML(c.toString()));
-            }
           }
         }
       }
     }
   }
-  if (attrs.html) {
+  if (attrs.html)
     parts.push(attrs.html);
-  }
   if (tag !== "noop" && tag !== "") {
-    if (tag !== "cdata") {
+    if (tag !== "cdata")
       parts.push(`</${tag}>`);
-    } else {
+    else
       parts.push("]]>");
-    }
   }
   return parts.join("");
 }
 function html$1(itag, iattrs, ...ichildren) {
-  let { tag, attrs, children } = hArgumentParser(itag, iattrs, ichildren);
+  const { tag, attrs, children } = hArgumentParser(itag, iattrs, ichildren);
   return markup(false, tag, attrs, children);
 }
 var htmlVDOM = markup.bind(null, false);
 html$1.firstLine = "<!DOCTYPE html>";
 html$1.html = true;
-/*! https://mths.be/he v1.2.0 by @mathias | MIT license */
-
-var SelectorType;
-(function (SelectorType) {
-    SelectorType["Attribute"] = "attribute";
-    SelectorType["Pseudo"] = "pseudo";
-    SelectorType["PseudoElement"] = "pseudo-element";
-    SelectorType["Tag"] = "tag";
-    SelectorType["Universal"] = "universal";
-    // Traversals
-    SelectorType["Adjacent"] = "adjacent";
-    SelectorType["Child"] = "child";
-    SelectorType["Descendant"] = "descendant";
-    SelectorType["Parent"] = "parent";
-    SelectorType["Sibling"] = "sibling";
-    SelectorType["ColumnCombinator"] = "column-combinator";
-})(SelectorType || (SelectorType = {}));
-var AttributeAction;
-(function (AttributeAction) {
-    AttributeAction["Any"] = "any";
-    AttributeAction["Element"] = "element";
-    AttributeAction["End"] = "end";
-    AttributeAction["Equals"] = "equals";
-    AttributeAction["Exists"] = "exists";
-    AttributeAction["Hyphen"] = "hyphen";
-    AttributeAction["Not"] = "not";
-    AttributeAction["Start"] = "start";
-})(AttributeAction || (AttributeAction = {}));
-
-const reName = /^[^\\#]?(?:\\(?:[\da-f]{1,6}\s?|.)|[\w\-\u00b0-\uFFFF])+/;
-const reEscape = /\\([\da-f]{1,6}\s?|(\s)|.)/gi;
-const actionTypes = new Map([
-    [126 /* Tilde */, AttributeAction.Element],
-    [94 /* Circumflex */, AttributeAction.Start],
-    [36 /* Dollar */, AttributeAction.End],
-    [42 /* Asterisk */, AttributeAction.Any],
-    [33 /* ExclamationMark */, AttributeAction.Not],
-    [124 /* Pipe */, AttributeAction.Hyphen],
-]);
-// Pseudos, whose data property is parsed as well.
-const unpackPseudos = new Set([
-    "has",
-    "not",
-    "matches",
-    "is",
-    "where",
-    "host",
-    "host-context",
-]);
-/**
- * Checks whether a specific selector is a traversal.
- * This is useful eg. in swapping the order of elements that
- * are not traversals.
- *
- * @param selector Selector to check.
- */
-function isTraversal(selector) {
-    switch (selector.type) {
-        case SelectorType.Adjacent:
-        case SelectorType.Child:
-        case SelectorType.Descendant:
-        case SelectorType.Parent:
-        case SelectorType.Sibling:
-        case SelectorType.ColumnCombinator:
-            return true;
-        default:
-            return false;
-    }
-}
-const stripQuotesFromPseudos = new Set(["contains", "icontains"]);
-// Unescape function taken from https://github.com/jquery/sizzle/blob/master/src/sizzle.js#L152
-function funescape(_, escaped, escapedWhitespace) {
-    const high = parseInt(escaped, 16) - 0x10000;
-    // NaN means non-codepoint
-    return high !== high || escapedWhitespace
-        ? escaped
-        : high < 0
-            ? // BMP codepoint
-                String.fromCharCode(high + 0x10000)
-            : // Supplemental Plane codepoint (surrogate pair)
-                String.fromCharCode((high >> 10) | 0xd800, (high & 0x3ff) | 0xdc00);
-}
-function unescapeCSS(str) {
-    return str.replace(reEscape, funescape);
-}
-function isQuote(c) {
-    return c === 39 /* SingleQuote */ || c === 34 /* DoubleQuote */;
-}
-function isWhitespace$1(c) {
-    return (c === 32 /* Space */ ||
-        c === 9 /* Tab */ ||
-        c === 10 /* NewLine */ ||
-        c === 12 /* FormFeed */ ||
-        c === 13 /* CarriageReturn */);
-}
-/**
- * Parses `selector`, optionally with the passed `options`.
- *
- * @param selector Selector to parse.
- * @param options Options for parsing.
- * @returns Returns a two-dimensional array.
- * The first dimension represents selectors separated by commas (eg. `sub1, sub2`),
- * the second contains the relevant tokens for that selector.
- */
-function parse$1(selector) {
-    const subselects = [];
-    const endIndex = parseSelector$1(subselects, `${selector}`, 0);
-    if (endIndex < selector.length) {
-        throw new Error(`Unmatched selector: ${selector.slice(endIndex)}`);
-    }
-    return subselects;
-}
-function parseSelector$1(subselects, selector, selectorIndex) {
-    let tokens = [];
-    function getName(offset) {
-        const match = selector.slice(selectorIndex + offset).match(reName);
-        if (!match) {
-            throw new Error(`Expected name, found ${selector.slice(selectorIndex)}`);
-        }
-        const [name] = match;
-        selectorIndex += offset + name.length;
-        return unescapeCSS(name);
-    }
-    function stripWhitespace(offset) {
-        selectorIndex += offset;
-        while (selectorIndex < selector.length &&
-            isWhitespace$1(selector.charCodeAt(selectorIndex))) {
-            selectorIndex++;
-        }
-    }
-    function readValueWithParenthesis() {
-        selectorIndex += 1;
-        const start = selectorIndex;
-        let counter = 1;
-        for (; counter > 0 && selectorIndex < selector.length; selectorIndex++) {
-            if (selector.charCodeAt(selectorIndex) ===
-                40 /* LeftParenthesis */ &&
-                !isEscaped(selectorIndex)) {
-                counter++;
-            }
-            else if (selector.charCodeAt(selectorIndex) ===
-                41 /* RightParenthesis */ &&
-                !isEscaped(selectorIndex)) {
-                counter--;
-            }
-        }
-        if (counter) {
-            throw new Error("Parenthesis not matched");
-        }
-        return unescapeCSS(selector.slice(start, selectorIndex - 1));
-    }
-    function isEscaped(pos) {
-        let slashCount = 0;
-        while (selector.charCodeAt(--pos) === 92 /* BackSlash */)
-            slashCount++;
-        return (slashCount & 1) === 1;
-    }
-    function ensureNotTraversal() {
-        if (tokens.length > 0 && isTraversal(tokens[tokens.length - 1])) {
-            throw new Error("Did not expect successive traversals.");
-        }
-    }
-    function addTraversal(type) {
-        if (tokens.length > 0 &&
-            tokens[tokens.length - 1].type === SelectorType.Descendant) {
-            tokens[tokens.length - 1].type = type;
-            return;
-        }
-        ensureNotTraversal();
-        tokens.push({ type });
-    }
-    function addSpecialAttribute(name, action) {
-        tokens.push({
-            type: SelectorType.Attribute,
-            name,
-            action,
-            value: getName(1),
-            namespace: null,
-            ignoreCase: "quirks",
-        });
-    }
-    /**
-     * We have finished parsing the current part of the selector.
-     *
-     * Remove descendant tokens at the end if they exist,
-     * and return the last index, so that parsing can be
-     * picked up from here.
-     */
-    function finalizeSubselector() {
-        if (tokens.length &&
-            tokens[tokens.length - 1].type === SelectorType.Descendant) {
-            tokens.pop();
-        }
-        if (tokens.length === 0) {
-            throw new Error("Empty sub-selector");
-        }
-        subselects.push(tokens);
-    }
-    stripWhitespace(0);
-    if (selector.length === selectorIndex) {
-        return selectorIndex;
-    }
-    loop: while (selectorIndex < selector.length) {
-        const firstChar = selector.charCodeAt(selectorIndex);
-        switch (firstChar) {
-            // Whitespace
-            case 32 /* Space */:
-            case 9 /* Tab */:
-            case 10 /* NewLine */:
-            case 12 /* FormFeed */:
-            case 13 /* CarriageReturn */: {
-                if (tokens.length === 0 ||
-                    tokens[0].type !== SelectorType.Descendant) {
-                    ensureNotTraversal();
-                    tokens.push({ type: SelectorType.Descendant });
-                }
-                stripWhitespace(1);
-                break;
-            }
-            // Traversals
-            case 62 /* GreaterThan */: {
-                addTraversal(SelectorType.Child);
-                stripWhitespace(1);
-                break;
-            }
-            case 60 /* LessThan */: {
-                addTraversal(SelectorType.Parent);
-                stripWhitespace(1);
-                break;
-            }
-            case 126 /* Tilde */: {
-                addTraversal(SelectorType.Sibling);
-                stripWhitespace(1);
-                break;
-            }
-            case 43 /* Plus */: {
-                addTraversal(SelectorType.Adjacent);
-                stripWhitespace(1);
-                break;
-            }
-            // Special attribute selectors: .class, #id
-            case 46 /* Period */: {
-                addSpecialAttribute("class", AttributeAction.Element);
-                break;
-            }
-            case 35 /* Hash */: {
-                addSpecialAttribute("id", AttributeAction.Equals);
-                break;
-            }
-            case 91 /* LeftSquareBracket */: {
-                stripWhitespace(1);
-                // Determine attribute name and namespace
-                let name;
-                let namespace = null;
-                if (selector.charCodeAt(selectorIndex) === 124 /* Pipe */) {
-                    // Equivalent to no namespace
-                    name = getName(1);
-                }
-                else if (selector.startsWith("*|", selectorIndex)) {
-                    namespace = "*";
-                    name = getName(2);
-                }
-                else {
-                    name = getName(0);
-                    if (selector.charCodeAt(selectorIndex) === 124 /* Pipe */ &&
-                        selector.charCodeAt(selectorIndex + 1) !==
-                            61 /* Equal */) {
-                        namespace = name;
-                        name = getName(1);
-                    }
-                }
-                stripWhitespace(0);
-                // Determine comparison operation
-                let action = AttributeAction.Exists;
-                const possibleAction = actionTypes.get(selector.charCodeAt(selectorIndex));
-                if (possibleAction) {
-                    action = possibleAction;
-                    if (selector.charCodeAt(selectorIndex + 1) !==
-                        61 /* Equal */) {
-                        throw new Error("Expected `=`");
-                    }
-                    stripWhitespace(2);
-                }
-                else if (selector.charCodeAt(selectorIndex) === 61 /* Equal */) {
-                    action = AttributeAction.Equals;
-                    stripWhitespace(1);
-                }
-                // Determine value
-                let value = "";
-                let ignoreCase = null;
-                if (action !== "exists") {
-                    if (isQuote(selector.charCodeAt(selectorIndex))) {
-                        const quote = selector.charCodeAt(selectorIndex);
-                        let sectionEnd = selectorIndex + 1;
-                        while (sectionEnd < selector.length &&
-                            (selector.charCodeAt(sectionEnd) !== quote ||
-                                isEscaped(sectionEnd))) {
-                            sectionEnd += 1;
-                        }
-                        if (selector.charCodeAt(sectionEnd) !== quote) {
-                            throw new Error("Attribute value didn't end");
-                        }
-                        value = unescapeCSS(selector.slice(selectorIndex + 1, sectionEnd));
-                        selectorIndex = sectionEnd + 1;
-                    }
-                    else {
-                        const valueStart = selectorIndex;
-                        while (selectorIndex < selector.length &&
-                            ((!isWhitespace$1(selector.charCodeAt(selectorIndex)) &&
-                                selector.charCodeAt(selectorIndex) !==
-                                    93 /* RightSquareBracket */) ||
-                                isEscaped(selectorIndex))) {
-                            selectorIndex += 1;
-                        }
-                        value = unescapeCSS(selector.slice(valueStart, selectorIndex));
-                    }
-                    stripWhitespace(0);
-                    // See if we have a force ignore flag
-                    const forceIgnore = selector.charCodeAt(selectorIndex) | 0x20;
-                    // If the forceIgnore flag is set (either `i` or `s`), use that value
-                    if (forceIgnore === 115 /* LowerS */) {
-                        ignoreCase = false;
-                        stripWhitespace(1);
-                    }
-                    else if (forceIgnore === 105 /* LowerI */) {
-                        ignoreCase = true;
-                        stripWhitespace(1);
-                    }
-                }
-                if (selector.charCodeAt(selectorIndex) !==
-                    93 /* RightSquareBracket */) {
-                    throw new Error("Attribute selector didn't terminate");
-                }
-                selectorIndex += 1;
-                const attributeSelector = {
-                    type: SelectorType.Attribute,
-                    name,
-                    action,
-                    value,
-                    namespace,
-                    ignoreCase,
-                };
-                tokens.push(attributeSelector);
-                break;
-            }
-            case 58 /* Colon */: {
-                if (selector.charCodeAt(selectorIndex + 1) === 58 /* Colon */) {
-                    tokens.push({
-                        type: SelectorType.PseudoElement,
-                        name: getName(2).toLowerCase(),
-                        data: selector.charCodeAt(selectorIndex) ===
-                            40 /* LeftParenthesis */
-                            ? readValueWithParenthesis()
-                            : null,
-                    });
-                    continue;
-                }
-                const name = getName(1).toLowerCase();
-                let data = null;
-                if (selector.charCodeAt(selectorIndex) ===
-                    40 /* LeftParenthesis */) {
-                    if (unpackPseudos.has(name)) {
-                        if (isQuote(selector.charCodeAt(selectorIndex + 1))) {
-                            throw new Error(`Pseudo-selector ${name} cannot be quoted`);
-                        }
-                        data = [];
-                        selectorIndex = parseSelector$1(data, selector, selectorIndex + 1);
-                        if (selector.charCodeAt(selectorIndex) !==
-                            41 /* RightParenthesis */) {
-                            throw new Error(`Missing closing parenthesis in :${name} (${selector})`);
-                        }
-                        selectorIndex += 1;
-                    }
-                    else {
-                        data = readValueWithParenthesis();
-                        if (stripQuotesFromPseudos.has(name)) {
-                            const quot = data.charCodeAt(0);
-                            if (quot === data.charCodeAt(data.length - 1) &&
-                                isQuote(quot)) {
-                                data = data.slice(1, -1);
-                            }
-                        }
-                        data = unescapeCSS(data);
-                    }
-                }
-                tokens.push({ type: SelectorType.Pseudo, name, data });
-                break;
-            }
-            case 44 /* Comma */: {
-                finalizeSubselector();
-                tokens = [];
-                stripWhitespace(1);
-                break;
-            }
-            default: {
-                if (selector.startsWith("/*", selectorIndex)) {
-                    const endIndex = selector.indexOf("*/", selectorIndex + 2);
-                    if (endIndex < 0) {
-                        throw new Error("Comment was not terminated");
-                    }
-                    selectorIndex = endIndex + 2;
-                    // Remove leading whitespace
-                    if (tokens.length === 0) {
-                        stripWhitespace(0);
-                    }
-                    break;
-                }
-                let namespace = null;
-                let name;
-                if (firstChar === 42 /* Asterisk */) {
-                    selectorIndex += 1;
-                    name = "*";
-                }
-                else if (firstChar === 124 /* Pipe */) {
-                    name = "";
-                    if (selector.charCodeAt(selectorIndex + 1) === 124 /* Pipe */) {
-                        addTraversal(SelectorType.ColumnCombinator);
-                        stripWhitespace(2);
-                        break;
-                    }
-                }
-                else if (reName.test(selector.slice(selectorIndex))) {
-                    name = getName(0);
-                }
-                else {
-                    break loop;
-                }
-                if (selector.charCodeAt(selectorIndex) === 124 /* Pipe */ &&
-                    selector.charCodeAt(selectorIndex + 1) !== 124 /* Pipe */) {
-                    namespace = name;
-                    if (selector.charCodeAt(selectorIndex + 1) ===
-                        42 /* Asterisk */) {
-                        name = "*";
-                        selectorIndex += 2;
-                    }
-                    else {
-                        name = getName(1);
-                    }
-                }
-                tokens.push(name === "*"
-                    ? { type: SelectorType.Universal, namespace }
-                    : { type: SelectorType.Tag, name, namespace });
-            }
-        }
-    }
-    finalizeSubselector();
-    return selectorIndex;
-}
-
 var cache = {};
 function parseSelector(selector) {
   let ast = cache[selector];
@@ -20223,67 +20844,45 @@ function parseSelector(selector) {
   return ast;
 }
 function matchSelector(selector, element, { debug = false } = {}) {
-  for (let rules of parseSelector(selector)) {
-    if (debug) {
-      console.log("Selector:", selector);
-      console.log("Rules:", rules);
-      console.log("Element:", element);
-    }
+  for (const rules of parseSelector(selector)) {
     const handleRules = (element2, rules2) => {
-      var _a, _b, _c;
+      var _a, _b, _c, _d;
       let success = false;
-      for (let part of rules2) {
-        const { type, name, action, value, ignoreCase = true, data } = part;
+      for (const part of rules2) {
+        const { type, name, action, value, _ignoreCase = true, data } = part;
         if (type === "attribute") {
           if (action === "equals") {
             success = element2.getAttribute(name) === value;
-            if (debug)
-              console.log("Attribute equals", success);
           } else if (action === "start") {
             success = !!((_a = element2.getAttribute(name)) == null ? void 0 : _a.startsWith(value));
-            if (debug)
-              console.log("Attribute start", success);
           } else if (action === "end") {
             success = !!((_b = element2.getAttribute(name)) == null ? void 0 : _b.endsWith(value));
-            if (debug)
-              console.log("Attribute start", success);
           } else if (action === "element") {
             if (name === "class") {
               success = element2.classList.contains(value);
-              if (debug)
-                console.log("Attribute class", success);
             } else {
               success = !!((_c = element2.getAttribute(name)) == null ? void 0 : _c.includes(value));
-              if (debug)
-                console.log("Attribute element", success);
             }
           } else if (action === "exists") {
             success = element2.hasAttribute(name);
-            if (debug)
-              console.log("Attribute exists", success);
+          } else if (action === "any") {
+            success = !!((_d = element2.getAttribute(name)) == null ? void 0 : _d.includes(value));
           } else {
             console.warn("Unknown CSS selector action", action);
           }
         } else if (type === "tag") {
           success = element2.tagName === name.toUpperCase();
-          if (debug)
-            console.log("Is tag", success);
         } else if (type === "universal") {
           success = true;
-          if (debug)
-            console.log("Is universal", success);
         } else if (type === "pseudo") {
           if (name === "not") {
             let ok = true;
             data.forEach((rules3) => {
-              if (!handleRules(element2, rules3)) {
+              if (!handleRules(element2, rules3))
                 ok = false;
-              }
             });
             success = !ok;
           }
-          if (debug)
-            console.log("Is :not", success);
         } else {
           console.warn("Unknown CSS selector type", type, selector, rules2);
         }
@@ -20292,9 +20891,8 @@ function matchSelector(selector, element, { debug = false } = {}) {
       }
       return success;
     };
-    if (handleRules(element, rules)) {
+    if (handleRules(element, rules))
       return true;
-    }
   }
   return false;
 }
@@ -20318,9 +20916,13 @@ var DEFAULTS = {
   del: S,
   ins: M,
   strike: S
+  // 'code': C,
+  // 'tt': C
 };
-var toCamelCase = (s) => s.toLowerCase().replace(/[^a-zA-Z0-9]+(.)/g, (m, chr) => chr.toUpperCase());
-var _VNode = class {
+function toCamelCase(s) {
+  return s.toLowerCase().replace(/[^a-zA-Z0-9]+(.)/g, (_m, chr) => chr.toUpperCase());
+}
+var _VNode = class _VNode {
   constructor() {
     this.append = this.appendChild;
     this._parentNode = null;
@@ -20338,7 +20940,7 @@ var _VNode = class {
     return null;
   }
   cloneNode(deep = false) {
-    let node = new this.constructor();
+    const node = new this.constructor();
     if (deep) {
       node._childNodes = this._childNodes.map((c) => c.cloneNode(true));
       node._fixChildNodesParent();
@@ -20364,15 +20966,14 @@ var _VNode = class {
       console.warn("Cannot appendChild to self");
       return;
     }
-    if (node instanceof VDocument) {
+    if (node instanceof VDocument)
       console.warn("No defined how to append a document to a node!", node);
-    }
     if (node instanceof VDocumentFragment) {
-      for (let c of [...node._childNodes]) {
+      for (const c of [...node._childNodes]) {
         this.appendChild(c);
       }
     } else if (Array.isArray(node)) {
-      for (let c of [...node]) {
+      for (const c of [...node]) {
         this.appendChild(c);
       }
     } else if (node instanceof _VNode) {
@@ -20391,28 +20992,31 @@ var _VNode = class {
     this._fixChildNodesParent();
   }
   removeChild(node) {
-    let i = this._childNodes.indexOf(node);
+    const i = this._childNodes.indexOf(node);
     if (i >= 0) {
       node._parentNode = null;
       this._childNodes.splice(i, 1);
       this._fixChildNodesParent();
     }
   }
+  /** Remove node */
   remove() {
     var _a;
     (_a = this == null ? void 0 : this.parentNode) == null ? void 0 : _a.removeChild(this);
     return this;
   }
+  /** Replace content of node with text or nodes */
   replaceChildren(...nodes) {
     this._childNodes = nodes.map(
       (n) => typeof n === "string" ? new VTextNode(n) : n.remove()
     );
     this._fixChildNodesParent();
   }
+  /** Replace node itself with nodes */
   replaceWith(...nodes) {
-    let p = this._parentNode;
+    const p = this._parentNode;
     if (p) {
-      let index = this._indexInParent();
+      const index = this._indexInParent();
       if (index >= 0) {
         nodes = nodes.map(
           (n) => typeof n === "string" ? new VTextNode(n) : n.remove()
@@ -20424,9 +21028,8 @@ var _VNode = class {
     }
   }
   _indexInParent() {
-    if (this._parentNode) {
+    if (this._parentNode)
       return this._parentNode.childNodes.indexOf(this);
-    }
     return -1;
   }
   get parentNode() {
@@ -20445,35 +21048,30 @@ var _VNode = class {
     return this._childNodes[this._childNodes.length - 1];
   }
   get nextSibling() {
-    let i = this._indexInParent();
-    if (i != null) {
+    const i = this._indexInParent();
+    if (i != null)
       return this.parentNode.childNodes[i + 1] || null;
-    }
     return null;
   }
   get previousSibling() {
-    let i = this._indexInParent();
-    if (i > 0) {
+    const i = this._indexInParent();
+    if (i > 0)
       return this.parentNode.childNodes[i - 1] || null;
-    }
     return null;
   }
   flatten() {
-    let elements = [];
-    if (this instanceof VElement) {
+    const elements = [];
+    if (this instanceof VElement)
       elements.push(this);
-    }
-    for (let child of this._childNodes) {
+    for (const child of this._childNodes)
       elements.push(...child.flatten());
-    }
     return elements;
   }
   flattenNodes() {
-    let nodes = [];
+    const nodes = [];
     nodes.push(this);
-    for (let child of this._childNodes) {
+    for (const child of this._childNodes)
       nodes.push(...child.flattenNodes());
-    }
     return nodes;
   }
   render() {
@@ -20484,9 +21082,8 @@ var _VNode = class {
   }
   set textContent(text) {
     this._childNodes = [];
-    if (text) {
+    if (text)
       this.appendChild(new VTextNode(text.toString()));
-    }
   }
   contains(otherNode) {
     if (otherNode === this)
@@ -20495,9 +21092,8 @@ var _VNode = class {
   }
   get ownerDocument() {
     var _a;
-    if (this.nodeType === _VNode.DOCUMENT_NODE || this.nodeType === _VNode.DOCUMENT_FRAGMENT_NODE) {
+    if (this.nodeType === _VNode.DOCUMENT_NODE || this.nodeType === _VNode.DOCUMENT_FRAGMENT_NODE)
       return this;
-    }
     return (_a = this == null ? void 0 : this._parentNode) == null ? void 0 : _a.ownerDocument;
   }
   toString() {
@@ -20507,15 +21103,15 @@ var _VNode = class {
     return `${this.constructor.name} "${this.render()}"`;
   }
 };
+_VNode.ELEMENT_NODE = 1;
+_VNode.TEXT_NODE = 3;
+_VNode.CDATA_SECTION_NODE = 4;
+_VNode.PROCESSING_INSTRUCTION_NODE = 7;
+_VNode.COMMENT_NODE = 8;
+_VNode.DOCUMENT_NODE = 9;
+_VNode.DOCUMENT_TYPE_NODE = 10;
+_VNode.DOCUMENT_FRAGMENT_NODE = 11;
 var VNode = _VNode;
-VNode.ELEMENT_NODE = 1;
-VNode.TEXT_NODE = 3;
-VNode.CDATA_SECTION_NODE = 4;
-VNode.PROCESSING_INSTRUCTION_NODE = 7;
-VNode.COMMENT_NODE = 8;
-VNode.DOCUMENT_NODE = 9;
-VNode.DOCUMENT_TYPE_NODE = 10;
-VNode.DOCUMENT_FRAGMENT_NODE = 11;
 var VTextNode = class extends VNode {
   constructor(text = "") {
     super();
@@ -20536,20 +21132,19 @@ var VTextNode = class extends VNode {
   render() {
     var _a;
     const parentTagName = (_a = this.parentNode) == null ? void 0 : _a.tagName;
-    if (parentTagName === "SCRIPT" || parentTagName === "STYLE") {
+    if (parentTagName === "SCRIPT" || parentTagName === "STYLE")
       return this._text;
-    }
     return escapeHTML(this._text);
   }
   cloneNode(deep = false) {
-    let node = super.cloneNode(deep);
+    const node = super.cloneNode(deep);
     node._text = this._text;
     return node;
   }
 };
 var VNodeQuery = class extends VNode {
   getElementById(name) {
-    return this.flatten().find((e) => e._attributes["id"] === name);
+    return this.flatten().find((e) => e._attributes.id === name);
   }
   getElementsByClassName(name) {
     return this.flatten().filter((e) => e.classList.contains(name));
@@ -20563,21 +21158,19 @@ var VNodeQuery = class extends VNode {
   querySelector(selector) {
     return this.flatten().find((e) => e.matches(selector));
   }
+  //
   parent(selector) {
     var _a;
-    if (this.matches(selector)) {
+    if (this.matches(selector))
       return this;
-    }
-    if (this.parentNode == null) {
+    if (this.parentNode == null)
       return null;
-    }
     return (_a = this.parentNode) == null ? void 0 : _a.parent(selector);
   }
   handle(selector, handler) {
     let i = 0;
-    for (let el of this.querySelectorAll(selector)) {
+    for (const el of this.querySelectorAll(selector))
       handler(el, i++);
-    }
   }
 };
 var VElement = class extends VNodeQuery {
@@ -20595,14 +21188,17 @@ var VElement = class extends VNodeQuery {
     return this._nodeName;
   }
   cloneNode(deep = false) {
-    let node = super.cloneNode(deep);
+    const node = super.cloneNode(deep);
     node._originalTagName = this._originalTagName;
     node._nodeName = this._nodeName;
     node._attributes = Object.assign({}, this._attributes);
     return node;
   }
   get attributes() {
-    return this._attributes;
+    return Object.entries(this._attributes).map(([name, value]) => ({ name, value }));
+  }
+  get attributesObject() {
+    return { ...this._attributes };
   }
   _findAttributeName(name) {
     const search = name.toLowerCase();
@@ -20617,13 +21213,18 @@ var VElement = class extends VNodeQuery {
   }
   getAttribute(name) {
     const originalName = this._findAttributeName(name);
-    return originalName ? this._attributes[originalName] : null;
+    const value = originalName ? this._attributes[originalName] : null;
+    if (value == null)
+      return null;
+    else if (typeof value === "string")
+      return value;
+    else
+      return "";
   }
   removeAttribute(name) {
     const originalName = this._findAttributeName(String(name));
-    if (originalName) {
+    if (originalName)
       delete this._attributes[name];
-    }
   }
   hasAttribute(name) {
     const originalName = this._findAttributeName(name);
@@ -20631,14 +21232,14 @@ var VElement = class extends VNodeQuery {
   }
   get style() {
     if (this._styles == null) {
-      let styles = Object.assign({}, DEFAULTS[this.tagName.toLowerCase()] || {});
-      let styleString = this.getAttribute("style");
+      const styles = Object.assign({}, DEFAULTS[this.tagName.toLowerCase()] || {});
+      const styleString = this.getAttribute("style");
       if (styleString) {
         let m;
-        let re = /\s*([\w-]+)\s*:\s*([^;]+)/g;
+        const re = /\s*([\w-]+)\s*:\s*([^;]+)/g;
         while (m = re.exec(styleString)) {
-          let name = m[1];
-          let value = m[2].trim();
+          const name = m[1];
+          const value = m[2].trim();
           styles[name] = value;
           styles[toCamelCase(name)] = value;
         }
@@ -20649,6 +21250,10 @@ var VElement = class extends VNodeQuery {
   }
   get tagName() {
     return this._nodeName;
+  }
+  /** Private function to easily change the tagName */
+  setTagName(name) {
+    this._nodeName = name.toUpperCase();
   }
   get id() {
     return this._attributes.id || null;
@@ -20668,16 +21273,16 @@ var VElement = class extends VNodeQuery {
     else
       this._attributes.src = value;
   }
+  //
   getElementsByTagName(name) {
     name = name.toUpperCase();
-    let elements = this.flatten();
-    if (name !== "*") {
+    const elements = this.flatten();
+    if (name !== "*")
       return elements.filter((e) => e.tagName === name);
-    }
     return elements;
   }
-  setInnerHTML(html2) {
-    throw "setInnerHTML is not implemented; see vdomparser for an example";
+  // html
+  setInnerHTML(_html) {
   }
   get innerHTML() {
     return this._childNodes.map((c) => c.render(html$1)).join("");
@@ -20688,20 +21293,22 @@ var VElement = class extends VNodeQuery {
   get outerHTML() {
     return this.render(htmlVDOM);
   }
+  // class
   get className() {
-    return this._attributes["class"] || "";
+    return this._attributes.class || "";
   }
   set className(name) {
     if (Array.isArray(name)) {
       name = name.filter((n) => !!n).join(" ");
     } else if (typeof name === "object") {
-      name = Object.entries(name).filter(([k, v]) => !!v).map(([k, v]) => k).join(" ");
+      name = Object.entries(name).filter(([_k, v]) => !!v).map(([k, _v]) => k).join(" ");
     }
-    this._attributes["class"] = name;
+    this._attributes.class = name;
   }
   get classList() {
-    let self = this;
-    let classNames = (this.className || "").trim().split(/\s+/g) || [];
+    var _a;
+    const self = this;
+    const classNames = String((_a = this.className) != null ? _a : "").trim().split(/\s+/g) || [];
     return {
       contains(s) {
         return classNames.includes(s);
@@ -20713,7 +21320,7 @@ var VElement = class extends VNodeQuery {
         }
       },
       remove(s) {
-        let index = classNames.indexOf(s);
+        const index = classNames.indexOf(s);
         if (index >= 0) {
           classNames.splice(index, 1);
           self.className = classNames;
@@ -20721,15 +21328,17 @@ var VElement = class extends VNodeQuery {
       }
     };
   }
-  render(h2 = htmlVDOM) {
-    return h2(
+  //
+  render(h3 = htmlVDOM) {
+    return h3(
       this._originalTagName || this.tagName,
-      this.attributes,
-      this._childNodes.map((c) => c.render(h2)).join("")
+      this._attributes,
+      this._childNodes.map((c) => c.render(h3)).join("")
+      // children:string is not escaped again
     );
   }
 };
-var VDocType = class extends VNode {
+var VDocType = class _VDocType extends VNode {
   get nodeName() {
     return super.nodeName;
   }
@@ -20737,21 +21346,21 @@ var VDocType = class extends VNode {
     return super.nodeValue;
   }
   get nodeType() {
-    return VDocType.DOCUMENT_TYPE_NODE;
+    return _VDocType.DOCUMENT_TYPE_NODE;
   }
   render() {
-    return `<!DOCTYPE html>`;
+    return "<!DOCTYPE html>";
   }
 };
-var VDocumentFragment = class extends VNodeQuery {
+var VDocumentFragment = class _VDocumentFragment extends VNodeQuery {
   get nodeType() {
     return VNode.DOCUMENT_FRAGMENT_NODE;
   }
   get nodeName() {
     return "#document-fragment";
   }
-  render(h2 = htmlVDOM) {
-    return this._childNodes.map((c) => c.render(h2) || []).join("");
+  render(h3 = htmlVDOM) {
+    return this._childNodes.map((c) => c.render(h3) || []).join("");
   }
   get innerHTML() {
     return this._childNodes.map((c) => c.render(html$1)).join("");
@@ -20760,7 +21369,7 @@ var VDocumentFragment = class extends VNodeQuery {
     return new VElement(name, attrs);
   }
   createDocumentFragment() {
-    return new VDocumentFragment();
+    return new _VDocumentFragment();
   }
   createTextNode(text) {
     return new VTextNode(text);
@@ -20776,11 +21385,10 @@ var VDocument = class extends VDocumentFragment {
   get documentElement() {
     return this.firstChild;
   }
-  render(h2 = htmlVDOM) {
-    let content = super.render(h2);
-    if (this.docType) {
+  render(h3 = htmlVDOM) {
+    let content = super.render(h3);
+    if (this.docType)
       content = this.docType.render() + content;
-    }
     return content;
   }
 };
@@ -20789,10 +21397,10 @@ var VHTMLDocument = class extends VDocument {
     super();
     this.docType = new VDocType();
     if (!empty) {
-      let html2 = new VElement("html");
-      let body = new VElement("body");
-      let head = new VElement("head");
-      let title = new VElement("title");
+      const html2 = new VElement("html");
+      const body = new VElement("body");
+      const head = new VElement("head");
+      const title = new VElement("title");
       html2.appendChild(head);
       head.appendChild(title);
       html2.appendChild(body);
@@ -20843,6 +21451,12 @@ function createHTMLDocument() {
 }
 var document$1 = createDocument();
 hFactory({ document: document$1 });
+var object$2 = {};
+var hasOwnProperty$1 = object$2.hasOwnProperty;
+function hasOwn(object2, propertyName) {
+  return hasOwnProperty$1.call(object2, propertyName);
+}
+/*! https://mths.be/he v1.2.0 by @mathias | MIT license */
 
 // src/htmlparser.ts
 var attrRe = /([^=\s]+)(\s*=\s*(("([^"]*)")|('([^']*)')|[^>\s]+))?/gm;
@@ -20850,16 +21464,13 @@ var endTagRe = /^<\/([^>\s]+)[^>]*>/m;
 var startTagRe = /^<([^>\s\/]+)((\s+[^=>\s]+(\s*=\s*(("[^"]*")|('[^']*')|[^>\s]+))?)*)\s*\/?\s*>/m;
 var selfCloseTagRe = /\s*\/\s*>\s*$/m;
 var HtmlParser = class {
-  constructor(options) {
+  constructor(options = {}) {
     this.attrRe = attrRe;
     this.endTagRe = endTagRe;
     this.startTagRe = startTagRe;
     this.defaults = { ignoreWhitespaceText: false };
-    options = options || {};
-    if (options.scanner) {
+    if (options.scanner)
       this.scanner = options.scanner;
-      options.scanner = null;
-    }
     this.options = Object.assign({}, this.defaults, options);
   }
   parse(html2) {
@@ -20896,19 +21507,20 @@ var HtmlParser = class {
       }
       if (treatAsChars) {
         index = html2.indexOf("<");
+        let offset = index;
         if (index === 0) {
           index = html2.substring(1).indexOf("<");
+          offset = offset + 1;
         }
         if (index === -1) {
           characters = html2;
           html2 = "";
         } else {
-          characters = html2.substring(0, index);
-          html2 = html2.substring(index);
+          characters = html2.substring(0, offset);
+          html2 = html2.substring(offset);
         }
-        if (!this.options.ignoreWhitespaceText || !/^\s*$/.test(characters)) {
+        if (!this.options.ignoreWhitespaceText || !/^\s*$/.test(characters))
           this.scanner.characters(characters);
-        }
       }
       treatAsChars = true;
       match = null;
@@ -20917,9 +21529,8 @@ var HtmlParser = class {
   parseStartTag(input, tagName, match) {
     const isSelfColse = selfCloseTagRe.test(input);
     let attrInput = match[2];
-    if (isSelfColse) {
+    if (isSelfColse)
       attrInput = attrInput.replace(/\s*\/\s*$/, "");
-    }
     const attrs = this.parseAttributes(tagName, attrInput);
     this.scanner.startElement(tagName, attrs, isSelfColse, match[0]);
   }
@@ -20928,12 +21539,12 @@ var HtmlParser = class {
   }
   parseAttributes(tagName, input) {
     const attrs = {};
-    input.replace(
-      this.attrRe,
-      (attr, name, c2, value, c4, valueInQuote, c6, valueInSingleQuote) => {
-        attrs[name] = valueInSingleQuote ?? valueInQuote ?? value ?? true;
-      }
-    );
+    input.replace(this.attrRe, (...m) => {
+      var _a, _b;
+      const [_attr, name, _c2, value, _c4, valueInQuote, _c6, valueInSingleQuote] = m;
+      attrs[name] = (_b = (_a = valueInSingleQuote != null ? valueInSingleQuote : valueInQuote) != null ? _a : value) != null ? _b : true;
+      return void 0;
+    });
     return attrs;
   }
 };
@@ -20942,9 +21553,10 @@ function parseHTML(html2) {
     console.error("parseHTML requires string, found", html2);
     throw new Error("parseHTML requires string");
   }
-  let frag = html2.indexOf("<!") === 0 ? new VHTMLDocument(true) : new VDocumentFragment();
-  let stack = [frag];
-  let parser = new HtmlParser({
+  const frag = html2.indexOf("<!") === 0 ? new VHTMLDocument(true) : new VDocumentFragment();
+  const stack = [frag];
+  const parser = new HtmlParser({
+    // the for methods must be implemented yourself
     scanner: {
       startElement(tagName, attrs, isSelfClosing) {
         const lowerTagName = tagName.toLowerCase();
@@ -20952,39 +21564,36 @@ function parseHTML(html2) {
           frag.docType = new VDocType();
           return;
         }
-        for (let name in attrs) {
-          if (attrs.hasOwnProperty(name)) {
-            let value = attrs[name];
-            if (typeof value === "string") {
+        for (const name in attrs) {
+          if (hasOwn(attrs, name)) {
+            const value = attrs[name];
+            if (typeof value === "string")
               attrs[name] = unescapeHTML(value);
-            }
           }
         }
-        let parentNode = stack[stack.length - 1];
+        const parentNode = stack[stack.length - 1];
         if (parentNode) {
           const element = document$1.createElement(tagName, attrs);
           parentNode.appendChild(element);
-          if (!(SELF_CLOSING_TAGS.includes(tagName.toLowerCase()) || isSelfClosing)) {
+          if (!(SELF_CLOSING_TAGS.includes(tagName.toLowerCase()) || isSelfClosing))
             stack.push(element);
-          }
         }
       },
-      endElement(tagName) {
+      endElement(_tagName) {
         stack.pop();
       },
       characters(text) {
         var _a;
         text = unescapeHTML(text);
-        let parentNode = stack[stack.length - 1];
+        const parentNode = stack[stack.length - 1];
         if (((_a = parentNode == null ? void 0 : parentNode.lastChild) == null ? void 0 : _a.nodeType) === VNode.TEXT_NODE) {
           parentNode.lastChild._text += text;
         } else {
-          if (parentNode) {
+          if (parentNode)
             parentNode.appendChild(new VTextNode(text));
-          }
         }
       },
-      comment(text) {
+      comment(_text) {
       }
     }
   });
@@ -20992,24 +21601,78 @@ function parseHTML(html2) {
   return frag;
 }
 VElement.prototype.setInnerHTML = function(html2) {
-  let frag = parseHTML(html2);
+  const frag = parseHTML(html2);
   this._childNodes = frag._childNodes;
   this._fixChildNodesParent();
 };
 
-function getHTMLFromFragment(doc, schema) {
-    const document = DOMSerializer.fromSchema(schema).serializeFragment(doc.content, {
+/**
+ * Returns the HTML string representation of a given document node.
+ *
+ * @param doc - The document node to serialize.
+ * @param schema - The Prosemirror schema to use for serialization.
+ * @returns The HTML string representation of the document fragment.
+ *
+ * @example
+ * ```typescript
+ * const html = getHTMLFromFragment(doc, schema)
+ * ```
+ */
+function getHTMLFromFragment(doc, schema, options) {
+    if (options === null || options === void 0 ? void 0 : options.document) {
+        // The caller is relying on their own document implementation. Use this
+        // instead of the default zeed-dom.
+        const wrap = options.document.createElement('div');
+        DOMSerializer.fromSchema(schema).serializeFragment(doc.content, { document: options.document }, wrap);
+        return wrap.innerHTML;
+    }
+    // Use zeed-dom for serialization.
+    const zeedDocument = DOMSerializer.fromSchema(schema).serializeFragment(doc.content, {
         document: createHTMLDocument(),
     });
-    return document.render();
+    return zeedDocument.render();
 }
 
+/**
+ * Generates HTML from a ProseMirror JSON content object.
+ * @param doc - The ProseMirror JSON content object.
+ * @param extensions - The Tiptap extensions used to build the schema.
+ * @returns The generated HTML string.
+ * @example
+ * const doc = {
+ *   type: 'doc',
+ *   content: [
+ *     {
+ *       type: 'paragraph',
+ *       content: [
+ *         {
+ *           type: 'text',
+ *           text: 'Hello world!'
+ *         }
+ *       ]
+ *     }
+ *   ]
+ * }
+ * const extensions = [...]
+ * const html = generateHTML(doc, extensions)
+ */
 function generateHTML(doc, extensions) {
     const schema = getSchema(extensions);
     const contentNode = Node$4.fromJSON(schema, doc);
     return getHTMLFromFragment(contentNode, schema);
 }
 
+/**
+ * Generates a JSON object from the given HTML string and converts it into a Prosemirror node with content.
+ * @param {string} html - The HTML string to be converted into a Prosemirror node.
+ * @param {Extensions} extensions - The extensions to be used for generating the schema.
+ * @returns {Record<string, any>} - The generated JSON object.
+ * @example
+ * const html = '<p>Hello, world!</p>'
+ * const extensions = [...]
+ * const json = generateJSON(html, extensions)
+ * console.log(json) // { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello, world!' }] }] }
+ */
 function generateJSON(html, extensions) {
     const schema = getSchema(extensions);
     const dom = parseHTML(html);
@@ -21066,7 +21729,7 @@ const decodeMap = new Map([
 /**
  * Polyfill for `String.fromCodePoint`. It is used to create a string from a Unicode code point.
  */
-const fromCodePoint$2 = 
+const fromCodePoint$1 = 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, node/no-unsupported-features/es-builtins
 (_a = String.fromCodePoint) !== null && _a !== void 0 ? _a : function (codePoint) {
     let output = "";
@@ -21474,7 +22137,7 @@ class EntityDecoder {
  */
 function getDecoder$3(decodeTree) {
     let ret = "";
-    const decoder = new EntityDecoder(decodeTree, (str) => (ret += fromCodePoint$2(str)));
+    const decoder = new EntityDecoder(decodeTree, (str) => (ret += fromCodePoint$1(str)));
     return function decodeWithTrie(str, decodeMode) {
         let lastIndex = 0;
         let offset = 0;
@@ -21604,9 +22267,10 @@ var State$1;
     State[State["InCommentLike"] = 21] = "InCommentLike";
     // Special tags
     State[State["BeforeSpecialS"] = 22] = "BeforeSpecialS";
-    State[State["SpecialStartSequence"] = 23] = "SpecialStartSequence";
-    State[State["InSpecialTag"] = 24] = "InSpecialTag";
-    State[State["InEntity"] = 25] = "InEntity";
+    State[State["BeforeSpecialT"] = 23] = "BeforeSpecialT";
+    State[State["SpecialStartSequence"] = 24] = "SpecialStartSequence";
+    State[State["InSpecialTag"] = 25] = "InSpecialTag";
+    State[State["InEntity"] = 26] = "InEntity";
 })(State$1 || (State$1 = {}));
 function isWhitespace(c) {
     return (c === CharCodes.Space ||
@@ -21636,12 +22300,15 @@ var QuoteType;
  * sequences with an increased offset.
  */
 const Sequences = {
-    Cdata: new Uint8Array([0x43, 0x44, 0x41, 0x54, 0x41, 0x5b]),
-    CdataEnd: new Uint8Array([0x5d, 0x5d, 0x3e]),
-    CommentEnd: new Uint8Array([0x2d, 0x2d, 0x3e]),
-    ScriptEnd: new Uint8Array([0x3c, 0x2f, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74]),
-    StyleEnd: new Uint8Array([0x3c, 0x2f, 0x73, 0x74, 0x79, 0x6c, 0x65]),
+    Cdata: new Uint8Array([0x43, 0x44, 0x41, 0x54, 0x41, 0x5b]), // CDATA[
+    CdataEnd: new Uint8Array([0x5d, 0x5d, 0x3e]), // ]]>
+    CommentEnd: new Uint8Array([0x2d, 0x2d, 0x3e]), // `-->`
+    ScriptEnd: new Uint8Array([0x3c, 0x2f, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74]), // `</script`
+    StyleEnd: new Uint8Array([0x3c, 0x2f, 0x73, 0x74, 0x79, 0x6c, 0x65]), // `</style`
     TitleEnd: new Uint8Array([0x3c, 0x2f, 0x74, 0x69, 0x74, 0x6c, 0x65]), // `</title`
+    TextareaEnd: new Uint8Array([
+        0x3c, 0x2f, 0x74, 0x65, 0x78, 0x74, 0x61, 0x72, 0x65, 0x61,
+    ]), // `</textarea`
 };
 class Tokenizer {
     constructor({ xmlMode = false, decodeEntities = true, }, cbs) {
@@ -21864,14 +22531,17 @@ class Tokenizer {
         else if (this.isTagStartChar(c)) {
             const lower = c | 0x20;
             this.sectionStart = this.index;
-            if (!this.xmlMode && lower === Sequences.TitleEnd[2]) {
-                this.startSpecial(Sequences.TitleEnd, 3);
+            if (this.xmlMode) {
+                this.state = State$1.InTagName;
+            }
+            else if (lower === Sequences.ScriptEnd[2]) {
+                this.state = State$1.BeforeSpecialS;
+            }
+            else if (lower === Sequences.TitleEnd[2]) {
+                this.state = State$1.BeforeSpecialT;
             }
             else {
-                this.state =
-                    !this.xmlMode && lower === Sequences.ScriptEnd[2]
-                        ? State$1.BeforeSpecialS
-                        : State$1.InTagName;
+                this.state = State$1.InTagName;
             }
         }
         else if (c === CharCodes.Slash) {
@@ -21952,7 +22622,7 @@ class Tokenizer {
     stateInAttributeName(c) {
         if (c === CharCodes.Eq || isEndOfTagSection(c)) {
             this.cbs.onattribname(this.sectionStart, this.index);
-            this.sectionStart = -1;
+            this.sectionStart = this.index;
             this.state = State$1.AfterAttributeName;
             this.stateAfterAttributeName(c);
         }
@@ -21962,12 +22632,13 @@ class Tokenizer {
             this.state = State$1.BeforeAttributeValue;
         }
         else if (c === CharCodes.Slash || c === CharCodes.Gt) {
-            this.cbs.onattribend(QuoteType.NoValue, this.index);
+            this.cbs.onattribend(QuoteType.NoValue, this.sectionStart);
+            this.sectionStart = -1;
             this.state = State$1.BeforeAttributeName;
             this.stateBeforeAttributeName(c);
         }
         else if (!isWhitespace(c)) {
-            this.cbs.onattribend(QuoteType.NoValue, this.index);
+            this.cbs.onattribend(QuoteType.NoValue, this.sectionStart);
             this.state = State$1.InAttributeName;
             this.sectionStart = this.index;
         }
@@ -21994,7 +22665,7 @@ class Tokenizer {
             this.sectionStart = -1;
             this.cbs.onattribend(quote === CharCodes.DoubleQuote
                 ? QuoteType.Double
-                : QuoteType.Single, this.index);
+                : QuoteType.Single, this.index + 1);
             this.state = State$1.BeforeAttributeName;
         }
         else if (this.decodeEntities && c === CharCodes.Amp) {
@@ -22071,6 +22742,19 @@ class Tokenizer {
         }
         else if (lower === Sequences.StyleEnd[3]) {
             this.startSpecial(Sequences.StyleEnd, 4);
+        }
+        else {
+            this.state = State$1.InTagName;
+            this.stateInTagName(c); // Consume the token again
+        }
+    }
+    stateBeforeSpecialT(c) {
+        const lower = c | 0x20;
+        if (lower === Sequences.TitleEnd[3]) {
+            this.startSpecial(Sequences.TitleEnd, 4);
+        }
+        else if (lower === Sequences.TextareaEnd[3]) {
+            this.startSpecial(Sequences.TextareaEnd, 4);
         }
         else {
             this.state = State$1.InTagName;
@@ -22203,6 +22887,10 @@ class Tokenizer {
                 }
                 case State$1.BeforeSpecialS: {
                     this.stateBeforeSpecialS(c);
+                    break;
+                }
+                case State$1.BeforeSpecialT: {
+                    this.stateBeforeSpecialT(c);
                     break;
                 }
                 case State$1.InAttributeValueNq: {
@@ -22393,7 +23081,7 @@ const htmlIntegrationElements = new Set([
 const reNameEnd = /\s|\//;
 class Parser {
     constructor(cbs, options = {}) {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c, _d, _e, _f;
         this.options = options;
         /** The start index of the last event. */
         this.startIndex = 0;
@@ -22420,9 +23108,11 @@ class Parser {
         this.lowerCaseTagNames = (_a = options.lowerCaseTags) !== null && _a !== void 0 ? _a : this.htmlMode;
         this.lowerCaseAttributeNames =
             (_b = options.lowerCaseAttributeNames) !== null && _b !== void 0 ? _b : this.htmlMode;
-        this.tokenizer = new ((_c = options.Tokenizer) !== null && _c !== void 0 ? _c : Tokenizer)(this.options, this);
+        this.recognizeSelfClosing =
+            (_c = options.recognizeSelfClosing) !== null && _c !== void 0 ? _c : !this.htmlMode;
+        this.tokenizer = new ((_d = options.Tokenizer) !== null && _d !== void 0 ? _d : Tokenizer)(this.options, this);
         this.foreignContext = [!this.htmlMode];
-        (_e = (_d = this.cbs).onparserinit) === null || _e === void 0 ? void 0 : _e.call(_d, this);
+        (_f = (_e = this.cbs).onparserinit) === null || _f === void 0 ? void 0 : _f.call(_e, this);
     }
     // Tokenizer event handlers
     /** @internal */
@@ -22437,7 +23127,7 @@ class Parser {
     ontextentity(cp, endIndex) {
         var _a, _b;
         this.endIndex = endIndex - 1;
-        (_b = (_a = this.cbs).ontext) === null || _b === void 0 ? void 0 : _b.call(_a, fromCodePoint$2(cp));
+        (_b = (_a = this.cbs).ontext) === null || _b === void 0 ? void 0 : _b.call(_a, fromCodePoint$1(cp));
         this.startIndex = endIndex;
     }
     /**
@@ -22541,7 +23231,7 @@ class Parser {
     /** @internal */
     onselfclosingtag(endIndex) {
         this.endIndex = endIndex;
-        if (this.options.recognizeSelfClosing || this.foreignContext[0]) {
+        if (this.recognizeSelfClosing || this.foreignContext[0]) {
             this.closeCurrentTag(false);
             // Set `startIndex` for next node
             this.startIndex = endIndex + 1;
@@ -22576,7 +23266,7 @@ class Parser {
     }
     /** @internal */
     onattribentity(cp) {
-        this.attribvalue += fromCodePoint$2(cp);
+        this.attribvalue += fromCodePoint$1(cp);
     }
     /** @internal */
     onattribend(quote, endIndex) {
@@ -22782,7 +23472,7 @@ class Parser {
 }
 
 /** Types of elements found in htmlparser2's DOM */
-var ElementType$1;
+var ElementType;
 (function (ElementType) {
     /** Type for the root element of a document */
     ElementType["Root"] = "root";
@@ -22802,36 +23492,36 @@ var ElementType$1;
     ElementType["CDATA"] = "cdata";
     /** Type for <!doctype ...> */
     ElementType["Doctype"] = "doctype";
-})(ElementType$1 || (ElementType$1 = {}));
+})(ElementType || (ElementType = {}));
 /**
  * Tests whether an element is a tag or not.
  *
  * @param elem Element to test
  */
 function isTag$1(elem) {
-    return (elem.type === ElementType$1.Tag ||
-        elem.type === ElementType$1.Script ||
-        elem.type === ElementType$1.Style);
+    return (elem.type === ElementType.Tag ||
+        elem.type === ElementType.Script ||
+        elem.type === ElementType.Style);
 }
 // Exports for backwards compatibility
 /** Type for the root element of a document */
-ElementType$1.Root;
+const Root = ElementType.Root;
 /** Type for Text */
-ElementType$1.Text;
+const Text$5 = ElementType.Text;
 /** Type for <? ... ?> */
-ElementType$1.Directive;
+const Directive = ElementType.Directive;
 /** Type for <!-- ... --> */
-ElementType$1.Comment;
+const Comment$2 = ElementType.Comment;
 /** Type for <script> tags */
-ElementType$1.Script;
+const Script = ElementType.Script;
 /** Type for <style> tags */
-ElementType$1.Style;
+const Style = ElementType.Style;
 /** Type for Any tag */
-ElementType$1.Tag;
+const Tag = ElementType.Tag;
 /** Type for <![CDATA[ ... ]]> */
-ElementType$1.CDATA;
+const CDATA$1 = ElementType.CDATA;
 /** Type for <!doctype ...> */
-ElementType$1.Doctype;
+const Doctype = ElementType.Doctype;
 
 /**
  * This object will be used as the prototype for Nodes when creating a
@@ -22919,7 +23609,7 @@ class DataNode extends Node$2 {
 let Text$4 = class Text extends DataNode {
     constructor() {
         super(...arguments);
-        this.type = ElementType$1.Text;
+        this.type = ElementType.Text;
     }
     get nodeType() {
         return 3;
@@ -22931,7 +23621,7 @@ let Text$4 = class Text extends DataNode {
 let Comment$1 = class Comment extends DataNode {
     constructor() {
         super(...arguments);
-        this.type = ElementType$1.Comment;
+        this.type = ElementType.Comment;
     }
     get nodeType() {
         return 8;
@@ -22944,7 +23634,7 @@ let ProcessingInstruction$1 = class ProcessingInstruction extends DataNode {
     constructor(name, data) {
         super(data);
         this.name = name;
-        this.type = ElementType$1.Directive;
+        this.type = ElementType.Directive;
     }
     get nodeType() {
         return 1;
@@ -22987,7 +23677,7 @@ class NodeWithChildren extends Node$2 {
 class CDATA extends NodeWithChildren {
     constructor() {
         super(...arguments);
-        this.type = ElementType$1.CDATA;
+        this.type = ElementType.CDATA;
     }
     get nodeType() {
         return 4;
@@ -22999,7 +23689,7 @@ class CDATA extends NodeWithChildren {
 let Document$3 = class Document extends NodeWithChildren {
     constructor() {
         super(...arguments);
-        this.type = ElementType$1.Root;
+        this.type = ElementType.Root;
     }
     get nodeType() {
         return 9;
@@ -23008,17 +23698,17 @@ let Document$3 = class Document extends NodeWithChildren {
 /**
  * An element within the DOM.
  */
-let Element$4 = class Element extends NodeWithChildren {
+let Element$3 = class Element extends NodeWithChildren {
     /**
      * @param name Name of the tag, eg. `div`, `span`.
      * @param attribs Object mapping attribute names to attribute values.
      * @param children Children of the node.
      */
     constructor(name, attribs, children = [], type = name === "script"
-        ? ElementType$1.Script
+        ? ElementType.Script
         : name === "style"
-            ? ElementType$1.Style
-            : ElementType$1.Tag) {
+            ? ElementType.Style
+            : ElementType.Tag) {
         super(children);
         this.name = name;
         this.attribs = attribs;
@@ -23062,35 +23752,35 @@ function isTag(node) {
  * @returns `true` if the node has the type `CDATA`, `false` otherwise.
  */
 function isCDATA(node) {
-    return node.type === ElementType$1.CDATA;
+    return node.type === ElementType.CDATA;
 }
 /**
  * @param node Node to check.
  * @returns `true` if the node has the type `Text`, `false` otherwise.
  */
 function isText(node) {
-    return node.type === ElementType$1.Text;
+    return node.type === ElementType.Text;
 }
 /**
  * @param node Node to check.
  * @returns `true` if the node has the type `Comment`, `false` otherwise.
  */
 function isComment(node) {
-    return node.type === ElementType$1.Comment;
+    return node.type === ElementType.Comment;
 }
 /**
  * @param node Node to check.
  * @returns `true` if the node has the type `ProcessingInstruction`, `false` otherwise.
  */
 function isDirective(node) {
-    return node.type === ElementType$1.Directive;
+    return node.type === ElementType.Directive;
 }
 /**
  * @param node Node to check.
  * @returns `true` if the node has the type `ProcessingInstruction`, `false` otherwise.
  */
 function isDocument(node) {
-    return node.type === ElementType$1.Root;
+    return node.type === ElementType.Root;
 }
 /**
  * @param node Node to check.
@@ -23115,7 +23805,7 @@ function cloneNode$1(node, recursive = false) {
     }
     else if (isTag(node)) {
         const children = recursive ? cloneChildren(node.children) : [];
-        const clone = new Element$4(node.name, { ...node.attribs }, children);
+        const clone = new Element$3(node.name, { ...node.attribs }, children);
         children.forEach((child) => (child.parent = clone));
         if (node.namespace != null) {
             clone.namespace = node.namespace;
@@ -23242,14 +23932,14 @@ class DomHandler {
             this.elementCB(elem);
     }
     onopentag(name, attribs) {
-        const type = this.options.xmlMode ? ElementType$1.Tag : undefined;
-        const element = new Element$4(name, attribs, undefined, type);
+        const type = this.options.xmlMode ? ElementType.Tag : undefined;
+        const element = new Element$3(name, attribs, undefined, type);
         this.addNode(element);
         this.tagStack.push(element);
     }
     ontext(data) {
         const { lastNode } = this;
-        if (lastNode && lastNode.type === ElementType$1.Text) {
+        if (lastNode && lastNode.type === ElementType.Text) {
             lastNode.data += data;
             if (this.options.withEndIndices) {
                 lastNode.endIndex = this.parser.endIndex;
@@ -23262,7 +23952,7 @@ class DomHandler {
         }
     }
     oncomment(data) {
-        if (this.lastNode && this.lastNode.type === ElementType$1.Comment) {
+        if (this.lastNode && this.lastNode.type === ElementType.Comment) {
             this.lastNode.data += data;
             return;
         }
@@ -23312,6 +24002,386 @@ class DomHandler {
         node.parent = parent;
         this.lastNode = null;
     }
+}
+
+const xmlReplacer = /["&'<>$\x80-\uFFFF]/g;
+const xmlCodeMap = new Map([
+    [34, "&quot;"],
+    [38, "&amp;"],
+    [39, "&apos;"],
+    [60, "&lt;"],
+    [62, "&gt;"],
+]);
+// For compatibility with node < 4, we wrap `codePointAt`
+const getCodePoint = 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+String.prototype.codePointAt != null
+    ? (str, index) => str.codePointAt(index)
+    : // http://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
+        (c, index) => (c.charCodeAt(index) & 0xfc00) === 0xd800
+            ? (c.charCodeAt(index) - 0xd800) * 0x400 +
+                c.charCodeAt(index + 1) -
+                0xdc00 +
+                0x10000
+            : c.charCodeAt(index);
+/**
+ * Encodes all non-ASCII characters, as well as characters not valid in XML
+ * documents using XML entities.
+ *
+ * If a character has no equivalent entity, a
+ * numeric hexadecimal reference (eg. `&#xfc;`) will be used.
+ */
+function encodeXML(str) {
+    let ret = "";
+    let lastIdx = 0;
+    let match;
+    while ((match = xmlReplacer.exec(str)) !== null) {
+        const i = match.index;
+        const char = str.charCodeAt(i);
+        const next = xmlCodeMap.get(char);
+        if (next !== undefined) {
+            ret += str.substring(lastIdx, i) + next;
+            lastIdx = i + 1;
+        }
+        else {
+            ret += `${str.substring(lastIdx, i)}&#x${getCodePoint(str, i).toString(16)};`;
+            // Increase by 1 if we have a surrogate pair
+            lastIdx = xmlReplacer.lastIndex += Number((char & 0xfc00) === 0xd800);
+        }
+    }
+    return ret + str.substr(lastIdx);
+}
+/**
+ * Creates a function that escapes all characters matched by the given regular
+ * expression using the given map of characters to escape to their entities.
+ *
+ * @param regex Regular expression to match characters to escape.
+ * @param map Map of characters to escape to their entities.
+ *
+ * @returns Function that escapes all characters matched by the given regular
+ * expression using the given map of characters to escape to their entities.
+ */
+function getEscaper(regex, map) {
+    return function escape(data) {
+        let match;
+        let lastIdx = 0;
+        let result = "";
+        while ((match = regex.exec(data))) {
+            if (lastIdx !== match.index) {
+                result += data.substring(lastIdx, match.index);
+            }
+            // We know that this character will be in the map.
+            result += map.get(match[0].charCodeAt(0));
+            // Every match will be of length 1
+            lastIdx = match.index + 1;
+        }
+        return result + data.substring(lastIdx);
+    };
+}
+/**
+ * Encodes all characters that have to be escaped in HTML attributes,
+ * following {@link https://html.spec.whatwg.org/multipage/parsing.html#escapingString}.
+ *
+ * @param data String to escape.
+ */
+const escapeAttribute = getEscaper(/["&\u00A0]/g, new Map([
+    [34, "&quot;"],
+    [38, "&amp;"],
+    [160, "&nbsp;"],
+]));
+/**
+ * Encodes all characters that have to be escaped in HTML text,
+ * following {@link https://html.spec.whatwg.org/multipage/parsing.html#escapingString}.
+ *
+ * @param data String to escape.
+ */
+const escapeText = getEscaper(/[&<>\u00A0]/g, new Map([
+    [38, "&amp;"],
+    [60, "&lt;"],
+    [62, "&gt;"],
+    [160, "&nbsp;"],
+]));
+
+const elementNames = new Map([
+    "altGlyph",
+    "altGlyphDef",
+    "altGlyphItem",
+    "animateColor",
+    "animateMotion",
+    "animateTransform",
+    "clipPath",
+    "feBlend",
+    "feColorMatrix",
+    "feComponentTransfer",
+    "feComposite",
+    "feConvolveMatrix",
+    "feDiffuseLighting",
+    "feDisplacementMap",
+    "feDistantLight",
+    "feDropShadow",
+    "feFlood",
+    "feFuncA",
+    "feFuncB",
+    "feFuncG",
+    "feFuncR",
+    "feGaussianBlur",
+    "feImage",
+    "feMerge",
+    "feMergeNode",
+    "feMorphology",
+    "feOffset",
+    "fePointLight",
+    "feSpecularLighting",
+    "feSpotLight",
+    "feTile",
+    "feTurbulence",
+    "foreignObject",
+    "glyphRef",
+    "linearGradient",
+    "radialGradient",
+    "textPath",
+].map((val) => [val.toLowerCase(), val]));
+const attributeNames = new Map([
+    "definitionURL",
+    "attributeName",
+    "attributeType",
+    "baseFrequency",
+    "baseProfile",
+    "calcMode",
+    "clipPathUnits",
+    "diffuseConstant",
+    "edgeMode",
+    "filterUnits",
+    "glyphRef",
+    "gradientTransform",
+    "gradientUnits",
+    "kernelMatrix",
+    "kernelUnitLength",
+    "keyPoints",
+    "keySplines",
+    "keyTimes",
+    "lengthAdjust",
+    "limitingConeAngle",
+    "markerHeight",
+    "markerUnits",
+    "markerWidth",
+    "maskContentUnits",
+    "maskUnits",
+    "numOctaves",
+    "pathLength",
+    "patternContentUnits",
+    "patternTransform",
+    "patternUnits",
+    "pointsAtX",
+    "pointsAtY",
+    "pointsAtZ",
+    "preserveAlpha",
+    "preserveAspectRatio",
+    "primitiveUnits",
+    "refX",
+    "refY",
+    "repeatCount",
+    "repeatDur",
+    "requiredExtensions",
+    "requiredFeatures",
+    "specularConstant",
+    "specularExponent",
+    "spreadMethod",
+    "startOffset",
+    "stdDeviation",
+    "stitchTiles",
+    "surfaceScale",
+    "systemLanguage",
+    "tableValues",
+    "targetX",
+    "targetY",
+    "textLength",
+    "viewBox",
+    "viewTarget",
+    "xChannelSelector",
+    "yChannelSelector",
+    "zoomAndPan",
+].map((val) => [val.toLowerCase(), val]));
+
+/*
+ * Module dependencies
+ */
+const unencodedElements = new Set([
+    "style",
+    "script",
+    "xmp",
+    "iframe",
+    "noembed",
+    "noframes",
+    "plaintext",
+    "noscript",
+]);
+function replaceQuotes(value) {
+    return value.replace(/"/g, "&quot;");
+}
+/**
+ * Format attributes
+ */
+function formatAttributes(attributes, opts) {
+    var _a;
+    if (!attributes)
+        return;
+    const encode = ((_a = opts.encodeEntities) !== null && _a !== void 0 ? _a : opts.decodeEntities) === false
+        ? replaceQuotes
+        : opts.xmlMode || opts.encodeEntities !== "utf8"
+            ? encodeXML
+            : escapeAttribute;
+    return Object.keys(attributes)
+        .map((key) => {
+        var _a, _b;
+        const value = (_a = attributes[key]) !== null && _a !== void 0 ? _a : "";
+        if (opts.xmlMode === "foreign") {
+            /* Fix up mixed-case attribute names */
+            key = (_b = attributeNames.get(key)) !== null && _b !== void 0 ? _b : key;
+        }
+        if (!opts.emptyAttrs && !opts.xmlMode && value === "") {
+            return key;
+        }
+        return `${key}="${encode(value)}"`;
+    })
+        .join(" ");
+}
+/**
+ * Self-enclosing tags
+ */
+const singleTag = new Set([
+    "area",
+    "base",
+    "basefont",
+    "br",
+    "col",
+    "command",
+    "embed",
+    "frame",
+    "hr",
+    "img",
+    "input",
+    "isindex",
+    "keygen",
+    "link",
+    "meta",
+    "param",
+    "source",
+    "track",
+    "wbr",
+]);
+/**
+ * Renders a DOM node or an array of DOM nodes to a string.
+ *
+ * Can be thought of as the equivalent of the `outerHTML` of the passed node(s).
+ *
+ * @param node Node to be rendered.
+ * @param options Changes serialization behavior
+ */
+function render(node, options = {}) {
+    const nodes = "length" in node ? node : [node];
+    let output = "";
+    for (let i = 0; i < nodes.length; i++) {
+        output += renderNode(nodes[i], options);
+    }
+    return output;
+}
+function renderNode(node, options) {
+    switch (node.type) {
+        case Root:
+            return render(node.children, options);
+        // @ts-expect-error We don't use `Doctype` yet
+        case Doctype:
+        case Directive:
+            return renderDirective(node);
+        case Comment$2:
+            return renderComment(node);
+        case CDATA$1:
+            return renderCdata(node);
+        case Script:
+        case Style:
+        case Tag:
+            return renderTag(node, options);
+        case Text$5:
+            return renderText(node, options);
+    }
+}
+const foreignModeIntegrationPoints = new Set([
+    "mi",
+    "mo",
+    "mn",
+    "ms",
+    "mtext",
+    "annotation-xml",
+    "foreignObject",
+    "desc",
+    "title",
+]);
+const foreignElements = new Set(["svg", "math"]);
+function renderTag(elem, opts) {
+    var _a;
+    // Handle SVG / MathML in HTML
+    if (opts.xmlMode === "foreign") {
+        /* Fix up mixed-case element names */
+        elem.name = (_a = elementNames.get(elem.name)) !== null && _a !== void 0 ? _a : elem.name;
+        /* Exit foreign mode at integration points */
+        if (elem.parent &&
+            foreignModeIntegrationPoints.has(elem.parent.name)) {
+            opts = { ...opts, xmlMode: false };
+        }
+    }
+    if (!opts.xmlMode && foreignElements.has(elem.name)) {
+        opts = { ...opts, xmlMode: "foreign" };
+    }
+    let tag = `<${elem.name}`;
+    const attribs = formatAttributes(elem.attribs, opts);
+    if (attribs) {
+        tag += ` ${attribs}`;
+    }
+    if (elem.children.length === 0 &&
+        (opts.xmlMode
+            ? // In XML mode or foreign mode, and user hasn't explicitly turned off self-closing tags
+                opts.selfClosingTags !== false
+            : // User explicitly asked for self-closing tags, even in HTML mode
+                opts.selfClosingTags && singleTag.has(elem.name))) {
+        if (!opts.xmlMode)
+            tag += " ";
+        tag += "/>";
+    }
+    else {
+        tag += ">";
+        if (elem.children.length > 0) {
+            tag += render(elem.children, opts);
+        }
+        if (opts.xmlMode || !singleTag.has(elem.name)) {
+            tag += `</${elem.name}>`;
+        }
+    }
+    return tag;
+}
+function renderDirective(elem) {
+    return `<${elem.data}>`;
+}
+function renderText(elem, opts) {
+    var _a;
+    let data = elem.data || "";
+    // If entities weren't decoded, no need to encode them back
+    if (((_a = opts.encodeEntities) !== null && _a !== void 0 ? _a : opts.decodeEntities) !== false &&
+        !(!opts.xmlMode &&
+            elem.parent &&
+            unencodedElements.has(elem.parent.name))) {
+        data =
+            opts.xmlMode || opts.encodeEntities !== "utf8"
+                ? encodeXML(data)
+                : escapeText(data);
+    }
+    return data;
+}
+function renderCdata(elem) {
+    return `<![CDATA[${elem.children[0].data}]]>`;
+}
+function renderComment(elem) {
+    return `<!--${elem.data}-->`;
 }
 
 /**
@@ -23490,5214 +24560,14 @@ function parseDocument(data, options) {
     return handler.root;
 }
 
-var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
-
-function getDefaultExportFromCjs (x) {
-	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
-}
-
-function getAugmentedNamespace(n) {
-  if (n.__esModule) return n;
-  var f = n.default;
-	if (typeof f == "function") {
-		var a = function a () {
-			if (this instanceof a) {
-				var args = [null];
-				args.push.apply(args, arguments);
-				var Ctor = Function.bind.apply(f, args);
-				return new Ctor();
-			}
-			return f.apply(this, arguments);
-		};
-		a.prototype = f.prototype;
-  } else a = {};
-  Object.defineProperty(a, '__esModule', {value: true});
-	Object.keys(n).forEach(function (k) {
-		var d = Object.getOwnPropertyDescriptor(n, k);
-		Object.defineProperty(a, k, d.get ? d : {
-			enumerable: true,
-			get: function () {
-				return n[k];
-			}
-		});
-	});
-	return a;
-}
-
-var lib$9 = {};
-
-var lib$8 = {};
-
-(function (exports) {
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.Doctype = exports.CDATA = exports.Tag = exports.Style = exports.Script = exports.Comment = exports.Directive = exports.Text = exports.Root = exports.isTag = exports.ElementType = void 0;
-	/** Types of elements found in htmlparser2's DOM */
-	var ElementType;
-	(function (ElementType) {
-	    /** Type for the root element of a document */
-	    ElementType["Root"] = "root";
-	    /** Type for Text */
-	    ElementType["Text"] = "text";
-	    /** Type for <? ... ?> */
-	    ElementType["Directive"] = "directive";
-	    /** Type for <!-- ... --> */
-	    ElementType["Comment"] = "comment";
-	    /** Type for <script> tags */
-	    ElementType["Script"] = "script";
-	    /** Type for <style> tags */
-	    ElementType["Style"] = "style";
-	    /** Type for Any tag */
-	    ElementType["Tag"] = "tag";
-	    /** Type for <![CDATA[ ... ]]> */
-	    ElementType["CDATA"] = "cdata";
-	    /** Type for <!doctype ...> */
-	    ElementType["Doctype"] = "doctype";
-	})(ElementType = exports.ElementType || (exports.ElementType = {}));
-	/**
-	 * Tests whether an element is a tag or not.
-	 *
-	 * @param elem Element to test
-	 */
-	function isTag(elem) {
-	    return (elem.type === ElementType.Tag ||
-	        elem.type === ElementType.Script ||
-	        elem.type === ElementType.Style);
-	}
-	exports.isTag = isTag;
-	// Exports for backwards compatibility
-	/** Type for the root element of a document */
-	exports.Root = ElementType.Root;
-	/** Type for Text */
-	exports.Text = ElementType.Text;
-	/** Type for <? ... ?> */
-	exports.Directive = ElementType.Directive;
-	/** Type for <!-- ... --> */
-	exports.Comment = ElementType.Comment;
-	/** Type for <script> tags */
-	exports.Script = ElementType.Script;
-	/** Type for <style> tags */
-	exports.Style = ElementType.Style;
-	/** Type for Any tag */
-	exports.Tag = ElementType.Tag;
-	/** Type for <![CDATA[ ... ]]> */
-	exports.CDATA = ElementType.CDATA;
-	/** Type for <!doctype ...> */
-	exports.Doctype = ElementType.Doctype; 
-} (lib$8));
-
-var lib$7 = {};
-
-var decode = {};
-
-var Aacute$1 = "Á";
-var aacute$1 = "á";
-var Abreve = "Ă";
-var abreve = "ă";
-var ac = "∾";
-var acd = "∿";
-var acE = "∾̳";
-var Acirc$1 = "Â";
-var acirc$1 = "â";
-var acute$1 = "´";
-var Acy = "А";
-var acy = "а";
-var AElig$1 = "Æ";
-var aelig$1 = "æ";
-var af = "⁡";
-var Afr = "𝔄";
-var afr = "𝔞";
-var Agrave$1 = "À";
-var agrave$1 = "à";
-var alefsym = "ℵ";
-var aleph = "ℵ";
-var Alpha = "Α";
-var alpha$1 = "α";
-var Amacr = "Ā";
-var amacr = "ā";
-var amalg = "⨿";
-var amp$2 = "&";
-var AMP$1 = "&";
-var andand = "⩕";
-var And = "⩓";
-var and = "∧";
-var andd = "⩜";
-var andslope = "⩘";
-var andv = "⩚";
-var ang = "∠";
-var ange = "⦤";
-var angle = "∠";
-var angmsdaa = "⦨";
-var angmsdab = "⦩";
-var angmsdac = "⦪";
-var angmsdad = "⦫";
-var angmsdae = "⦬";
-var angmsdaf = "⦭";
-var angmsdag = "⦮";
-var angmsdah = "⦯";
-var angmsd = "∡";
-var angrt = "∟";
-var angrtvb = "⊾";
-var angrtvbd = "⦝";
-var angsph = "∢";
-var angst = "Å";
-var angzarr = "⍼";
-var Aogon = "Ą";
-var aogon = "ą";
-var Aopf = "𝔸";
-var aopf = "𝕒";
-var apacir = "⩯";
-var ap = "≈";
-var apE = "⩰";
-var ape = "≊";
-var apid = "≋";
-var apos$1 = "'";
-var ApplyFunction = "⁡";
-var approx = "≈";
-var approxeq = "≊";
-var Aring$1 = "Å";
-var aring$1 = "å";
-var Ascr = "𝒜";
-var ascr = "𝒶";
-var Assign = "≔";
-var ast$1 = "*";
-var asymp = "≈";
-var asympeq = "≍";
-var Atilde$1 = "Ã";
-var atilde$1 = "ã";
-var Auml$1 = "Ä";
-var auml$1 = "ä";
-var awconint = "∳";
-var awint = "⨑";
-var backcong = "≌";
-var backepsilon = "϶";
-var backprime = "‵";
-var backsim = "∽";
-var backsimeq = "⋍";
-var Backslash = "∖";
-var Barv = "⫧";
-var barvee = "⊽";
-var barwed = "⌅";
-var Barwed = "⌆";
-var barwedge = "⌅";
-var bbrk = "⎵";
-var bbrktbrk = "⎶";
-var bcong = "≌";
-var Bcy = "Б";
-var bcy = "б";
-var bdquo = "„";
-var becaus = "∵";
-var because = "∵";
-var Because = "∵";
-var bemptyv = "⦰";
-var bepsi = "϶";
-var bernou = "ℬ";
-var Bernoullis = "ℬ";
-var Beta = "Β";
-var beta = "β";
-var beth = "ℶ";
-var between = "≬";
-var Bfr = "𝔅";
-var bfr = "𝔟";
-var bigcap = "⋂";
-var bigcirc = "◯";
-var bigcup = "⋃";
-var bigodot = "⨀";
-var bigoplus = "⨁";
-var bigotimes = "⨂";
-var bigsqcup = "⨆";
-var bigstar = "★";
-var bigtriangledown = "▽";
-var bigtriangleup = "△";
-var biguplus = "⨄";
-var bigvee = "⋁";
-var bigwedge = "⋀";
-var bkarow = "⤍";
-var blacklozenge = "⧫";
-var blacksquare = "▪";
-var blacktriangle = "▴";
-var blacktriangledown = "▾";
-var blacktriangleleft = "◂";
-var blacktriangleright = "▸";
-var blank = "␣";
-var blk12 = "▒";
-var blk14 = "░";
-var blk34 = "▓";
-var block = "█";
-var bne = "=⃥";
-var bnequiv = "≡⃥";
-var bNot = "⫭";
-var bnot = "⌐";
-var Bopf = "𝔹";
-var bopf = "𝕓";
-var bot = "⊥";
-var bottom = "⊥";
-var bowtie = "⋈";
-var boxbox = "⧉";
-var boxdl = "┐";
-var boxdL = "╕";
-var boxDl = "╖";
-var boxDL = "╗";
-var boxdr = "┌";
-var boxdR = "╒";
-var boxDr = "╓";
-var boxDR = "╔";
-var boxh = "─";
-var boxH = "═";
-var boxhd = "┬";
-var boxHd = "╤";
-var boxhD = "╥";
-var boxHD = "╦";
-var boxhu = "┴";
-var boxHu = "╧";
-var boxhU = "╨";
-var boxHU = "╩";
-var boxminus = "⊟";
-var boxplus = "⊞";
-var boxtimes = "⊠";
-var boxul = "┘";
-var boxuL = "╛";
-var boxUl = "╜";
-var boxUL = "╝";
-var boxur = "└";
-var boxuR = "╘";
-var boxUr = "╙";
-var boxUR = "╚";
-var boxv = "│";
-var boxV = "║";
-var boxvh = "┼";
-var boxvH = "╪";
-var boxVh = "╫";
-var boxVH = "╬";
-var boxvl = "┤";
-var boxvL = "╡";
-var boxVl = "╢";
-var boxVL = "╣";
-var boxvr = "├";
-var boxvR = "╞";
-var boxVr = "╟";
-var boxVR = "╠";
-var bprime = "‵";
-var breve = "˘";
-var Breve = "˘";
-var brvbar$1 = "¦";
-var bscr = "𝒷";
-var Bscr = "ℬ";
-var bsemi = "⁏";
-var bsim = "∽";
-var bsime = "⋍";
-var bsolb = "⧅";
-var bsol = "\\";
-var bsolhsub = "⟈";
-var bull = "•";
-var bullet = "•";
-var bump = "≎";
-var bumpE = "⪮";
-var bumpe = "≏";
-var Bumpeq = "≎";
-var bumpeq = "≏";
-var Cacute = "Ć";
-var cacute = "ć";
-var capand = "⩄";
-var capbrcup = "⩉";
-var capcap = "⩋";
-var cap = "∩";
-var Cap = "⋒";
-var capcup = "⩇";
-var capdot = "⩀";
-var CapitalDifferentialD = "ⅅ";
-var caps = "∩︀";
-var caret = "⁁";
-var caron = "ˇ";
-var Cayleys = "ℭ";
-var ccaps = "⩍";
-var Ccaron = "Č";
-var ccaron = "č";
-var Ccedil$1 = "Ç";
-var ccedil$1 = "ç";
-var Ccirc = "Ĉ";
-var ccirc = "ĉ";
-var Cconint = "∰";
-var ccups = "⩌";
-var ccupssm = "⩐";
-var Cdot = "Ċ";
-var cdot = "ċ";
-var cedil$1 = "¸";
-var Cedilla = "¸";
-var cemptyv = "⦲";
-var cent$1 = "¢";
-var centerdot = "·";
-var CenterDot = "·";
-var cfr = "𝔠";
-var Cfr = "ℭ";
-var CHcy = "Ч";
-var chcy = "ч";
-var check = "✓";
-var checkmark = "✓";
-var Chi = "Χ";
-var chi = "χ";
-var circ = "ˆ";
-var circeq = "≗";
-var circlearrowleft = "↺";
-var circlearrowright = "↻";
-var circledast = "⊛";
-var circledcirc = "⊚";
-var circleddash = "⊝";
-var CircleDot = "⊙";
-var circledR = "®";
-var circledS = "Ⓢ";
-var CircleMinus = "⊖";
-var CirclePlus = "⊕";
-var CircleTimes = "⊗";
-var cir = "○";
-var cirE = "⧃";
-var cire = "≗";
-var cirfnint = "⨐";
-var cirmid = "⫯";
-var cirscir = "⧂";
-var ClockwiseContourIntegral = "∲";
-var CloseCurlyDoubleQuote = "”";
-var CloseCurlyQuote = "’";
-var clubs = "♣";
-var clubsuit = "♣";
-var colon = ":";
-var Colon = "∷";
-var Colone = "⩴";
-var colone = "≔";
-var coloneq = "≔";
-var comma = ",";
-var commat = "@";
-var comp = "∁";
-var compfn = "∘";
-var complement = "∁";
-var complexes = "ℂ";
-var cong = "≅";
-var congdot = "⩭";
-var Congruent = "≡";
-var conint = "∮";
-var Conint = "∯";
-var ContourIntegral = "∮";
-var copf = "𝕔";
-var Copf = "ℂ";
-var coprod = "∐";
-var Coproduct = "∐";
-var copy$2 = "©";
-var COPY$2 = "©";
-var copysr = "℗";
-var CounterClockwiseContourIntegral = "∳";
-var crarr = "↵";
-var cross = "✗";
-var Cross = "⨯";
-var Cscr = "𝒞";
-var cscr = "𝒸";
-var csub = "⫏";
-var csube = "⫑";
-var csup = "⫐";
-var csupe = "⫒";
-var ctdot = "⋯";
-var cudarrl = "⤸";
-var cudarrr = "⤵";
-var cuepr = "⋞";
-var cuesc = "⋟";
-var cularr = "↶";
-var cularrp = "⤽";
-var cupbrcap = "⩈";
-var cupcap = "⩆";
-var CupCap = "≍";
-var cup = "∪";
-var Cup = "⋓";
-var cupcup = "⩊";
-var cupdot = "⊍";
-var cupor = "⩅";
-var cups = "∪︀";
-var curarr = "↷";
-var curarrm = "⤼";
-var curlyeqprec = "⋞";
-var curlyeqsucc = "⋟";
-var curlyvee = "⋎";
-var curlywedge = "⋏";
-var curren$1 = "¤";
-var curvearrowleft = "↶";
-var curvearrowright = "↷";
-var cuvee = "⋎";
-var cuwed = "⋏";
-var cwconint = "∲";
-var cwint = "∱";
-var cylcty = "⌭";
-var dagger = "†";
-var Dagger = "‡";
-var daleth = "ℸ";
-var darr = "↓";
-var Darr = "↡";
-var dArr = "⇓";
-var dash = "‐";
-var Dashv = "⫤";
-var dashv = "⊣";
-var dbkarow = "⤏";
-var dblac = "˝";
-var Dcaron = "Ď";
-var dcaron = "ď";
-var Dcy = "Д";
-var dcy = "д";
-var ddagger = "‡";
-var ddarr = "⇊";
-var DD = "ⅅ";
-var dd = "ⅆ";
-var DDotrahd = "⤑";
-var ddotseq = "⩷";
-var deg$1 = "°";
-var Del = "∇";
-var Delta = "Δ";
-var delta = "δ";
-var demptyv = "⦱";
-var dfisht = "⥿";
-var Dfr = "𝔇";
-var dfr = "𝔡";
-var dHar = "⥥";
-var dharl = "⇃";
-var dharr = "⇂";
-var DiacriticalAcute = "´";
-var DiacriticalDot = "˙";
-var DiacriticalDoubleAcute = "˝";
-var DiacriticalGrave = "`";
-var DiacriticalTilde = "˜";
-var diam = "⋄";
-var diamond = "⋄";
-var Diamond = "⋄";
-var diamondsuit = "♦";
-var diams = "♦";
-var die = "¨";
-var DifferentialD = "ⅆ";
-var digamma = "ϝ";
-var disin = "⋲";
-var div = "÷";
-var divide$1 = "÷";
-var divideontimes = "⋇";
-var divonx = "⋇";
-var DJcy = "Ђ";
-var djcy = "ђ";
-var dlcorn = "⌞";
-var dlcrop = "⌍";
-var dollar = "$";
-var Dopf = "𝔻";
-var dopf = "𝕕";
-var Dot = "¨";
-var dot = "˙";
-var DotDot = "⃜";
-var doteq = "≐";
-var doteqdot = "≑";
-var DotEqual = "≐";
-var dotminus = "∸";
-var dotplus = "∔";
-var dotsquare = "⊡";
-var doublebarwedge = "⌆";
-var DoubleContourIntegral = "∯";
-var DoubleDot = "¨";
-var DoubleDownArrow = "⇓";
-var DoubleLeftArrow = "⇐";
-var DoubleLeftRightArrow = "⇔";
-var DoubleLeftTee = "⫤";
-var DoubleLongLeftArrow = "⟸";
-var DoubleLongLeftRightArrow = "⟺";
-var DoubleLongRightArrow = "⟹";
-var DoubleRightArrow = "⇒";
-var DoubleRightTee = "⊨";
-var DoubleUpArrow = "⇑";
-var DoubleUpDownArrow = "⇕";
-var DoubleVerticalBar = "∥";
-var DownArrowBar = "⤓";
-var downarrow = "↓";
-var DownArrow = "↓";
-var Downarrow = "⇓";
-var DownArrowUpArrow = "⇵";
-var DownBreve = "̑";
-var downdownarrows = "⇊";
-var downharpoonleft = "⇃";
-var downharpoonright = "⇂";
-var DownLeftRightVector = "⥐";
-var DownLeftTeeVector = "⥞";
-var DownLeftVectorBar = "⥖";
-var DownLeftVector = "↽";
-var DownRightTeeVector = "⥟";
-var DownRightVectorBar = "⥗";
-var DownRightVector = "⇁";
-var DownTeeArrow = "↧";
-var DownTee = "⊤";
-var drbkarow = "⤐";
-var drcorn = "⌟";
-var drcrop = "⌌";
-var Dscr = "𝒟";
-var dscr = "𝒹";
-var DScy = "Ѕ";
-var dscy = "ѕ";
-var dsol = "⧶";
-var Dstrok = "Đ";
-var dstrok = "đ";
-var dtdot = "⋱";
-var dtri = "▿";
-var dtrif = "▾";
-var duarr = "⇵";
-var duhar = "⥯";
-var dwangle = "⦦";
-var DZcy = "Џ";
-var dzcy = "џ";
-var dzigrarr = "⟿";
-var Eacute$1 = "É";
-var eacute$1 = "é";
-var easter = "⩮";
-var Ecaron = "Ě";
-var ecaron = "ě";
-var Ecirc$1 = "Ê";
-var ecirc$1 = "ê";
-var ecir = "≖";
-var ecolon = "≕";
-var Ecy = "Э";
-var ecy = "э";
-var eDDot = "⩷";
-var Edot = "Ė";
-var edot = "ė";
-var eDot = "≑";
-var ee = "ⅇ";
-var efDot = "≒";
-var Efr = "𝔈";
-var efr = "𝔢";
-var eg = "⪚";
-var Egrave$1 = "È";
-var egrave$1 = "è";
-var egs = "⪖";
-var egsdot = "⪘";
-var el = "⪙";
-var Element$3 = "∈";
-var elinters = "⏧";
-var ell = "ℓ";
-var els = "⪕";
-var elsdot = "⪗";
-var Emacr = "Ē";
-var emacr = "ē";
-var empty = "∅";
-var emptyset = "∅";
-var EmptySmallSquare = "◻";
-var emptyv = "∅";
-var EmptyVerySmallSquare = "▫";
-var emsp13 = " ";
-var emsp14 = " ";
-var emsp = " ";
-var ENG = "Ŋ";
-var eng = "ŋ";
-var ensp = " ";
-var Eogon = "Ę";
-var eogon = "ę";
-var Eopf = "𝔼";
-var eopf = "𝕖";
-var epar = "⋕";
-var eparsl = "⧣";
-var eplus = "⩱";
-var epsi = "ε";
-var Epsilon = "Ε";
-var epsilon = "ε";
-var epsiv = "ϵ";
-var eqcirc = "≖";
-var eqcolon = "≕";
-var eqsim = "≂";
-var eqslantgtr = "⪖";
-var eqslantless = "⪕";
-var Equal = "⩵";
-var equals = "=";
-var EqualTilde = "≂";
-var equest = "≟";
-var Equilibrium = "⇌";
-var equiv = "≡";
-var equivDD = "⩸";
-var eqvparsl = "⧥";
-var erarr = "⥱";
-var erDot = "≓";
-var escr = "ℯ";
-var Escr = "ℰ";
-var esdot = "≐";
-var Esim = "⩳";
-var esim = "≂";
-var Eta = "Η";
-var eta = "η";
-var ETH$1 = "Ð";
-var eth$1 = "ð";
-var Euml$1 = "Ë";
-var euml$1 = "ë";
-var euro = "€";
-var excl = "!";
-var exist = "∃";
-var Exists = "∃";
-var expectation = "ℰ";
-var exponentiale = "ⅇ";
-var ExponentialE = "ⅇ";
-var fallingdotseq = "≒";
-var Fcy = "Ф";
-var fcy = "ф";
-var female = "♀";
-var ffilig = "ﬃ";
-var fflig = "ﬀ";
-var ffllig = "ﬄ";
-var Ffr = "𝔉";
-var ffr = "𝔣";
-var filig = "ﬁ";
-var FilledSmallSquare = "◼";
-var FilledVerySmallSquare = "▪";
-var fjlig = "fj";
-var flat = "♭";
-var fllig = "ﬂ";
-var fltns = "▱";
-var fnof = "ƒ";
-var Fopf = "𝔽";
-var fopf = "𝕗";
-var forall = "∀";
-var ForAll = "∀";
-var fork = "⋔";
-var forkv = "⫙";
-var Fouriertrf = "ℱ";
-var fpartint = "⨍";
-var frac12$1 = "½";
-var frac13 = "⅓";
-var frac14$1 = "¼";
-var frac15 = "⅕";
-var frac16 = "⅙";
-var frac18 = "⅛";
-var frac23 = "⅔";
-var frac25 = "⅖";
-var frac34$1 = "¾";
-var frac35 = "⅗";
-var frac38 = "⅜";
-var frac45 = "⅘";
-var frac56 = "⅚";
-var frac58 = "⅝";
-var frac78 = "⅞";
-var frasl = "⁄";
-var frown = "⌢";
-var fscr = "𝒻";
-var Fscr = "ℱ";
-var gacute = "ǵ";
-var Gamma = "Γ";
-var gamma = "γ";
-var Gammad = "Ϝ";
-var gammad = "ϝ";
-var gap = "⪆";
-var Gbreve = "Ğ";
-var gbreve = "ğ";
-var Gcedil = "Ģ";
-var Gcirc = "Ĝ";
-var gcirc = "ĝ";
-var Gcy = "Г";
-var gcy = "г";
-var Gdot = "Ġ";
-var gdot = "ġ";
-var ge = "≥";
-var gE = "≧";
-var gEl = "⪌";
-var gel = "⋛";
-var geq = "≥";
-var geqq = "≧";
-var geqslant = "⩾";
-var gescc = "⪩";
-var ges = "⩾";
-var gesdot = "⪀";
-var gesdoto = "⪂";
-var gesdotol = "⪄";
-var gesl = "⋛︀";
-var gesles = "⪔";
-var Gfr = "𝔊";
-var gfr = "𝔤";
-var gg = "≫";
-var Gg = "⋙";
-var ggg = "⋙";
-var gimel = "ℷ";
-var GJcy = "Ѓ";
-var gjcy = "ѓ";
-var gla = "⪥";
-var gl = "≷";
-var glE = "⪒";
-var glj = "⪤";
-var gnap = "⪊";
-var gnapprox = "⪊";
-var gne = "⪈";
-var gnE = "≩";
-var gneq = "⪈";
-var gneqq = "≩";
-var gnsim = "⋧";
-var Gopf = "𝔾";
-var gopf = "𝕘";
-var grave = "`";
-var GreaterEqual = "≥";
-var GreaterEqualLess = "⋛";
-var GreaterFullEqual = "≧";
-var GreaterGreater = "⪢";
-var GreaterLess = "≷";
-var GreaterSlantEqual = "⩾";
-var GreaterTilde = "≳";
-var Gscr = "𝒢";
-var gscr = "ℊ";
-var gsim = "≳";
-var gsime = "⪎";
-var gsiml = "⪐";
-var gtcc = "⪧";
-var gtcir = "⩺";
-var gt$2 = ">";
-var GT$1 = ">";
-var Gt = "≫";
-var gtdot = "⋗";
-var gtlPar = "⦕";
-var gtquest = "⩼";
-var gtrapprox = "⪆";
-var gtrarr = "⥸";
-var gtrdot = "⋗";
-var gtreqless = "⋛";
-var gtreqqless = "⪌";
-var gtrless = "≷";
-var gtrsim = "≳";
-var gvertneqq = "≩︀";
-var gvnE = "≩︀";
-var Hacek = "ˇ";
-var hairsp = " ";
-var half = "½";
-var hamilt = "ℋ";
-var HARDcy = "Ъ";
-var hardcy = "ъ";
-var harrcir = "⥈";
-var harr = "↔";
-var hArr = "⇔";
-var harrw = "↭";
-var Hat = "^";
-var hbar = "ℏ";
-var Hcirc = "Ĥ";
-var hcirc = "ĥ";
-var hearts = "♥";
-var heartsuit = "♥";
-var hellip = "…";
-var hercon = "⊹";
-var hfr = "𝔥";
-var Hfr = "ℌ";
-var HilbertSpace = "ℋ";
-var hksearow = "⤥";
-var hkswarow = "⤦";
-var hoarr = "⇿";
-var homtht = "∻";
-var hookleftarrow = "↩";
-var hookrightarrow = "↪";
-var hopf = "𝕙";
-var Hopf = "ℍ";
-var horbar = "―";
-var HorizontalLine = "─";
-var hscr = "𝒽";
-var Hscr = "ℋ";
-var hslash = "ℏ";
-var Hstrok = "Ħ";
-var hstrok = "ħ";
-var HumpDownHump = "≎";
-var HumpEqual = "≏";
-var hybull = "⁃";
-var hyphen = "‐";
-var Iacute$1 = "Í";
-var iacute$1 = "í";
-var ic = "⁣";
-var Icirc$1 = "Î";
-var icirc$1 = "î";
-var Icy = "И";
-var icy = "и";
-var Idot = "İ";
-var IEcy = "Е";
-var iecy = "е";
-var iexcl$1 = "¡";
-var iff = "⇔";
-var ifr = "𝔦";
-var Ifr = "ℑ";
-var Igrave$1 = "Ì";
-var igrave$1 = "ì";
-var ii = "ⅈ";
-var iiiint = "⨌";
-var iiint = "∭";
-var iinfin = "⧜";
-var iiota = "℩";
-var IJlig = "Ĳ";
-var ijlig = "ĳ";
-var Imacr = "Ī";
-var imacr = "ī";
-var image = "ℑ";
-var ImaginaryI = "ⅈ";
-var imagline = "ℐ";
-var imagpart = "ℑ";
-var imath = "ı";
-var Im = "ℑ";
-var imof = "⊷";
-var imped = "Ƶ";
-var Implies = "⇒";
-var incare = "℅";
-var infin = "∞";
-var infintie = "⧝";
-var inodot = "ı";
-var intcal = "⊺";
-var int = "∫";
-var Int = "∬";
-var integers = "ℤ";
-var Integral = "∫";
-var intercal = "⊺";
-var Intersection = "⋂";
-var intlarhk = "⨗";
-var intprod = "⨼";
-var InvisibleComma = "⁣";
-var InvisibleTimes = "⁢";
-var IOcy = "Ё";
-var iocy = "ё";
-var Iogon = "Į";
-var iogon = "į";
-var Iopf = "𝕀";
-var iopf = "𝕚";
-var Iota = "Ι";
-var iota = "ι";
-var iprod = "⨼";
-var iquest$1 = "¿";
-var iscr = "𝒾";
-var Iscr = "ℐ";
-var isin = "∈";
-var isindot = "⋵";
-var isinE = "⋹";
-var isins = "⋴";
-var isinsv = "⋳";
-var isinv = "∈";
-var it = "⁢";
-var Itilde = "Ĩ";
-var itilde = "ĩ";
-var Iukcy = "І";
-var iukcy = "і";
-var Iuml$1 = "Ï";
-var iuml$1 = "ï";
-var Jcirc = "Ĵ";
-var jcirc = "ĵ";
-var Jcy = "Й";
-var jcy = "й";
-var Jfr = "𝔍";
-var jfr = "𝔧";
-var jmath = "ȷ";
-var Jopf = "𝕁";
-var jopf = "𝕛";
-var Jscr = "𝒥";
-var jscr = "𝒿";
-var Jsercy = "Ј";
-var jsercy = "ј";
-var Jukcy = "Є";
-var jukcy = "є";
-var Kappa = "Κ";
-var kappa = "κ";
-var kappav = "ϰ";
-var Kcedil = "Ķ";
-var kcedil = "ķ";
-var Kcy = "К";
-var kcy = "к";
-var Kfr = "𝔎";
-var kfr = "𝔨";
-var kgreen = "ĸ";
-var KHcy = "Х";
-var khcy = "х";
-var KJcy = "Ќ";
-var kjcy = "ќ";
-var Kopf = "𝕂";
-var kopf = "𝕜";
-var Kscr = "𝒦";
-var kscr = "𝓀";
-var lAarr = "⇚";
-var Lacute = "Ĺ";
-var lacute = "ĺ";
-var laemptyv = "⦴";
-var lagran = "ℒ";
-var Lambda = "Λ";
-var lambda = "λ";
-var lang = "⟨";
-var Lang = "⟪";
-var langd = "⦑";
-var langle = "⟨";
-var lap = "⪅";
-var Laplacetrf = "ℒ";
-var laquo$1 = "«";
-var larrb = "⇤";
-var larrbfs = "⤟";
-var larr = "←";
-var Larr = "↞";
-var lArr = "⇐";
-var larrfs = "⤝";
-var larrhk = "↩";
-var larrlp = "↫";
-var larrpl = "⤹";
-var larrsim = "⥳";
-var larrtl = "↢";
-var latail = "⤙";
-var lAtail = "⤛";
-var lat = "⪫";
-var late = "⪭";
-var lates = "⪭︀";
-var lbarr = "⤌";
-var lBarr = "⤎";
-var lbbrk = "❲";
-var lbrace = "{";
-var lbrack = "[";
-var lbrke = "⦋";
-var lbrksld = "⦏";
-var lbrkslu = "⦍";
-var Lcaron = "Ľ";
-var lcaron = "ľ";
-var Lcedil = "Ļ";
-var lcedil = "ļ";
-var lceil = "⌈";
-var lcub = "{";
-var Lcy = "Л";
-var lcy = "л";
-var ldca = "⤶";
-var ldquo = "“";
-var ldquor = "„";
-var ldrdhar = "⥧";
-var ldrushar = "⥋";
-var ldsh = "↲";
-var le = "≤";
-var lE = "≦";
-var LeftAngleBracket = "⟨";
-var LeftArrowBar = "⇤";
-var leftarrow = "←";
-var LeftArrow = "←";
-var Leftarrow = "⇐";
-var LeftArrowRightArrow = "⇆";
-var leftarrowtail = "↢";
-var LeftCeiling = "⌈";
-var LeftDoubleBracket = "⟦";
-var LeftDownTeeVector = "⥡";
-var LeftDownVectorBar = "⥙";
-var LeftDownVector = "⇃";
-var LeftFloor = "⌊";
-var leftharpoondown = "↽";
-var leftharpoonup = "↼";
-var leftleftarrows = "⇇";
-var leftrightarrow = "↔";
-var LeftRightArrow = "↔";
-var Leftrightarrow = "⇔";
-var leftrightarrows = "⇆";
-var leftrightharpoons = "⇋";
-var leftrightsquigarrow = "↭";
-var LeftRightVector = "⥎";
-var LeftTeeArrow = "↤";
-var LeftTee = "⊣";
-var LeftTeeVector = "⥚";
-var leftthreetimes = "⋋";
-var LeftTriangleBar = "⧏";
-var LeftTriangle = "⊲";
-var LeftTriangleEqual = "⊴";
-var LeftUpDownVector = "⥑";
-var LeftUpTeeVector = "⥠";
-var LeftUpVectorBar = "⥘";
-var LeftUpVector = "↿";
-var LeftVectorBar = "⥒";
-var LeftVector = "↼";
-var lEg = "⪋";
-var leg = "⋚";
-var leq = "≤";
-var leqq = "≦";
-var leqslant = "⩽";
-var lescc = "⪨";
-var les = "⩽";
-var lesdot = "⩿";
-var lesdoto = "⪁";
-var lesdotor = "⪃";
-var lesg = "⋚︀";
-var lesges = "⪓";
-var lessapprox = "⪅";
-var lessdot = "⋖";
-var lesseqgtr = "⋚";
-var lesseqqgtr = "⪋";
-var LessEqualGreater = "⋚";
-var LessFullEqual = "≦";
-var LessGreater = "≶";
-var lessgtr = "≶";
-var LessLess = "⪡";
-var lesssim = "≲";
-var LessSlantEqual = "⩽";
-var LessTilde = "≲";
-var lfisht = "⥼";
-var lfloor = "⌊";
-var Lfr = "𝔏";
-var lfr = "𝔩";
-var lg = "≶";
-var lgE = "⪑";
-var lHar = "⥢";
-var lhard = "↽";
-var lharu = "↼";
-var lharul = "⥪";
-var lhblk = "▄";
-var LJcy = "Љ";
-var ljcy = "љ";
-var llarr = "⇇";
-var ll = "≪";
-var Ll = "⋘";
-var llcorner = "⌞";
-var Lleftarrow = "⇚";
-var llhard = "⥫";
-var lltri = "◺";
-var Lmidot = "Ŀ";
-var lmidot = "ŀ";
-var lmoustache = "⎰";
-var lmoust = "⎰";
-var lnap = "⪉";
-var lnapprox = "⪉";
-var lne = "⪇";
-var lnE = "≨";
-var lneq = "⪇";
-var lneqq = "≨";
-var lnsim = "⋦";
-var loang = "⟬";
-var loarr = "⇽";
-var lobrk = "⟦";
-var longleftarrow = "⟵";
-var LongLeftArrow = "⟵";
-var Longleftarrow = "⟸";
-var longleftrightarrow = "⟷";
-var LongLeftRightArrow = "⟷";
-var Longleftrightarrow = "⟺";
-var longmapsto = "⟼";
-var longrightarrow = "⟶";
-var LongRightArrow = "⟶";
-var Longrightarrow = "⟹";
-var looparrowleft = "↫";
-var looparrowright = "↬";
-var lopar = "⦅";
-var Lopf = "𝕃";
-var lopf = "𝕝";
-var loplus = "⨭";
-var lotimes = "⨴";
-var lowast = "∗";
-var lowbar = "_";
-var LowerLeftArrow = "↙";
-var LowerRightArrow = "↘";
-var loz = "◊";
-var lozenge = "◊";
-var lozf = "⧫";
-var lpar = "(";
-var lparlt = "⦓";
-var lrarr = "⇆";
-var lrcorner = "⌟";
-var lrhar = "⇋";
-var lrhard = "⥭";
-var lrm = "‎";
-var lrtri = "⊿";
-var lsaquo = "‹";
-var lscr = "𝓁";
-var Lscr = "ℒ";
-var lsh = "↰";
-var Lsh = "↰";
-var lsim = "≲";
-var lsime = "⪍";
-var lsimg = "⪏";
-var lsqb = "[";
-var lsquo = "‘";
-var lsquor = "‚";
-var Lstrok = "Ł";
-var lstrok = "ł";
-var ltcc = "⪦";
-var ltcir = "⩹";
-var lt$2 = "<";
-var LT$1 = "<";
-var Lt = "≪";
-var ltdot = "⋖";
-var lthree = "⋋";
-var ltimes = "⋉";
-var ltlarr = "⥶";
-var ltquest = "⩻";
-var ltri = "◃";
-var ltrie = "⊴";
-var ltrif = "◂";
-var ltrPar = "⦖";
-var lurdshar = "⥊";
-var luruhar = "⥦";
-var lvertneqq = "≨︀";
-var lvnE = "≨︀";
-var macr$1 = "¯";
-var male = "♂";
-var malt = "✠";
-var maltese = "✠";
-var map$2 = "↦";
-var mapsto = "↦";
-var mapstodown = "↧";
-var mapstoleft = "↤";
-var mapstoup = "↥";
-var marker = "▮";
-var mcomma = "⨩";
-var Mcy = "М";
-var mcy = "м";
-var mdash = "—";
-var mDDot = "∺";
-var measuredangle = "∡";
-var MediumSpace = " ";
-var Mellintrf = "ℳ";
-var Mfr = "𝔐";
-var mfr = "𝔪";
-var mho = "℧";
-var micro$1 = "µ";
-var midast = "*";
-var midcir = "⫰";
-var mid = "∣";
-var middot$1 = "·";
-var minusb = "⊟";
-var minus = "−";
-var minusd = "∸";
-var minusdu = "⨪";
-var MinusPlus = "∓";
-var mlcp = "⫛";
-var mldr = "…";
-var mnplus = "∓";
-var models = "⊧";
-var Mopf = "𝕄";
-var mopf = "𝕞";
-var mp = "∓";
-var mscr = "𝓂";
-var Mscr = "ℳ";
-var mstpos = "∾";
-var Mu = "Μ";
-var mu = "μ";
-var multimap = "⊸";
-var mumap = "⊸";
-var nabla = "∇";
-var Nacute = "Ń";
-var nacute = "ń";
-var nang = "∠⃒";
-var nap = "≉";
-var napE = "⩰̸";
-var napid = "≋̸";
-var napos = "ŉ";
-var napprox = "≉";
-var natural = "♮";
-var naturals = "ℕ";
-var natur = "♮";
-var nbsp$1 = " ";
-var nbump = "≎̸";
-var nbumpe = "≏̸";
-var ncap = "⩃";
-var Ncaron = "Ň";
-var ncaron = "ň";
-var Ncedil = "Ņ";
-var ncedil = "ņ";
-var ncong = "≇";
-var ncongdot = "⩭̸";
-var ncup = "⩂";
-var Ncy = "Н";
-var ncy = "н";
-var ndash = "–";
-var nearhk = "⤤";
-var nearr = "↗";
-var neArr = "⇗";
-var nearrow = "↗";
-var ne = "≠";
-var nedot = "≐̸";
-var NegativeMediumSpace = "​";
-var NegativeThickSpace = "​";
-var NegativeThinSpace = "​";
-var NegativeVeryThinSpace = "​";
-var nequiv = "≢";
-var nesear = "⤨";
-var nesim = "≂̸";
-var NestedGreaterGreater = "≫";
-var NestedLessLess = "≪";
-var NewLine = "\n";
-var nexist = "∄";
-var nexists = "∄";
-var Nfr = "𝔑";
-var nfr = "𝔫";
-var ngE = "≧̸";
-var nge = "≱";
-var ngeq = "≱";
-var ngeqq = "≧̸";
-var ngeqslant = "⩾̸";
-var nges = "⩾̸";
-var nGg = "⋙̸";
-var ngsim = "≵";
-var nGt = "≫⃒";
-var ngt = "≯";
-var ngtr = "≯";
-var nGtv = "≫̸";
-var nharr = "↮";
-var nhArr = "⇎";
-var nhpar = "⫲";
-var ni = "∋";
-var nis = "⋼";
-var nisd = "⋺";
-var niv = "∋";
-var NJcy = "Њ";
-var njcy = "њ";
-var nlarr = "↚";
-var nlArr = "⇍";
-var nldr = "‥";
-var nlE = "≦̸";
-var nle = "≰";
-var nleftarrow = "↚";
-var nLeftarrow = "⇍";
-var nleftrightarrow = "↮";
-var nLeftrightarrow = "⇎";
-var nleq = "≰";
-var nleqq = "≦̸";
-var nleqslant = "⩽̸";
-var nles = "⩽̸";
-var nless = "≮";
-var nLl = "⋘̸";
-var nlsim = "≴";
-var nLt = "≪⃒";
-var nlt = "≮";
-var nltri = "⋪";
-var nltrie = "⋬";
-var nLtv = "≪̸";
-var nmid = "∤";
-var NoBreak = "⁠";
-var NonBreakingSpace = " ";
-var nopf = "𝕟";
-var Nopf = "ℕ";
-var Not = "⫬";
-var not$1 = "¬";
-var NotCongruent = "≢";
-var NotCupCap = "≭";
-var NotDoubleVerticalBar = "∦";
-var NotElement = "∉";
-var NotEqual = "≠";
-var NotEqualTilde = "≂̸";
-var NotExists = "∄";
-var NotGreater = "≯";
-var NotGreaterEqual = "≱";
-var NotGreaterFullEqual = "≧̸";
-var NotGreaterGreater = "≫̸";
-var NotGreaterLess = "≹";
-var NotGreaterSlantEqual = "⩾̸";
-var NotGreaterTilde = "≵";
-var NotHumpDownHump = "≎̸";
-var NotHumpEqual = "≏̸";
-var notin = "∉";
-var notindot = "⋵̸";
-var notinE = "⋹̸";
-var notinva = "∉";
-var notinvb = "⋷";
-var notinvc = "⋶";
-var NotLeftTriangleBar = "⧏̸";
-var NotLeftTriangle = "⋪";
-var NotLeftTriangleEqual = "⋬";
-var NotLess = "≮";
-var NotLessEqual = "≰";
-var NotLessGreater = "≸";
-var NotLessLess = "≪̸";
-var NotLessSlantEqual = "⩽̸";
-var NotLessTilde = "≴";
-var NotNestedGreaterGreater = "⪢̸";
-var NotNestedLessLess = "⪡̸";
-var notni = "∌";
-var notniva = "∌";
-var notnivb = "⋾";
-var notnivc = "⋽";
-var NotPrecedes = "⊀";
-var NotPrecedesEqual = "⪯̸";
-var NotPrecedesSlantEqual = "⋠";
-var NotReverseElement = "∌";
-var NotRightTriangleBar = "⧐̸";
-var NotRightTriangle = "⋫";
-var NotRightTriangleEqual = "⋭";
-var NotSquareSubset = "⊏̸";
-var NotSquareSubsetEqual = "⋢";
-var NotSquareSuperset = "⊐̸";
-var NotSquareSupersetEqual = "⋣";
-var NotSubset = "⊂⃒";
-var NotSubsetEqual = "⊈";
-var NotSucceeds = "⊁";
-var NotSucceedsEqual = "⪰̸";
-var NotSucceedsSlantEqual = "⋡";
-var NotSucceedsTilde = "≿̸";
-var NotSuperset = "⊃⃒";
-var NotSupersetEqual = "⊉";
-var NotTilde = "≁";
-var NotTildeEqual = "≄";
-var NotTildeFullEqual = "≇";
-var NotTildeTilde = "≉";
-var NotVerticalBar = "∤";
-var nparallel = "∦";
-var npar = "∦";
-var nparsl = "⫽⃥";
-var npart = "∂̸";
-var npolint = "⨔";
-var npr = "⊀";
-var nprcue = "⋠";
-var nprec = "⊀";
-var npreceq = "⪯̸";
-var npre = "⪯̸";
-var nrarrc = "⤳̸";
-var nrarr = "↛";
-var nrArr = "⇏";
-var nrarrw = "↝̸";
-var nrightarrow = "↛";
-var nRightarrow = "⇏";
-var nrtri = "⋫";
-var nrtrie = "⋭";
-var nsc = "⊁";
-var nsccue = "⋡";
-var nsce = "⪰̸";
-var Nscr = "𝒩";
-var nscr = "𝓃";
-var nshortmid = "∤";
-var nshortparallel = "∦";
-var nsim = "≁";
-var nsime = "≄";
-var nsimeq = "≄";
-var nsmid = "∤";
-var nspar = "∦";
-var nsqsube = "⋢";
-var nsqsupe = "⋣";
-var nsub = "⊄";
-var nsubE = "⫅̸";
-var nsube = "⊈";
-var nsubset = "⊂⃒";
-var nsubseteq = "⊈";
-var nsubseteqq = "⫅̸";
-var nsucc = "⊁";
-var nsucceq = "⪰̸";
-var nsup = "⊅";
-var nsupE = "⫆̸";
-var nsupe = "⊉";
-var nsupset = "⊃⃒";
-var nsupseteq = "⊉";
-var nsupseteqq = "⫆̸";
-var ntgl = "≹";
-var Ntilde$1 = "Ñ";
-var ntilde$1 = "ñ";
-var ntlg = "≸";
-var ntriangleleft = "⋪";
-var ntrianglelefteq = "⋬";
-var ntriangleright = "⋫";
-var ntrianglerighteq = "⋭";
-var Nu = "Ν";
-var nu = "ν";
-var num = "#";
-var numero = "№";
-var numsp = " ";
-var nvap = "≍⃒";
-var nvdash = "⊬";
-var nvDash = "⊭";
-var nVdash = "⊮";
-var nVDash = "⊯";
-var nvge = "≥⃒";
-var nvgt = ">⃒";
-var nvHarr = "⤄";
-var nvinfin = "⧞";
-var nvlArr = "⤂";
-var nvle = "≤⃒";
-var nvlt = "<⃒";
-var nvltrie = "⊴⃒";
-var nvrArr = "⤃";
-var nvrtrie = "⊵⃒";
-var nvsim = "∼⃒";
-var nwarhk = "⤣";
-var nwarr = "↖";
-var nwArr = "⇖";
-var nwarrow = "↖";
-var nwnear = "⤧";
-var Oacute$1 = "Ó";
-var oacute$1 = "ó";
-var oast = "⊛";
-var Ocirc$1 = "Ô";
-var ocirc$1 = "ô";
-var ocir = "⊚";
-var Ocy = "О";
-var ocy = "о";
-var odash = "⊝";
-var Odblac = "Ő";
-var odblac = "ő";
-var odiv = "⨸";
-var odot = "⊙";
-var odsold = "⦼";
-var OElig = "Œ";
-var oelig = "œ";
-var ofcir = "⦿";
-var Ofr = "𝔒";
-var ofr = "𝔬";
-var ogon = "˛";
-var Ograve$1 = "Ò";
-var ograve$1 = "ò";
-var ogt = "⧁";
-var ohbar = "⦵";
-var ohm = "Ω";
-var oint = "∮";
-var olarr = "↺";
-var olcir = "⦾";
-var olcross = "⦻";
-var oline = "‾";
-var olt = "⧀";
-var Omacr = "Ō";
-var omacr = "ō";
-var Omega = "Ω";
-var omega = "ω";
-var Omicron = "Ο";
-var omicron = "ο";
-var omid = "⦶";
-var ominus = "⊖";
-var Oopf = "𝕆";
-var oopf = "𝕠";
-var opar = "⦷";
-var OpenCurlyDoubleQuote = "“";
-var OpenCurlyQuote = "‘";
-var operp = "⦹";
-var oplus = "⊕";
-var orarr = "↻";
-var Or = "⩔";
-var or = "∨";
-var ord = "⩝";
-var order = "ℴ";
-var orderof = "ℴ";
-var ordf$1 = "ª";
-var ordm$1 = "º";
-var origof = "⊶";
-var oror = "⩖";
-var orslope = "⩗";
-var orv = "⩛";
-var oS = "Ⓢ";
-var Oscr = "𝒪";
-var oscr = "ℴ";
-var Oslash$1 = "Ø";
-var oslash$1 = "ø";
-var osol = "⊘";
-var Otilde$1 = "Õ";
-var otilde$1 = "õ";
-var otimesas = "⨶";
-var Otimes = "⨷";
-var otimes = "⊗";
-var Ouml$1 = "Ö";
-var ouml$1 = "ö";
-var ovbar = "⌽";
-var OverBar = "‾";
-var OverBrace = "⏞";
-var OverBracket = "⎴";
-var OverParenthesis = "⏜";
-var para$1 = "¶";
-var parallel = "∥";
-var par = "∥";
-var parsim = "⫳";
-var parsl = "⫽";
-var part = "∂";
-var PartialD = "∂";
-var Pcy = "П";
-var pcy = "п";
-var percnt = "%";
-var period = ".";
-var permil = "‰";
-var perp = "⊥";
-var pertenk = "‱";
-var Pfr = "𝔓";
-var pfr = "𝔭";
-var Phi = "Φ";
-var phi = "φ";
-var phiv = "ϕ";
-var phmmat = "ℳ";
-var phone = "☎";
-var Pi = "Π";
-var pi = "π";
-var pitchfork = "⋔";
-var piv = "ϖ";
-var planck = "ℏ";
-var planckh = "ℎ";
-var plankv = "ℏ";
-var plusacir = "⨣";
-var plusb = "⊞";
-var pluscir = "⨢";
-var plus = "+";
-var plusdo = "∔";
-var plusdu = "⨥";
-var pluse = "⩲";
-var PlusMinus = "±";
-var plusmn$1 = "±";
-var plussim = "⨦";
-var plustwo = "⨧";
-var pm = "±";
-var Poincareplane = "ℌ";
-var pointint = "⨕";
-var popf = "𝕡";
-var Popf = "ℙ";
-var pound$1 = "£";
-var prap = "⪷";
-var Pr = "⪻";
-var pr = "≺";
-var prcue = "≼";
-var precapprox = "⪷";
-var prec = "≺";
-var preccurlyeq = "≼";
-var Precedes = "≺";
-var PrecedesEqual = "⪯";
-var PrecedesSlantEqual = "≼";
-var PrecedesTilde = "≾";
-var preceq = "⪯";
-var precnapprox = "⪹";
-var precneqq = "⪵";
-var precnsim = "⋨";
-var pre = "⪯";
-var prE = "⪳";
-var precsim = "≾";
-var prime = "′";
-var Prime = "″";
-var primes = "ℙ";
-var prnap = "⪹";
-var prnE = "⪵";
-var prnsim = "⋨";
-var prod = "∏";
-var Product = "∏";
-var profalar = "⌮";
-var profline = "⌒";
-var profsurf = "⌓";
-var prop = "∝";
-var Proportional = "∝";
-var Proportion = "∷";
-var propto = "∝";
-var prsim = "≾";
-var prurel = "⊰";
-var Pscr = "𝒫";
-var pscr = "𝓅";
-var Psi = "Ψ";
-var psi = "ψ";
-var puncsp = " ";
-var Qfr = "𝔔";
-var qfr = "𝔮";
-var qint = "⨌";
-var qopf = "𝕢";
-var Qopf = "ℚ";
-var qprime = "⁗";
-var Qscr = "𝒬";
-var qscr = "𝓆";
-var quaternions = "ℍ";
-var quatint = "⨖";
-var quest = "?";
-var questeq = "≟";
-var quot$2 = "\"";
-var QUOT$1 = "\"";
-var rAarr = "⇛";
-var race$1 = "∽̱";
-var Racute = "Ŕ";
-var racute = "ŕ";
-var radic = "√";
-var raemptyv = "⦳";
-var rang = "⟩";
-var Rang = "⟫";
-var rangd = "⦒";
-var range$1 = "⦥";
-var rangle = "⟩";
-var raquo$1 = "»";
-var rarrap = "⥵";
-var rarrb = "⇥";
-var rarrbfs = "⤠";
-var rarrc = "⤳";
-var rarr = "→";
-var Rarr = "↠";
-var rArr = "⇒";
-var rarrfs = "⤞";
-var rarrhk = "↪";
-var rarrlp = "↬";
-var rarrpl = "⥅";
-var rarrsim = "⥴";
-var Rarrtl = "⤖";
-var rarrtl = "↣";
-var rarrw = "↝";
-var ratail = "⤚";
-var rAtail = "⤜";
-var ratio = "∶";
-var rationals = "ℚ";
-var rbarr = "⤍";
-var rBarr = "⤏";
-var RBarr = "⤐";
-var rbbrk = "❳";
-var rbrace = "}";
-var rbrack = "]";
-var rbrke = "⦌";
-var rbrksld = "⦎";
-var rbrkslu = "⦐";
-var Rcaron = "Ř";
-var rcaron = "ř";
-var Rcedil = "Ŗ";
-var rcedil = "ŗ";
-var rceil = "⌉";
-var rcub = "}";
-var Rcy = "Р";
-var rcy = "р";
-var rdca = "⤷";
-var rdldhar = "⥩";
-var rdquo = "”";
-var rdquor = "”";
-var rdsh = "↳";
-var real = "ℜ";
-var realine = "ℛ";
-var realpart = "ℜ";
-var reals = "ℝ";
-var Re = "ℜ";
-var rect = "▭";
-var reg$1 = "®";
-var REG$1 = "®";
-var ReverseElement = "∋";
-var ReverseEquilibrium = "⇋";
-var ReverseUpEquilibrium = "⥯";
-var rfisht = "⥽";
-var rfloor = "⌋";
-var rfr = "𝔯";
-var Rfr = "ℜ";
-var rHar = "⥤";
-var rhard = "⇁";
-var rharu = "⇀";
-var rharul = "⥬";
-var Rho = "Ρ";
-var rho = "ρ";
-var rhov = "ϱ";
-var RightAngleBracket = "⟩";
-var RightArrowBar = "⇥";
-var rightarrow = "→";
-var RightArrow = "→";
-var Rightarrow = "⇒";
-var RightArrowLeftArrow = "⇄";
-var rightarrowtail = "↣";
-var RightCeiling = "⌉";
-var RightDoubleBracket = "⟧";
-var RightDownTeeVector = "⥝";
-var RightDownVectorBar = "⥕";
-var RightDownVector = "⇂";
-var RightFloor = "⌋";
-var rightharpoondown = "⇁";
-var rightharpoonup = "⇀";
-var rightleftarrows = "⇄";
-var rightleftharpoons = "⇌";
-var rightrightarrows = "⇉";
-var rightsquigarrow = "↝";
-var RightTeeArrow = "↦";
-var RightTee = "⊢";
-var RightTeeVector = "⥛";
-var rightthreetimes = "⋌";
-var RightTriangleBar = "⧐";
-var RightTriangle = "⊳";
-var RightTriangleEqual = "⊵";
-var RightUpDownVector = "⥏";
-var RightUpTeeVector = "⥜";
-var RightUpVectorBar = "⥔";
-var RightUpVector = "↾";
-var RightVectorBar = "⥓";
-var RightVector = "⇀";
-var ring = "˚";
-var risingdotseq = "≓";
-var rlarr = "⇄";
-var rlhar = "⇌";
-var rlm = "‏";
-var rmoustache = "⎱";
-var rmoust = "⎱";
-var rnmid = "⫮";
-var roang = "⟭";
-var roarr = "⇾";
-var robrk = "⟧";
-var ropar = "⦆";
-var ropf = "𝕣";
-var Ropf = "ℝ";
-var roplus = "⨮";
-var rotimes = "⨵";
-var RoundImplies = "⥰";
-var rpar = ")";
-var rpargt = "⦔";
-var rppolint = "⨒";
-var rrarr = "⇉";
-var Rrightarrow = "⇛";
-var rsaquo = "›";
-var rscr = "𝓇";
-var Rscr = "ℛ";
-var rsh = "↱";
-var Rsh = "↱";
-var rsqb = "]";
-var rsquo = "’";
-var rsquor = "’";
-var rthree = "⋌";
-var rtimes = "⋊";
-var rtri = "▹";
-var rtrie = "⊵";
-var rtrif = "▸";
-var rtriltri = "⧎";
-var RuleDelayed = "⧴";
-var ruluhar = "⥨";
-var rx = "℞";
-var Sacute = "Ś";
-var sacute = "ś";
-var sbquo = "‚";
-var scap = "⪸";
-var Scaron = "Š";
-var scaron = "š";
-var Sc = "⪼";
-var sc = "≻";
-var sccue = "≽";
-var sce = "⪰";
-var scE = "⪴";
-var Scedil = "Ş";
-var scedil = "ş";
-var Scirc = "Ŝ";
-var scirc = "ŝ";
-var scnap = "⪺";
-var scnE = "⪶";
-var scnsim = "⋩";
-var scpolint = "⨓";
-var scsim = "≿";
-var Scy = "С";
-var scy = "с";
-var sdotb = "⊡";
-var sdot = "⋅";
-var sdote = "⩦";
-var searhk = "⤥";
-var searr = "↘";
-var seArr = "⇘";
-var searrow = "↘";
-var sect$1 = "§";
-var semi = ";";
-var seswar = "⤩";
-var setminus = "∖";
-var setmn = "∖";
-var sext = "✶";
-var Sfr = "𝔖";
-var sfr = "𝔰";
-var sfrown = "⌢";
-var sharp = "♯";
-var SHCHcy = "Щ";
-var shchcy = "щ";
-var SHcy = "Ш";
-var shcy = "ш";
-var ShortDownArrow = "↓";
-var ShortLeftArrow = "←";
-var shortmid = "∣";
-var shortparallel = "∥";
-var ShortRightArrow = "→";
-var ShortUpArrow = "↑";
-var shy$1 = "­";
-var Sigma = "Σ";
-var sigma = "σ";
-var sigmaf = "ς";
-var sigmav = "ς";
-var sim = "∼";
-var simdot = "⩪";
-var sime = "≃";
-var simeq = "≃";
-var simg = "⪞";
-var simgE = "⪠";
-var siml = "⪝";
-var simlE = "⪟";
-var simne = "≆";
-var simplus = "⨤";
-var simrarr = "⥲";
-var slarr = "←";
-var SmallCircle = "∘";
-var smallsetminus = "∖";
-var smashp = "⨳";
-var smeparsl = "⧤";
-var smid = "∣";
-var smile = "⌣";
-var smt = "⪪";
-var smte = "⪬";
-var smtes = "⪬︀";
-var SOFTcy = "Ь";
-var softcy = "ь";
-var solbar = "⌿";
-var solb = "⧄";
-var sol = "/";
-var Sopf = "𝕊";
-var sopf = "𝕤";
-var spades = "♠";
-var spadesuit = "♠";
-var spar = "∥";
-var sqcap = "⊓";
-var sqcaps = "⊓︀";
-var sqcup = "⊔";
-var sqcups = "⊔︀";
-var Sqrt = "√";
-var sqsub = "⊏";
-var sqsube = "⊑";
-var sqsubset = "⊏";
-var sqsubseteq = "⊑";
-var sqsup = "⊐";
-var sqsupe = "⊒";
-var sqsupset = "⊐";
-var sqsupseteq = "⊒";
-var square = "□";
-var Square = "□";
-var SquareIntersection = "⊓";
-var SquareSubset = "⊏";
-var SquareSubsetEqual = "⊑";
-var SquareSuperset = "⊐";
-var SquareSupersetEqual = "⊒";
-var SquareUnion = "⊔";
-var squarf = "▪";
-var squ = "□";
-var squf = "▪";
-var srarr = "→";
-var Sscr = "𝒮";
-var sscr = "𝓈";
-var ssetmn = "∖";
-var ssmile = "⌣";
-var sstarf = "⋆";
-var Star = "⋆";
-var star = "☆";
-var starf = "★";
-var straightepsilon = "ϵ";
-var straightphi = "ϕ";
-var strns = "¯";
-var sub = "⊂";
-var Sub = "⋐";
-var subdot = "⪽";
-var subE = "⫅";
-var sube = "⊆";
-var subedot = "⫃";
-var submult = "⫁";
-var subnE = "⫋";
-var subne = "⊊";
-var subplus = "⪿";
-var subrarr = "⥹";
-var subset = "⊂";
-var Subset = "⋐";
-var subseteq = "⊆";
-var subseteqq = "⫅";
-var SubsetEqual = "⊆";
-var subsetneq = "⊊";
-var subsetneqq = "⫋";
-var subsim = "⫇";
-var subsub = "⫕";
-var subsup = "⫓";
-var succapprox = "⪸";
-var succ = "≻";
-var succcurlyeq = "≽";
-var Succeeds = "≻";
-var SucceedsEqual = "⪰";
-var SucceedsSlantEqual = "≽";
-var SucceedsTilde = "≿";
-var succeq = "⪰";
-var succnapprox = "⪺";
-var succneqq = "⪶";
-var succnsim = "⋩";
-var succsim = "≿";
-var SuchThat = "∋";
-var sum = "∑";
-var Sum = "∑";
-var sung = "♪";
-var sup1$1 = "¹";
-var sup2$1 = "²";
-var sup3$1 = "³";
-var sup = "⊃";
-var Sup = "⋑";
-var supdot = "⪾";
-var supdsub = "⫘";
-var supE = "⫆";
-var supe = "⊇";
-var supedot = "⫄";
-var Superset = "⊃";
-var SupersetEqual = "⊇";
-var suphsol = "⟉";
-var suphsub = "⫗";
-var suplarr = "⥻";
-var supmult = "⫂";
-var supnE = "⫌";
-var supne = "⊋";
-var supplus = "⫀";
-var supset = "⊃";
-var Supset = "⋑";
-var supseteq = "⊇";
-var supseteqq = "⫆";
-var supsetneq = "⊋";
-var supsetneqq = "⫌";
-var supsim = "⫈";
-var supsub = "⫔";
-var supsup = "⫖";
-var swarhk = "⤦";
-var swarr = "↙";
-var swArr = "⇙";
-var swarrow = "↙";
-var swnwar = "⤪";
-var szlig$1 = "ß";
-var Tab$1 = "\t";
-var target = "⌖";
-var Tau = "Τ";
-var tau = "τ";
-var tbrk = "⎴";
-var Tcaron = "Ť";
-var tcaron = "ť";
-var Tcedil = "Ţ";
-var tcedil = "ţ";
-var Tcy = "Т";
-var tcy = "т";
-var tdot = "⃛";
-var telrec = "⌕";
-var Tfr = "𝔗";
-var tfr = "𝔱";
-var there4 = "∴";
-var therefore = "∴";
-var Therefore = "∴";
-var Theta = "Θ";
-var theta = "θ";
-var thetasym = "ϑ";
-var thetav = "ϑ";
-var thickapprox = "≈";
-var thicksim = "∼";
-var ThickSpace = "  ";
-var ThinSpace = " ";
-var thinsp = " ";
-var thkap = "≈";
-var thksim = "∼";
-var THORN$1 = "Þ";
-var thorn$1 = "þ";
-var tilde = "˜";
-var Tilde = "∼";
-var TildeEqual = "≃";
-var TildeFullEqual = "≅";
-var TildeTilde = "≈";
-var timesbar = "⨱";
-var timesb = "⊠";
-var times$2 = "×";
-var timesd = "⨰";
-var tint = "∭";
-var toea = "⤨";
-var topbot = "⌶";
-var topcir = "⫱";
-var top = "⊤";
-var Topf = "𝕋";
-var topf = "𝕥";
-var topfork = "⫚";
-var tosa = "⤩";
-var tprime = "‴";
-var trade = "™";
-var TRADE = "™";
-var triangle = "▵";
-var triangledown = "▿";
-var triangleleft = "◃";
-var trianglelefteq = "⊴";
-var triangleq = "≜";
-var triangleright = "▹";
-var trianglerighteq = "⊵";
-var tridot = "◬";
-var trie = "≜";
-var triminus = "⨺";
-var TripleDot = "⃛";
-var triplus = "⨹";
-var trisb = "⧍";
-var tritime = "⨻";
-var trpezium = "⏢";
-var Tscr = "𝒯";
-var tscr = "𝓉";
-var TScy = "Ц";
-var tscy = "ц";
-var TSHcy = "Ћ";
-var tshcy = "ћ";
-var Tstrok = "Ŧ";
-var tstrok = "ŧ";
-var twixt = "≬";
-var twoheadleftarrow = "↞";
-var twoheadrightarrow = "↠";
-var Uacute$1 = "Ú";
-var uacute$1 = "ú";
-var uarr = "↑";
-var Uarr = "↟";
-var uArr = "⇑";
-var Uarrocir = "⥉";
-var Ubrcy = "Ў";
-var ubrcy = "ў";
-var Ubreve = "Ŭ";
-var ubreve = "ŭ";
-var Ucirc$1 = "Û";
-var ucirc$1 = "û";
-var Ucy = "У";
-var ucy = "у";
-var udarr = "⇅";
-var Udblac = "Ű";
-var udblac = "ű";
-var udhar = "⥮";
-var ufisht = "⥾";
-var Ufr = "𝔘";
-var ufr = "𝔲";
-var Ugrave$1 = "Ù";
-var ugrave$1 = "ù";
-var uHar = "⥣";
-var uharl = "↿";
-var uharr = "↾";
-var uhblk = "▀";
-var ulcorn = "⌜";
-var ulcorner = "⌜";
-var ulcrop = "⌏";
-var ultri = "◸";
-var Umacr = "Ū";
-var umacr = "ū";
-var uml$1 = "¨";
-var UnderBar = "_";
-var UnderBrace = "⏟";
-var UnderBracket = "⎵";
-var UnderParenthesis = "⏝";
-var Union = "⋃";
-var UnionPlus = "⊎";
-var Uogon = "Ų";
-var uogon = "ų";
-var Uopf = "𝕌";
-var uopf = "𝕦";
-var UpArrowBar = "⤒";
-var uparrow = "↑";
-var UpArrow = "↑";
-var Uparrow = "⇑";
-var UpArrowDownArrow = "⇅";
-var updownarrow = "↕";
-var UpDownArrow = "↕";
-var Updownarrow = "⇕";
-var UpEquilibrium = "⥮";
-var upharpoonleft = "↿";
-var upharpoonright = "↾";
-var uplus = "⊎";
-var UpperLeftArrow = "↖";
-var UpperRightArrow = "↗";
-var upsi = "υ";
-var Upsi = "ϒ";
-var upsih = "ϒ";
-var Upsilon = "Υ";
-var upsilon = "υ";
-var UpTeeArrow = "↥";
-var UpTee = "⊥";
-var upuparrows = "⇈";
-var urcorn = "⌝";
-var urcorner = "⌝";
-var urcrop = "⌎";
-var Uring = "Ů";
-var uring = "ů";
-var urtri = "◹";
-var Uscr = "𝒰";
-var uscr = "𝓊";
-var utdot = "⋰";
-var Utilde = "Ũ";
-var utilde = "ũ";
-var utri = "▵";
-var utrif = "▴";
-var uuarr = "⇈";
-var Uuml$1 = "Ü";
-var uuml$1 = "ü";
-var uwangle = "⦧";
-var vangrt = "⦜";
-var varepsilon = "ϵ";
-var varkappa = "ϰ";
-var varnothing = "∅";
-var varphi = "ϕ";
-var varpi = "ϖ";
-var varpropto = "∝";
-var varr = "↕";
-var vArr = "⇕";
-var varrho = "ϱ";
-var varsigma = "ς";
-var varsubsetneq = "⊊︀";
-var varsubsetneqq = "⫋︀";
-var varsupsetneq = "⊋︀";
-var varsupsetneqq = "⫌︀";
-var vartheta = "ϑ";
-var vartriangleleft = "⊲";
-var vartriangleright = "⊳";
-var vBar = "⫨";
-var Vbar = "⫫";
-var vBarv = "⫩";
-var Vcy = "В";
-var vcy = "в";
-var vdash = "⊢";
-var vDash = "⊨";
-var Vdash = "⊩";
-var VDash = "⊫";
-var Vdashl = "⫦";
-var veebar = "⊻";
-var vee = "∨";
-var Vee = "⋁";
-var veeeq = "≚";
-var vellip = "⋮";
-var verbar = "|";
-var Verbar = "‖";
-var vert = "|";
-var Vert = "‖";
-var VerticalBar = "∣";
-var VerticalLine = "|";
-var VerticalSeparator = "❘";
-var VerticalTilde = "≀";
-var VeryThinSpace = " ";
-var Vfr = "𝔙";
-var vfr = "𝔳";
-var vltri = "⊲";
-var vnsub = "⊂⃒";
-var vnsup = "⊃⃒";
-var Vopf = "𝕍";
-var vopf = "𝕧";
-var vprop = "∝";
-var vrtri = "⊳";
-var Vscr = "𝒱";
-var vscr = "𝓋";
-var vsubnE = "⫋︀";
-var vsubne = "⊊︀";
-var vsupnE = "⫌︀";
-var vsupne = "⊋︀";
-var Vvdash = "⊪";
-var vzigzag = "⦚";
-var Wcirc = "Ŵ";
-var wcirc = "ŵ";
-var wedbar = "⩟";
-var wedge = "∧";
-var Wedge = "⋀";
-var wedgeq = "≙";
-var weierp = "℘";
-var Wfr = "𝔚";
-var wfr = "𝔴";
-var Wopf = "𝕎";
-var wopf = "𝕨";
-var wp = "℘";
-var wr = "≀";
-var wreath = "≀";
-var Wscr = "𝒲";
-var wscr = "𝓌";
-var xcap = "⋂";
-var xcirc = "◯";
-var xcup = "⋃";
-var xdtri = "▽";
-var Xfr = "𝔛";
-var xfr = "𝔵";
-var xharr = "⟷";
-var xhArr = "⟺";
-var Xi = "Ξ";
-var xi = "ξ";
-var xlarr = "⟵";
-var xlArr = "⟸";
-var xmap = "⟼";
-var xnis = "⋻";
-var xodot = "⨀";
-var Xopf = "𝕏";
-var xopf = "𝕩";
-var xoplus = "⨁";
-var xotime = "⨂";
-var xrarr = "⟶";
-var xrArr = "⟹";
-var Xscr = "𝒳";
-var xscr = "𝓍";
-var xsqcup = "⨆";
-var xuplus = "⨄";
-var xutri = "△";
-var xvee = "⋁";
-var xwedge = "⋀";
-var Yacute$1 = "Ý";
-var yacute$1 = "ý";
-var YAcy = "Я";
-var yacy = "я";
-var Ycirc = "Ŷ";
-var ycirc = "ŷ";
-var Ycy = "Ы";
-var ycy = "ы";
-var yen$1 = "¥";
-var Yfr = "𝔜";
-var yfr = "𝔶";
-var YIcy = "Ї";
-var yicy = "ї";
-var Yopf = "𝕐";
-var yopf = "𝕪";
-var Yscr = "𝒴";
-var yscr = "𝓎";
-var YUcy = "Ю";
-var yucy = "ю";
-var yuml$1 = "ÿ";
-var Yuml = "Ÿ";
-var Zacute = "Ź";
-var zacute = "ź";
-var Zcaron = "Ž";
-var zcaron = "ž";
-var Zcy = "З";
-var zcy = "з";
-var Zdot = "Ż";
-var zdot = "ż";
-var zeetrf = "ℨ";
-var ZeroWidthSpace = "​";
-var Zeta = "Ζ";
-var zeta = "ζ";
-var zfr = "𝔷";
-var Zfr = "ℨ";
-var ZHcy = "Ж";
-var zhcy = "ж";
-var zigrarr = "⇝";
-var zopf = "𝕫";
-var Zopf = "ℤ";
-var Zscr = "𝒵";
-var zscr = "𝓏";
-var zwj = "‍";
-var zwnj = "‌";
-var require$$1$1 = {
-	Aacute: Aacute$1,
-	aacute: aacute$1,
-	Abreve: Abreve,
-	abreve: abreve,
-	ac: ac,
-	acd: acd,
-	acE: acE,
-	Acirc: Acirc$1,
-	acirc: acirc$1,
-	acute: acute$1,
-	Acy: Acy,
-	acy: acy,
-	AElig: AElig$1,
-	aelig: aelig$1,
-	af: af,
-	Afr: Afr,
-	afr: afr,
-	Agrave: Agrave$1,
-	agrave: agrave$1,
-	alefsym: alefsym,
-	aleph: aleph,
-	Alpha: Alpha,
-	alpha: alpha$1,
-	Amacr: Amacr,
-	amacr: amacr,
-	amalg: amalg,
-	amp: amp$2,
-	AMP: AMP$1,
-	andand: andand,
-	And: And,
-	and: and,
-	andd: andd,
-	andslope: andslope,
-	andv: andv,
-	ang: ang,
-	ange: ange,
-	angle: angle,
-	angmsdaa: angmsdaa,
-	angmsdab: angmsdab,
-	angmsdac: angmsdac,
-	angmsdad: angmsdad,
-	angmsdae: angmsdae,
-	angmsdaf: angmsdaf,
-	angmsdag: angmsdag,
-	angmsdah: angmsdah,
-	angmsd: angmsd,
-	angrt: angrt,
-	angrtvb: angrtvb,
-	angrtvbd: angrtvbd,
-	angsph: angsph,
-	angst: angst,
-	angzarr: angzarr,
-	Aogon: Aogon,
-	aogon: aogon,
-	Aopf: Aopf,
-	aopf: aopf,
-	apacir: apacir,
-	ap: ap,
-	apE: apE,
-	ape: ape,
-	apid: apid,
-	apos: apos$1,
-	ApplyFunction: ApplyFunction,
-	approx: approx,
-	approxeq: approxeq,
-	Aring: Aring$1,
-	aring: aring$1,
-	Ascr: Ascr,
-	ascr: ascr,
-	Assign: Assign,
-	ast: ast$1,
-	asymp: asymp,
-	asympeq: asympeq,
-	Atilde: Atilde$1,
-	atilde: atilde$1,
-	Auml: Auml$1,
-	auml: auml$1,
-	awconint: awconint,
-	awint: awint,
-	backcong: backcong,
-	backepsilon: backepsilon,
-	backprime: backprime,
-	backsim: backsim,
-	backsimeq: backsimeq,
-	Backslash: Backslash,
-	Barv: Barv,
-	barvee: barvee,
-	barwed: barwed,
-	Barwed: Barwed,
-	barwedge: barwedge,
-	bbrk: bbrk,
-	bbrktbrk: bbrktbrk,
-	bcong: bcong,
-	Bcy: Bcy,
-	bcy: bcy,
-	bdquo: bdquo,
-	becaus: becaus,
-	because: because,
-	Because: Because,
-	bemptyv: bemptyv,
-	bepsi: bepsi,
-	bernou: bernou,
-	Bernoullis: Bernoullis,
-	Beta: Beta,
-	beta: beta,
-	beth: beth,
-	between: between,
-	Bfr: Bfr,
-	bfr: bfr,
-	bigcap: bigcap,
-	bigcirc: bigcirc,
-	bigcup: bigcup,
-	bigodot: bigodot,
-	bigoplus: bigoplus,
-	bigotimes: bigotimes,
-	bigsqcup: bigsqcup,
-	bigstar: bigstar,
-	bigtriangledown: bigtriangledown,
-	bigtriangleup: bigtriangleup,
-	biguplus: biguplus,
-	bigvee: bigvee,
-	bigwedge: bigwedge,
-	bkarow: bkarow,
-	blacklozenge: blacklozenge,
-	blacksquare: blacksquare,
-	blacktriangle: blacktriangle,
-	blacktriangledown: blacktriangledown,
-	blacktriangleleft: blacktriangleleft,
-	blacktriangleright: blacktriangleright,
-	blank: blank,
-	blk12: blk12,
-	blk14: blk14,
-	blk34: blk34,
-	block: block,
-	bne: bne,
-	bnequiv: bnequiv,
-	bNot: bNot,
-	bnot: bnot,
-	Bopf: Bopf,
-	bopf: bopf,
-	bot: bot,
-	bottom: bottom,
-	bowtie: bowtie,
-	boxbox: boxbox,
-	boxdl: boxdl,
-	boxdL: boxdL,
-	boxDl: boxDl,
-	boxDL: boxDL,
-	boxdr: boxdr,
-	boxdR: boxdR,
-	boxDr: boxDr,
-	boxDR: boxDR,
-	boxh: boxh,
-	boxH: boxH,
-	boxhd: boxhd,
-	boxHd: boxHd,
-	boxhD: boxhD,
-	boxHD: boxHD,
-	boxhu: boxhu,
-	boxHu: boxHu,
-	boxhU: boxhU,
-	boxHU: boxHU,
-	boxminus: boxminus,
-	boxplus: boxplus,
-	boxtimes: boxtimes,
-	boxul: boxul,
-	boxuL: boxuL,
-	boxUl: boxUl,
-	boxUL: boxUL,
-	boxur: boxur,
-	boxuR: boxuR,
-	boxUr: boxUr,
-	boxUR: boxUR,
-	boxv: boxv,
-	boxV: boxV,
-	boxvh: boxvh,
-	boxvH: boxvH,
-	boxVh: boxVh,
-	boxVH: boxVH,
-	boxvl: boxvl,
-	boxvL: boxvL,
-	boxVl: boxVl,
-	boxVL: boxVL,
-	boxvr: boxvr,
-	boxvR: boxvR,
-	boxVr: boxVr,
-	boxVR: boxVR,
-	bprime: bprime,
-	breve: breve,
-	Breve: Breve,
-	brvbar: brvbar$1,
-	bscr: bscr,
-	Bscr: Bscr,
-	bsemi: bsemi,
-	bsim: bsim,
-	bsime: bsime,
-	bsolb: bsolb,
-	bsol: bsol,
-	bsolhsub: bsolhsub,
-	bull: bull,
-	bullet: bullet,
-	bump: bump,
-	bumpE: bumpE,
-	bumpe: bumpe,
-	Bumpeq: Bumpeq,
-	bumpeq: bumpeq,
-	Cacute: Cacute,
-	cacute: cacute,
-	capand: capand,
-	capbrcup: capbrcup,
-	capcap: capcap,
-	cap: cap,
-	Cap: Cap,
-	capcup: capcup,
-	capdot: capdot,
-	CapitalDifferentialD: CapitalDifferentialD,
-	caps: caps,
-	caret: caret,
-	caron: caron,
-	Cayleys: Cayleys,
-	ccaps: ccaps,
-	Ccaron: Ccaron,
-	ccaron: ccaron,
-	Ccedil: Ccedil$1,
-	ccedil: ccedil$1,
-	Ccirc: Ccirc,
-	ccirc: ccirc,
-	Cconint: Cconint,
-	ccups: ccups,
-	ccupssm: ccupssm,
-	Cdot: Cdot,
-	cdot: cdot,
-	cedil: cedil$1,
-	Cedilla: Cedilla,
-	cemptyv: cemptyv,
-	cent: cent$1,
-	centerdot: centerdot,
-	CenterDot: CenterDot,
-	cfr: cfr,
-	Cfr: Cfr,
-	CHcy: CHcy,
-	chcy: chcy,
-	check: check,
-	checkmark: checkmark,
-	Chi: Chi,
-	chi: chi,
-	circ: circ,
-	circeq: circeq,
-	circlearrowleft: circlearrowleft,
-	circlearrowright: circlearrowright,
-	circledast: circledast,
-	circledcirc: circledcirc,
-	circleddash: circleddash,
-	CircleDot: CircleDot,
-	circledR: circledR,
-	circledS: circledS,
-	CircleMinus: CircleMinus,
-	CirclePlus: CirclePlus,
-	CircleTimes: CircleTimes,
-	cir: cir,
-	cirE: cirE,
-	cire: cire,
-	cirfnint: cirfnint,
-	cirmid: cirmid,
-	cirscir: cirscir,
-	ClockwiseContourIntegral: ClockwiseContourIntegral,
-	CloseCurlyDoubleQuote: CloseCurlyDoubleQuote,
-	CloseCurlyQuote: CloseCurlyQuote,
-	clubs: clubs,
-	clubsuit: clubsuit,
-	colon: colon,
-	Colon: Colon,
-	Colone: Colone,
-	colone: colone,
-	coloneq: coloneq,
-	comma: comma,
-	commat: commat,
-	comp: comp,
-	compfn: compfn,
-	complement: complement,
-	complexes: complexes,
-	cong: cong,
-	congdot: congdot,
-	Congruent: Congruent,
-	conint: conint,
-	Conint: Conint,
-	ContourIntegral: ContourIntegral,
-	copf: copf,
-	Copf: Copf,
-	coprod: coprod,
-	Coproduct: Coproduct,
-	copy: copy$2,
-	COPY: COPY$2,
-	copysr: copysr,
-	CounterClockwiseContourIntegral: CounterClockwiseContourIntegral,
-	crarr: crarr,
-	cross: cross,
-	Cross: Cross,
-	Cscr: Cscr,
-	cscr: cscr,
-	csub: csub,
-	csube: csube,
-	csup: csup,
-	csupe: csupe,
-	ctdot: ctdot,
-	cudarrl: cudarrl,
-	cudarrr: cudarrr,
-	cuepr: cuepr,
-	cuesc: cuesc,
-	cularr: cularr,
-	cularrp: cularrp,
-	cupbrcap: cupbrcap,
-	cupcap: cupcap,
-	CupCap: CupCap,
-	cup: cup,
-	Cup: Cup,
-	cupcup: cupcup,
-	cupdot: cupdot,
-	cupor: cupor,
-	cups: cups,
-	curarr: curarr,
-	curarrm: curarrm,
-	curlyeqprec: curlyeqprec,
-	curlyeqsucc: curlyeqsucc,
-	curlyvee: curlyvee,
-	curlywedge: curlywedge,
-	curren: curren$1,
-	curvearrowleft: curvearrowleft,
-	curvearrowright: curvearrowright,
-	cuvee: cuvee,
-	cuwed: cuwed,
-	cwconint: cwconint,
-	cwint: cwint,
-	cylcty: cylcty,
-	dagger: dagger,
-	Dagger: Dagger,
-	daleth: daleth,
-	darr: darr,
-	Darr: Darr,
-	dArr: dArr,
-	dash: dash,
-	Dashv: Dashv,
-	dashv: dashv,
-	dbkarow: dbkarow,
-	dblac: dblac,
-	Dcaron: Dcaron,
-	dcaron: dcaron,
-	Dcy: Dcy,
-	dcy: dcy,
-	ddagger: ddagger,
-	ddarr: ddarr,
-	DD: DD,
-	dd: dd,
-	DDotrahd: DDotrahd,
-	ddotseq: ddotseq,
-	deg: deg$1,
-	Del: Del,
-	Delta: Delta,
-	delta: delta,
-	demptyv: demptyv,
-	dfisht: dfisht,
-	Dfr: Dfr,
-	dfr: dfr,
-	dHar: dHar,
-	dharl: dharl,
-	dharr: dharr,
-	DiacriticalAcute: DiacriticalAcute,
-	DiacriticalDot: DiacriticalDot,
-	DiacriticalDoubleAcute: DiacriticalDoubleAcute,
-	DiacriticalGrave: DiacriticalGrave,
-	DiacriticalTilde: DiacriticalTilde,
-	diam: diam,
-	diamond: diamond,
-	Diamond: Diamond,
-	diamondsuit: diamondsuit,
-	diams: diams,
-	die: die,
-	DifferentialD: DifferentialD,
-	digamma: digamma,
-	disin: disin,
-	div: div,
-	divide: divide$1,
-	divideontimes: divideontimes,
-	divonx: divonx,
-	DJcy: DJcy,
-	djcy: djcy,
-	dlcorn: dlcorn,
-	dlcrop: dlcrop,
-	dollar: dollar,
-	Dopf: Dopf,
-	dopf: dopf,
-	Dot: Dot,
-	dot: dot,
-	DotDot: DotDot,
-	doteq: doteq,
-	doteqdot: doteqdot,
-	DotEqual: DotEqual,
-	dotminus: dotminus,
-	dotplus: dotplus,
-	dotsquare: dotsquare,
-	doublebarwedge: doublebarwedge,
-	DoubleContourIntegral: DoubleContourIntegral,
-	DoubleDot: DoubleDot,
-	DoubleDownArrow: DoubleDownArrow,
-	DoubleLeftArrow: DoubleLeftArrow,
-	DoubleLeftRightArrow: DoubleLeftRightArrow,
-	DoubleLeftTee: DoubleLeftTee,
-	DoubleLongLeftArrow: DoubleLongLeftArrow,
-	DoubleLongLeftRightArrow: DoubleLongLeftRightArrow,
-	DoubleLongRightArrow: DoubleLongRightArrow,
-	DoubleRightArrow: DoubleRightArrow,
-	DoubleRightTee: DoubleRightTee,
-	DoubleUpArrow: DoubleUpArrow,
-	DoubleUpDownArrow: DoubleUpDownArrow,
-	DoubleVerticalBar: DoubleVerticalBar,
-	DownArrowBar: DownArrowBar,
-	downarrow: downarrow,
-	DownArrow: DownArrow,
-	Downarrow: Downarrow,
-	DownArrowUpArrow: DownArrowUpArrow,
-	DownBreve: DownBreve,
-	downdownarrows: downdownarrows,
-	downharpoonleft: downharpoonleft,
-	downharpoonright: downharpoonright,
-	DownLeftRightVector: DownLeftRightVector,
-	DownLeftTeeVector: DownLeftTeeVector,
-	DownLeftVectorBar: DownLeftVectorBar,
-	DownLeftVector: DownLeftVector,
-	DownRightTeeVector: DownRightTeeVector,
-	DownRightVectorBar: DownRightVectorBar,
-	DownRightVector: DownRightVector,
-	DownTeeArrow: DownTeeArrow,
-	DownTee: DownTee,
-	drbkarow: drbkarow,
-	drcorn: drcorn,
-	drcrop: drcrop,
-	Dscr: Dscr,
-	dscr: dscr,
-	DScy: DScy,
-	dscy: dscy,
-	dsol: dsol,
-	Dstrok: Dstrok,
-	dstrok: dstrok,
-	dtdot: dtdot,
-	dtri: dtri,
-	dtrif: dtrif,
-	duarr: duarr,
-	duhar: duhar,
-	dwangle: dwangle,
-	DZcy: DZcy,
-	dzcy: dzcy,
-	dzigrarr: dzigrarr,
-	Eacute: Eacute$1,
-	eacute: eacute$1,
-	easter: easter,
-	Ecaron: Ecaron,
-	ecaron: ecaron,
-	Ecirc: Ecirc$1,
-	ecirc: ecirc$1,
-	ecir: ecir,
-	ecolon: ecolon,
-	Ecy: Ecy,
-	ecy: ecy,
-	eDDot: eDDot,
-	Edot: Edot,
-	edot: edot,
-	eDot: eDot,
-	ee: ee,
-	efDot: efDot,
-	Efr: Efr,
-	efr: efr,
-	eg: eg,
-	Egrave: Egrave$1,
-	egrave: egrave$1,
-	egs: egs,
-	egsdot: egsdot,
-	el: el,
-	Element: Element$3,
-	elinters: elinters,
-	ell: ell,
-	els: els,
-	elsdot: elsdot,
-	Emacr: Emacr,
-	emacr: emacr,
-	empty: empty,
-	emptyset: emptyset,
-	EmptySmallSquare: EmptySmallSquare,
-	emptyv: emptyv,
-	EmptyVerySmallSquare: EmptyVerySmallSquare,
-	emsp13: emsp13,
-	emsp14: emsp14,
-	emsp: emsp,
-	ENG: ENG,
-	eng: eng,
-	ensp: ensp,
-	Eogon: Eogon,
-	eogon: eogon,
-	Eopf: Eopf,
-	eopf: eopf,
-	epar: epar,
-	eparsl: eparsl,
-	eplus: eplus,
-	epsi: epsi,
-	Epsilon: Epsilon,
-	epsilon: epsilon,
-	epsiv: epsiv,
-	eqcirc: eqcirc,
-	eqcolon: eqcolon,
-	eqsim: eqsim,
-	eqslantgtr: eqslantgtr,
-	eqslantless: eqslantless,
-	Equal: Equal,
-	equals: equals,
-	EqualTilde: EqualTilde,
-	equest: equest,
-	Equilibrium: Equilibrium,
-	equiv: equiv,
-	equivDD: equivDD,
-	eqvparsl: eqvparsl,
-	erarr: erarr,
-	erDot: erDot,
-	escr: escr,
-	Escr: Escr,
-	esdot: esdot,
-	Esim: Esim,
-	esim: esim,
-	Eta: Eta,
-	eta: eta,
-	ETH: ETH$1,
-	eth: eth$1,
-	Euml: Euml$1,
-	euml: euml$1,
-	euro: euro,
-	excl: excl,
-	exist: exist,
-	Exists: Exists,
-	expectation: expectation,
-	exponentiale: exponentiale,
-	ExponentialE: ExponentialE,
-	fallingdotseq: fallingdotseq,
-	Fcy: Fcy,
-	fcy: fcy,
-	female: female,
-	ffilig: ffilig,
-	fflig: fflig,
-	ffllig: ffllig,
-	Ffr: Ffr,
-	ffr: ffr,
-	filig: filig,
-	FilledSmallSquare: FilledSmallSquare,
-	FilledVerySmallSquare: FilledVerySmallSquare,
-	fjlig: fjlig,
-	flat: flat,
-	fllig: fllig,
-	fltns: fltns,
-	fnof: fnof,
-	Fopf: Fopf,
-	fopf: fopf,
-	forall: forall,
-	ForAll: ForAll,
-	fork: fork,
-	forkv: forkv,
-	Fouriertrf: Fouriertrf,
-	fpartint: fpartint,
-	frac12: frac12$1,
-	frac13: frac13,
-	frac14: frac14$1,
-	frac15: frac15,
-	frac16: frac16,
-	frac18: frac18,
-	frac23: frac23,
-	frac25: frac25,
-	frac34: frac34$1,
-	frac35: frac35,
-	frac38: frac38,
-	frac45: frac45,
-	frac56: frac56,
-	frac58: frac58,
-	frac78: frac78,
-	frasl: frasl,
-	frown: frown,
-	fscr: fscr,
-	Fscr: Fscr,
-	gacute: gacute,
-	Gamma: Gamma,
-	gamma: gamma,
-	Gammad: Gammad,
-	gammad: gammad,
-	gap: gap,
-	Gbreve: Gbreve,
-	gbreve: gbreve,
-	Gcedil: Gcedil,
-	Gcirc: Gcirc,
-	gcirc: gcirc,
-	Gcy: Gcy,
-	gcy: gcy,
-	Gdot: Gdot,
-	gdot: gdot,
-	ge: ge,
-	gE: gE,
-	gEl: gEl,
-	gel: gel,
-	geq: geq,
-	geqq: geqq,
-	geqslant: geqslant,
-	gescc: gescc,
-	ges: ges,
-	gesdot: gesdot,
-	gesdoto: gesdoto,
-	gesdotol: gesdotol,
-	gesl: gesl,
-	gesles: gesles,
-	Gfr: Gfr,
-	gfr: gfr,
-	gg: gg,
-	Gg: Gg,
-	ggg: ggg,
-	gimel: gimel,
-	GJcy: GJcy,
-	gjcy: gjcy,
-	gla: gla,
-	gl: gl,
-	glE: glE,
-	glj: glj,
-	gnap: gnap,
-	gnapprox: gnapprox,
-	gne: gne,
-	gnE: gnE,
-	gneq: gneq,
-	gneqq: gneqq,
-	gnsim: gnsim,
-	Gopf: Gopf,
-	gopf: gopf,
-	grave: grave,
-	GreaterEqual: GreaterEqual,
-	GreaterEqualLess: GreaterEqualLess,
-	GreaterFullEqual: GreaterFullEqual,
-	GreaterGreater: GreaterGreater,
-	GreaterLess: GreaterLess,
-	GreaterSlantEqual: GreaterSlantEqual,
-	GreaterTilde: GreaterTilde,
-	Gscr: Gscr,
-	gscr: gscr,
-	gsim: gsim,
-	gsime: gsime,
-	gsiml: gsiml,
-	gtcc: gtcc,
-	gtcir: gtcir,
-	gt: gt$2,
-	GT: GT$1,
-	Gt: Gt,
-	gtdot: gtdot,
-	gtlPar: gtlPar,
-	gtquest: gtquest,
-	gtrapprox: gtrapprox,
-	gtrarr: gtrarr,
-	gtrdot: gtrdot,
-	gtreqless: gtreqless,
-	gtreqqless: gtreqqless,
-	gtrless: gtrless,
-	gtrsim: gtrsim,
-	gvertneqq: gvertneqq,
-	gvnE: gvnE,
-	Hacek: Hacek,
-	hairsp: hairsp,
-	half: half,
-	hamilt: hamilt,
-	HARDcy: HARDcy,
-	hardcy: hardcy,
-	harrcir: harrcir,
-	harr: harr,
-	hArr: hArr,
-	harrw: harrw,
-	Hat: Hat,
-	hbar: hbar,
-	Hcirc: Hcirc,
-	hcirc: hcirc,
-	hearts: hearts,
-	heartsuit: heartsuit,
-	hellip: hellip,
-	hercon: hercon,
-	hfr: hfr,
-	Hfr: Hfr,
-	HilbertSpace: HilbertSpace,
-	hksearow: hksearow,
-	hkswarow: hkswarow,
-	hoarr: hoarr,
-	homtht: homtht,
-	hookleftarrow: hookleftarrow,
-	hookrightarrow: hookrightarrow,
-	hopf: hopf,
-	Hopf: Hopf,
-	horbar: horbar,
-	HorizontalLine: HorizontalLine,
-	hscr: hscr,
-	Hscr: Hscr,
-	hslash: hslash,
-	Hstrok: Hstrok,
-	hstrok: hstrok,
-	HumpDownHump: HumpDownHump,
-	HumpEqual: HumpEqual,
-	hybull: hybull,
-	hyphen: hyphen,
-	Iacute: Iacute$1,
-	iacute: iacute$1,
-	ic: ic,
-	Icirc: Icirc$1,
-	icirc: icirc$1,
-	Icy: Icy,
-	icy: icy,
-	Idot: Idot,
-	IEcy: IEcy,
-	iecy: iecy,
-	iexcl: iexcl$1,
-	iff: iff,
-	ifr: ifr,
-	Ifr: Ifr,
-	Igrave: Igrave$1,
-	igrave: igrave$1,
-	ii: ii,
-	iiiint: iiiint,
-	iiint: iiint,
-	iinfin: iinfin,
-	iiota: iiota,
-	IJlig: IJlig,
-	ijlig: ijlig,
-	Imacr: Imacr,
-	imacr: imacr,
-	image: image,
-	ImaginaryI: ImaginaryI,
-	imagline: imagline,
-	imagpart: imagpart,
-	imath: imath,
-	Im: Im,
-	imof: imof,
-	imped: imped,
-	Implies: Implies,
-	incare: incare,
-	"in": "∈",
-	infin: infin,
-	infintie: infintie,
-	inodot: inodot,
-	intcal: intcal,
-	int: int,
-	Int: Int,
-	integers: integers,
-	Integral: Integral,
-	intercal: intercal,
-	Intersection: Intersection,
-	intlarhk: intlarhk,
-	intprod: intprod,
-	InvisibleComma: InvisibleComma,
-	InvisibleTimes: InvisibleTimes,
-	IOcy: IOcy,
-	iocy: iocy,
-	Iogon: Iogon,
-	iogon: iogon,
-	Iopf: Iopf,
-	iopf: iopf,
-	Iota: Iota,
-	iota: iota,
-	iprod: iprod,
-	iquest: iquest$1,
-	iscr: iscr,
-	Iscr: Iscr,
-	isin: isin,
-	isindot: isindot,
-	isinE: isinE,
-	isins: isins,
-	isinsv: isinsv,
-	isinv: isinv,
-	it: it,
-	Itilde: Itilde,
-	itilde: itilde,
-	Iukcy: Iukcy,
-	iukcy: iukcy,
-	Iuml: Iuml$1,
-	iuml: iuml$1,
-	Jcirc: Jcirc,
-	jcirc: jcirc,
-	Jcy: Jcy,
-	jcy: jcy,
-	Jfr: Jfr,
-	jfr: jfr,
-	jmath: jmath,
-	Jopf: Jopf,
-	jopf: jopf,
-	Jscr: Jscr,
-	jscr: jscr,
-	Jsercy: Jsercy,
-	jsercy: jsercy,
-	Jukcy: Jukcy,
-	jukcy: jukcy,
-	Kappa: Kappa,
-	kappa: kappa,
-	kappav: kappav,
-	Kcedil: Kcedil,
-	kcedil: kcedil,
-	Kcy: Kcy,
-	kcy: kcy,
-	Kfr: Kfr,
-	kfr: kfr,
-	kgreen: kgreen,
-	KHcy: KHcy,
-	khcy: khcy,
-	KJcy: KJcy,
-	kjcy: kjcy,
-	Kopf: Kopf,
-	kopf: kopf,
-	Kscr: Kscr,
-	kscr: kscr,
-	lAarr: lAarr,
-	Lacute: Lacute,
-	lacute: lacute,
-	laemptyv: laemptyv,
-	lagran: lagran,
-	Lambda: Lambda,
-	lambda: lambda,
-	lang: lang,
-	Lang: Lang,
-	langd: langd,
-	langle: langle,
-	lap: lap,
-	Laplacetrf: Laplacetrf,
-	laquo: laquo$1,
-	larrb: larrb,
-	larrbfs: larrbfs,
-	larr: larr,
-	Larr: Larr,
-	lArr: lArr,
-	larrfs: larrfs,
-	larrhk: larrhk,
-	larrlp: larrlp,
-	larrpl: larrpl,
-	larrsim: larrsim,
-	larrtl: larrtl,
-	latail: latail,
-	lAtail: lAtail,
-	lat: lat,
-	late: late,
-	lates: lates,
-	lbarr: lbarr,
-	lBarr: lBarr,
-	lbbrk: lbbrk,
-	lbrace: lbrace,
-	lbrack: lbrack,
-	lbrke: lbrke,
-	lbrksld: lbrksld,
-	lbrkslu: lbrkslu,
-	Lcaron: Lcaron,
-	lcaron: lcaron,
-	Lcedil: Lcedil,
-	lcedil: lcedil,
-	lceil: lceil,
-	lcub: lcub,
-	Lcy: Lcy,
-	lcy: lcy,
-	ldca: ldca,
-	ldquo: ldquo,
-	ldquor: ldquor,
-	ldrdhar: ldrdhar,
-	ldrushar: ldrushar,
-	ldsh: ldsh,
-	le: le,
-	lE: lE,
-	LeftAngleBracket: LeftAngleBracket,
-	LeftArrowBar: LeftArrowBar,
-	leftarrow: leftarrow,
-	LeftArrow: LeftArrow,
-	Leftarrow: Leftarrow,
-	LeftArrowRightArrow: LeftArrowRightArrow,
-	leftarrowtail: leftarrowtail,
-	LeftCeiling: LeftCeiling,
-	LeftDoubleBracket: LeftDoubleBracket,
-	LeftDownTeeVector: LeftDownTeeVector,
-	LeftDownVectorBar: LeftDownVectorBar,
-	LeftDownVector: LeftDownVector,
-	LeftFloor: LeftFloor,
-	leftharpoondown: leftharpoondown,
-	leftharpoonup: leftharpoonup,
-	leftleftarrows: leftleftarrows,
-	leftrightarrow: leftrightarrow,
-	LeftRightArrow: LeftRightArrow,
-	Leftrightarrow: Leftrightarrow,
-	leftrightarrows: leftrightarrows,
-	leftrightharpoons: leftrightharpoons,
-	leftrightsquigarrow: leftrightsquigarrow,
-	LeftRightVector: LeftRightVector,
-	LeftTeeArrow: LeftTeeArrow,
-	LeftTee: LeftTee,
-	LeftTeeVector: LeftTeeVector,
-	leftthreetimes: leftthreetimes,
-	LeftTriangleBar: LeftTriangleBar,
-	LeftTriangle: LeftTriangle,
-	LeftTriangleEqual: LeftTriangleEqual,
-	LeftUpDownVector: LeftUpDownVector,
-	LeftUpTeeVector: LeftUpTeeVector,
-	LeftUpVectorBar: LeftUpVectorBar,
-	LeftUpVector: LeftUpVector,
-	LeftVectorBar: LeftVectorBar,
-	LeftVector: LeftVector,
-	lEg: lEg,
-	leg: leg,
-	leq: leq,
-	leqq: leqq,
-	leqslant: leqslant,
-	lescc: lescc,
-	les: les,
-	lesdot: lesdot,
-	lesdoto: lesdoto,
-	lesdotor: lesdotor,
-	lesg: lesg,
-	lesges: lesges,
-	lessapprox: lessapprox,
-	lessdot: lessdot,
-	lesseqgtr: lesseqgtr,
-	lesseqqgtr: lesseqqgtr,
-	LessEqualGreater: LessEqualGreater,
-	LessFullEqual: LessFullEqual,
-	LessGreater: LessGreater,
-	lessgtr: lessgtr,
-	LessLess: LessLess,
-	lesssim: lesssim,
-	LessSlantEqual: LessSlantEqual,
-	LessTilde: LessTilde,
-	lfisht: lfisht,
-	lfloor: lfloor,
-	Lfr: Lfr,
-	lfr: lfr,
-	lg: lg,
-	lgE: lgE,
-	lHar: lHar,
-	lhard: lhard,
-	lharu: lharu,
-	lharul: lharul,
-	lhblk: lhblk,
-	LJcy: LJcy,
-	ljcy: ljcy,
-	llarr: llarr,
-	ll: ll,
-	Ll: Ll,
-	llcorner: llcorner,
-	Lleftarrow: Lleftarrow,
-	llhard: llhard,
-	lltri: lltri,
-	Lmidot: Lmidot,
-	lmidot: lmidot,
-	lmoustache: lmoustache,
-	lmoust: lmoust,
-	lnap: lnap,
-	lnapprox: lnapprox,
-	lne: lne,
-	lnE: lnE,
-	lneq: lneq,
-	lneqq: lneqq,
-	lnsim: lnsim,
-	loang: loang,
-	loarr: loarr,
-	lobrk: lobrk,
-	longleftarrow: longleftarrow,
-	LongLeftArrow: LongLeftArrow,
-	Longleftarrow: Longleftarrow,
-	longleftrightarrow: longleftrightarrow,
-	LongLeftRightArrow: LongLeftRightArrow,
-	Longleftrightarrow: Longleftrightarrow,
-	longmapsto: longmapsto,
-	longrightarrow: longrightarrow,
-	LongRightArrow: LongRightArrow,
-	Longrightarrow: Longrightarrow,
-	looparrowleft: looparrowleft,
-	looparrowright: looparrowright,
-	lopar: lopar,
-	Lopf: Lopf,
-	lopf: lopf,
-	loplus: loplus,
-	lotimes: lotimes,
-	lowast: lowast,
-	lowbar: lowbar,
-	LowerLeftArrow: LowerLeftArrow,
-	LowerRightArrow: LowerRightArrow,
-	loz: loz,
-	lozenge: lozenge,
-	lozf: lozf,
-	lpar: lpar,
-	lparlt: lparlt,
-	lrarr: lrarr,
-	lrcorner: lrcorner,
-	lrhar: lrhar,
-	lrhard: lrhard,
-	lrm: lrm,
-	lrtri: lrtri,
-	lsaquo: lsaquo,
-	lscr: lscr,
-	Lscr: Lscr,
-	lsh: lsh,
-	Lsh: Lsh,
-	lsim: lsim,
-	lsime: lsime,
-	lsimg: lsimg,
-	lsqb: lsqb,
-	lsquo: lsquo,
-	lsquor: lsquor,
-	Lstrok: Lstrok,
-	lstrok: lstrok,
-	ltcc: ltcc,
-	ltcir: ltcir,
-	lt: lt$2,
-	LT: LT$1,
-	Lt: Lt,
-	ltdot: ltdot,
-	lthree: lthree,
-	ltimes: ltimes,
-	ltlarr: ltlarr,
-	ltquest: ltquest,
-	ltri: ltri,
-	ltrie: ltrie,
-	ltrif: ltrif,
-	ltrPar: ltrPar,
-	lurdshar: lurdshar,
-	luruhar: luruhar,
-	lvertneqq: lvertneqq,
-	lvnE: lvnE,
-	macr: macr$1,
-	male: male,
-	malt: malt,
-	maltese: maltese,
-	"Map": "⤅",
-	map: map$2,
-	mapsto: mapsto,
-	mapstodown: mapstodown,
-	mapstoleft: mapstoleft,
-	mapstoup: mapstoup,
-	marker: marker,
-	mcomma: mcomma,
-	Mcy: Mcy,
-	mcy: mcy,
-	mdash: mdash,
-	mDDot: mDDot,
-	measuredangle: measuredangle,
-	MediumSpace: MediumSpace,
-	Mellintrf: Mellintrf,
-	Mfr: Mfr,
-	mfr: mfr,
-	mho: mho,
-	micro: micro$1,
-	midast: midast,
-	midcir: midcir,
-	mid: mid,
-	middot: middot$1,
-	minusb: minusb,
-	minus: minus,
-	minusd: minusd,
-	minusdu: minusdu,
-	MinusPlus: MinusPlus,
-	mlcp: mlcp,
-	mldr: mldr,
-	mnplus: mnplus,
-	models: models,
-	Mopf: Mopf,
-	mopf: mopf,
-	mp: mp,
-	mscr: mscr,
-	Mscr: Mscr,
-	mstpos: mstpos,
-	Mu: Mu,
-	mu: mu,
-	multimap: multimap,
-	mumap: mumap,
-	nabla: nabla,
-	Nacute: Nacute,
-	nacute: nacute,
-	nang: nang,
-	nap: nap,
-	napE: napE,
-	napid: napid,
-	napos: napos,
-	napprox: napprox,
-	natural: natural,
-	naturals: naturals,
-	natur: natur,
-	nbsp: nbsp$1,
-	nbump: nbump,
-	nbumpe: nbumpe,
-	ncap: ncap,
-	Ncaron: Ncaron,
-	ncaron: ncaron,
-	Ncedil: Ncedil,
-	ncedil: ncedil,
-	ncong: ncong,
-	ncongdot: ncongdot,
-	ncup: ncup,
-	Ncy: Ncy,
-	ncy: ncy,
-	ndash: ndash,
-	nearhk: nearhk,
-	nearr: nearr,
-	neArr: neArr,
-	nearrow: nearrow,
-	ne: ne,
-	nedot: nedot,
-	NegativeMediumSpace: NegativeMediumSpace,
-	NegativeThickSpace: NegativeThickSpace,
-	NegativeThinSpace: NegativeThinSpace,
-	NegativeVeryThinSpace: NegativeVeryThinSpace,
-	nequiv: nequiv,
-	nesear: nesear,
-	nesim: nesim,
-	NestedGreaterGreater: NestedGreaterGreater,
-	NestedLessLess: NestedLessLess,
-	NewLine: NewLine,
-	nexist: nexist,
-	nexists: nexists,
-	Nfr: Nfr,
-	nfr: nfr,
-	ngE: ngE,
-	nge: nge,
-	ngeq: ngeq,
-	ngeqq: ngeqq,
-	ngeqslant: ngeqslant,
-	nges: nges,
-	nGg: nGg,
-	ngsim: ngsim,
-	nGt: nGt,
-	ngt: ngt,
-	ngtr: ngtr,
-	nGtv: nGtv,
-	nharr: nharr,
-	nhArr: nhArr,
-	nhpar: nhpar,
-	ni: ni,
-	nis: nis,
-	nisd: nisd,
-	niv: niv,
-	NJcy: NJcy,
-	njcy: njcy,
-	nlarr: nlarr,
-	nlArr: nlArr,
-	nldr: nldr,
-	nlE: nlE,
-	nle: nle,
-	nleftarrow: nleftarrow,
-	nLeftarrow: nLeftarrow,
-	nleftrightarrow: nleftrightarrow,
-	nLeftrightarrow: nLeftrightarrow,
-	nleq: nleq,
-	nleqq: nleqq,
-	nleqslant: nleqslant,
-	nles: nles,
-	nless: nless,
-	nLl: nLl,
-	nlsim: nlsim,
-	nLt: nLt,
-	nlt: nlt,
-	nltri: nltri,
-	nltrie: nltrie,
-	nLtv: nLtv,
-	nmid: nmid,
-	NoBreak: NoBreak,
-	NonBreakingSpace: NonBreakingSpace,
-	nopf: nopf,
-	Nopf: Nopf,
-	Not: Not,
-	not: not$1,
-	NotCongruent: NotCongruent,
-	NotCupCap: NotCupCap,
-	NotDoubleVerticalBar: NotDoubleVerticalBar,
-	NotElement: NotElement,
-	NotEqual: NotEqual,
-	NotEqualTilde: NotEqualTilde,
-	NotExists: NotExists,
-	NotGreater: NotGreater,
-	NotGreaterEqual: NotGreaterEqual,
-	NotGreaterFullEqual: NotGreaterFullEqual,
-	NotGreaterGreater: NotGreaterGreater,
-	NotGreaterLess: NotGreaterLess,
-	NotGreaterSlantEqual: NotGreaterSlantEqual,
-	NotGreaterTilde: NotGreaterTilde,
-	NotHumpDownHump: NotHumpDownHump,
-	NotHumpEqual: NotHumpEqual,
-	notin: notin,
-	notindot: notindot,
-	notinE: notinE,
-	notinva: notinva,
-	notinvb: notinvb,
-	notinvc: notinvc,
-	NotLeftTriangleBar: NotLeftTriangleBar,
-	NotLeftTriangle: NotLeftTriangle,
-	NotLeftTriangleEqual: NotLeftTriangleEqual,
-	NotLess: NotLess,
-	NotLessEqual: NotLessEqual,
-	NotLessGreater: NotLessGreater,
-	NotLessLess: NotLessLess,
-	NotLessSlantEqual: NotLessSlantEqual,
-	NotLessTilde: NotLessTilde,
-	NotNestedGreaterGreater: NotNestedGreaterGreater,
-	NotNestedLessLess: NotNestedLessLess,
-	notni: notni,
-	notniva: notniva,
-	notnivb: notnivb,
-	notnivc: notnivc,
-	NotPrecedes: NotPrecedes,
-	NotPrecedesEqual: NotPrecedesEqual,
-	NotPrecedesSlantEqual: NotPrecedesSlantEqual,
-	NotReverseElement: NotReverseElement,
-	NotRightTriangleBar: NotRightTriangleBar,
-	NotRightTriangle: NotRightTriangle,
-	NotRightTriangleEqual: NotRightTriangleEqual,
-	NotSquareSubset: NotSquareSubset,
-	NotSquareSubsetEqual: NotSquareSubsetEqual,
-	NotSquareSuperset: NotSquareSuperset,
-	NotSquareSupersetEqual: NotSquareSupersetEqual,
-	NotSubset: NotSubset,
-	NotSubsetEqual: NotSubsetEqual,
-	NotSucceeds: NotSucceeds,
-	NotSucceedsEqual: NotSucceedsEqual,
-	NotSucceedsSlantEqual: NotSucceedsSlantEqual,
-	NotSucceedsTilde: NotSucceedsTilde,
-	NotSuperset: NotSuperset,
-	NotSupersetEqual: NotSupersetEqual,
-	NotTilde: NotTilde,
-	NotTildeEqual: NotTildeEqual,
-	NotTildeFullEqual: NotTildeFullEqual,
-	NotTildeTilde: NotTildeTilde,
-	NotVerticalBar: NotVerticalBar,
-	nparallel: nparallel,
-	npar: npar,
-	nparsl: nparsl,
-	npart: npart,
-	npolint: npolint,
-	npr: npr,
-	nprcue: nprcue,
-	nprec: nprec,
-	npreceq: npreceq,
-	npre: npre,
-	nrarrc: nrarrc,
-	nrarr: nrarr,
-	nrArr: nrArr,
-	nrarrw: nrarrw,
-	nrightarrow: nrightarrow,
-	nRightarrow: nRightarrow,
-	nrtri: nrtri,
-	nrtrie: nrtrie,
-	nsc: nsc,
-	nsccue: nsccue,
-	nsce: nsce,
-	Nscr: Nscr,
-	nscr: nscr,
-	nshortmid: nshortmid,
-	nshortparallel: nshortparallel,
-	nsim: nsim,
-	nsime: nsime,
-	nsimeq: nsimeq,
-	nsmid: nsmid,
-	nspar: nspar,
-	nsqsube: nsqsube,
-	nsqsupe: nsqsupe,
-	nsub: nsub,
-	nsubE: nsubE,
-	nsube: nsube,
-	nsubset: nsubset,
-	nsubseteq: nsubseteq,
-	nsubseteqq: nsubseteqq,
-	nsucc: nsucc,
-	nsucceq: nsucceq,
-	nsup: nsup,
-	nsupE: nsupE,
-	nsupe: nsupe,
-	nsupset: nsupset,
-	nsupseteq: nsupseteq,
-	nsupseteqq: nsupseteqq,
-	ntgl: ntgl,
-	Ntilde: Ntilde$1,
-	ntilde: ntilde$1,
-	ntlg: ntlg,
-	ntriangleleft: ntriangleleft,
-	ntrianglelefteq: ntrianglelefteq,
-	ntriangleright: ntriangleright,
-	ntrianglerighteq: ntrianglerighteq,
-	Nu: Nu,
-	nu: nu,
-	num: num,
-	numero: numero,
-	numsp: numsp,
-	nvap: nvap,
-	nvdash: nvdash,
-	nvDash: nvDash,
-	nVdash: nVdash,
-	nVDash: nVDash,
-	nvge: nvge,
-	nvgt: nvgt,
-	nvHarr: nvHarr,
-	nvinfin: nvinfin,
-	nvlArr: nvlArr,
-	nvle: nvle,
-	nvlt: nvlt,
-	nvltrie: nvltrie,
-	nvrArr: nvrArr,
-	nvrtrie: nvrtrie,
-	nvsim: nvsim,
-	nwarhk: nwarhk,
-	nwarr: nwarr,
-	nwArr: nwArr,
-	nwarrow: nwarrow,
-	nwnear: nwnear,
-	Oacute: Oacute$1,
-	oacute: oacute$1,
-	oast: oast,
-	Ocirc: Ocirc$1,
-	ocirc: ocirc$1,
-	ocir: ocir,
-	Ocy: Ocy,
-	ocy: ocy,
-	odash: odash,
-	Odblac: Odblac,
-	odblac: odblac,
-	odiv: odiv,
-	odot: odot,
-	odsold: odsold,
-	OElig: OElig,
-	oelig: oelig,
-	ofcir: ofcir,
-	Ofr: Ofr,
-	ofr: ofr,
-	ogon: ogon,
-	Ograve: Ograve$1,
-	ograve: ograve$1,
-	ogt: ogt,
-	ohbar: ohbar,
-	ohm: ohm,
-	oint: oint,
-	olarr: olarr,
-	olcir: olcir,
-	olcross: olcross,
-	oline: oline,
-	olt: olt,
-	Omacr: Omacr,
-	omacr: omacr,
-	Omega: Omega,
-	omega: omega,
-	Omicron: Omicron,
-	omicron: omicron,
-	omid: omid,
-	ominus: ominus,
-	Oopf: Oopf,
-	oopf: oopf,
-	opar: opar,
-	OpenCurlyDoubleQuote: OpenCurlyDoubleQuote,
-	OpenCurlyQuote: OpenCurlyQuote,
-	operp: operp,
-	oplus: oplus,
-	orarr: orarr,
-	Or: Or,
-	or: or,
-	ord: ord,
-	order: order,
-	orderof: orderof,
-	ordf: ordf$1,
-	ordm: ordm$1,
-	origof: origof,
-	oror: oror,
-	orslope: orslope,
-	orv: orv,
-	oS: oS,
-	Oscr: Oscr,
-	oscr: oscr,
-	Oslash: Oslash$1,
-	oslash: oslash$1,
-	osol: osol,
-	Otilde: Otilde$1,
-	otilde: otilde$1,
-	otimesas: otimesas,
-	Otimes: Otimes,
-	otimes: otimes,
-	Ouml: Ouml$1,
-	ouml: ouml$1,
-	ovbar: ovbar,
-	OverBar: OverBar,
-	OverBrace: OverBrace,
-	OverBracket: OverBracket,
-	OverParenthesis: OverParenthesis,
-	para: para$1,
-	parallel: parallel,
-	par: par,
-	parsim: parsim,
-	parsl: parsl,
-	part: part,
-	PartialD: PartialD,
-	Pcy: Pcy,
-	pcy: pcy,
-	percnt: percnt,
-	period: period,
-	permil: permil,
-	perp: perp,
-	pertenk: pertenk,
-	Pfr: Pfr,
-	pfr: pfr,
-	Phi: Phi,
-	phi: phi,
-	phiv: phiv,
-	phmmat: phmmat,
-	phone: phone,
-	Pi: Pi,
-	pi: pi,
-	pitchfork: pitchfork,
-	piv: piv,
-	planck: planck,
-	planckh: planckh,
-	plankv: plankv,
-	plusacir: plusacir,
-	plusb: plusb,
-	pluscir: pluscir,
-	plus: plus,
-	plusdo: plusdo,
-	plusdu: plusdu,
-	pluse: pluse,
-	PlusMinus: PlusMinus,
-	plusmn: plusmn$1,
-	plussim: plussim,
-	plustwo: plustwo,
-	pm: pm,
-	Poincareplane: Poincareplane,
-	pointint: pointint,
-	popf: popf,
-	Popf: Popf,
-	pound: pound$1,
-	prap: prap,
-	Pr: Pr,
-	pr: pr,
-	prcue: prcue,
-	precapprox: precapprox,
-	prec: prec,
-	preccurlyeq: preccurlyeq,
-	Precedes: Precedes,
-	PrecedesEqual: PrecedesEqual,
-	PrecedesSlantEqual: PrecedesSlantEqual,
-	PrecedesTilde: PrecedesTilde,
-	preceq: preceq,
-	precnapprox: precnapprox,
-	precneqq: precneqq,
-	precnsim: precnsim,
-	pre: pre,
-	prE: prE,
-	precsim: precsim,
-	prime: prime,
-	Prime: Prime,
-	primes: primes,
-	prnap: prnap,
-	prnE: prnE,
-	prnsim: prnsim,
-	prod: prod,
-	Product: Product,
-	profalar: profalar,
-	profline: profline,
-	profsurf: profsurf,
-	prop: prop,
-	Proportional: Proportional,
-	Proportion: Proportion,
-	propto: propto,
-	prsim: prsim,
-	prurel: prurel,
-	Pscr: Pscr,
-	pscr: pscr,
-	Psi: Psi,
-	psi: psi,
-	puncsp: puncsp,
-	Qfr: Qfr,
-	qfr: qfr,
-	qint: qint,
-	qopf: qopf,
-	Qopf: Qopf,
-	qprime: qprime,
-	Qscr: Qscr,
-	qscr: qscr,
-	quaternions: quaternions,
-	quatint: quatint,
-	quest: quest,
-	questeq: questeq,
-	quot: quot$2,
-	QUOT: QUOT$1,
-	rAarr: rAarr,
-	race: race$1,
-	Racute: Racute,
-	racute: racute,
-	radic: radic,
-	raemptyv: raemptyv,
-	rang: rang,
-	Rang: Rang,
-	rangd: rangd,
-	range: range$1,
-	rangle: rangle,
-	raquo: raquo$1,
-	rarrap: rarrap,
-	rarrb: rarrb,
-	rarrbfs: rarrbfs,
-	rarrc: rarrc,
-	rarr: rarr,
-	Rarr: Rarr,
-	rArr: rArr,
-	rarrfs: rarrfs,
-	rarrhk: rarrhk,
-	rarrlp: rarrlp,
-	rarrpl: rarrpl,
-	rarrsim: rarrsim,
-	Rarrtl: Rarrtl,
-	rarrtl: rarrtl,
-	rarrw: rarrw,
-	ratail: ratail,
-	rAtail: rAtail,
-	ratio: ratio,
-	rationals: rationals,
-	rbarr: rbarr,
-	rBarr: rBarr,
-	RBarr: RBarr,
-	rbbrk: rbbrk,
-	rbrace: rbrace,
-	rbrack: rbrack,
-	rbrke: rbrke,
-	rbrksld: rbrksld,
-	rbrkslu: rbrkslu,
-	Rcaron: Rcaron,
-	rcaron: rcaron,
-	Rcedil: Rcedil,
-	rcedil: rcedil,
-	rceil: rceil,
-	rcub: rcub,
-	Rcy: Rcy,
-	rcy: rcy,
-	rdca: rdca,
-	rdldhar: rdldhar,
-	rdquo: rdquo,
-	rdquor: rdquor,
-	rdsh: rdsh,
-	real: real,
-	realine: realine,
-	realpart: realpart,
-	reals: reals,
-	Re: Re,
-	rect: rect,
-	reg: reg$1,
-	REG: REG$1,
-	ReverseElement: ReverseElement,
-	ReverseEquilibrium: ReverseEquilibrium,
-	ReverseUpEquilibrium: ReverseUpEquilibrium,
-	rfisht: rfisht,
-	rfloor: rfloor,
-	rfr: rfr,
-	Rfr: Rfr,
-	rHar: rHar,
-	rhard: rhard,
-	rharu: rharu,
-	rharul: rharul,
-	Rho: Rho,
-	rho: rho,
-	rhov: rhov,
-	RightAngleBracket: RightAngleBracket,
-	RightArrowBar: RightArrowBar,
-	rightarrow: rightarrow,
-	RightArrow: RightArrow,
-	Rightarrow: Rightarrow,
-	RightArrowLeftArrow: RightArrowLeftArrow,
-	rightarrowtail: rightarrowtail,
-	RightCeiling: RightCeiling,
-	RightDoubleBracket: RightDoubleBracket,
-	RightDownTeeVector: RightDownTeeVector,
-	RightDownVectorBar: RightDownVectorBar,
-	RightDownVector: RightDownVector,
-	RightFloor: RightFloor,
-	rightharpoondown: rightharpoondown,
-	rightharpoonup: rightharpoonup,
-	rightleftarrows: rightleftarrows,
-	rightleftharpoons: rightleftharpoons,
-	rightrightarrows: rightrightarrows,
-	rightsquigarrow: rightsquigarrow,
-	RightTeeArrow: RightTeeArrow,
-	RightTee: RightTee,
-	RightTeeVector: RightTeeVector,
-	rightthreetimes: rightthreetimes,
-	RightTriangleBar: RightTriangleBar,
-	RightTriangle: RightTriangle,
-	RightTriangleEqual: RightTriangleEqual,
-	RightUpDownVector: RightUpDownVector,
-	RightUpTeeVector: RightUpTeeVector,
-	RightUpVectorBar: RightUpVectorBar,
-	RightUpVector: RightUpVector,
-	RightVectorBar: RightVectorBar,
-	RightVector: RightVector,
-	ring: ring,
-	risingdotseq: risingdotseq,
-	rlarr: rlarr,
-	rlhar: rlhar,
-	rlm: rlm,
-	rmoustache: rmoustache,
-	rmoust: rmoust,
-	rnmid: rnmid,
-	roang: roang,
-	roarr: roarr,
-	robrk: robrk,
-	ropar: ropar,
-	ropf: ropf,
-	Ropf: Ropf,
-	roplus: roplus,
-	rotimes: rotimes,
-	RoundImplies: RoundImplies,
-	rpar: rpar,
-	rpargt: rpargt,
-	rppolint: rppolint,
-	rrarr: rrarr,
-	Rrightarrow: Rrightarrow,
-	rsaquo: rsaquo,
-	rscr: rscr,
-	Rscr: Rscr,
-	rsh: rsh,
-	Rsh: Rsh,
-	rsqb: rsqb,
-	rsquo: rsquo,
-	rsquor: rsquor,
-	rthree: rthree,
-	rtimes: rtimes,
-	rtri: rtri,
-	rtrie: rtrie,
-	rtrif: rtrif,
-	rtriltri: rtriltri,
-	RuleDelayed: RuleDelayed,
-	ruluhar: ruluhar,
-	rx: rx,
-	Sacute: Sacute,
-	sacute: sacute,
-	sbquo: sbquo,
-	scap: scap,
-	Scaron: Scaron,
-	scaron: scaron,
-	Sc: Sc,
-	sc: sc,
-	sccue: sccue,
-	sce: sce,
-	scE: scE,
-	Scedil: Scedil,
-	scedil: scedil,
-	Scirc: Scirc,
-	scirc: scirc,
-	scnap: scnap,
-	scnE: scnE,
-	scnsim: scnsim,
-	scpolint: scpolint,
-	scsim: scsim,
-	Scy: Scy,
-	scy: scy,
-	sdotb: sdotb,
-	sdot: sdot,
-	sdote: sdote,
-	searhk: searhk,
-	searr: searr,
-	seArr: seArr,
-	searrow: searrow,
-	sect: sect$1,
-	semi: semi,
-	seswar: seswar,
-	setminus: setminus,
-	setmn: setmn,
-	sext: sext,
-	Sfr: Sfr,
-	sfr: sfr,
-	sfrown: sfrown,
-	sharp: sharp,
-	SHCHcy: SHCHcy,
-	shchcy: shchcy,
-	SHcy: SHcy,
-	shcy: shcy,
-	ShortDownArrow: ShortDownArrow,
-	ShortLeftArrow: ShortLeftArrow,
-	shortmid: shortmid,
-	shortparallel: shortparallel,
-	ShortRightArrow: ShortRightArrow,
-	ShortUpArrow: ShortUpArrow,
-	shy: shy$1,
-	Sigma: Sigma,
-	sigma: sigma,
-	sigmaf: sigmaf,
-	sigmav: sigmav,
-	sim: sim,
-	simdot: simdot,
-	sime: sime,
-	simeq: simeq,
-	simg: simg,
-	simgE: simgE,
-	siml: siml,
-	simlE: simlE,
-	simne: simne,
-	simplus: simplus,
-	simrarr: simrarr,
-	slarr: slarr,
-	SmallCircle: SmallCircle,
-	smallsetminus: smallsetminus,
-	smashp: smashp,
-	smeparsl: smeparsl,
-	smid: smid,
-	smile: smile,
-	smt: smt,
-	smte: smte,
-	smtes: smtes,
-	SOFTcy: SOFTcy,
-	softcy: softcy,
-	solbar: solbar,
-	solb: solb,
-	sol: sol,
-	Sopf: Sopf,
-	sopf: sopf,
-	spades: spades,
-	spadesuit: spadesuit,
-	spar: spar,
-	sqcap: sqcap,
-	sqcaps: sqcaps,
-	sqcup: sqcup,
-	sqcups: sqcups,
-	Sqrt: Sqrt,
-	sqsub: sqsub,
-	sqsube: sqsube,
-	sqsubset: sqsubset,
-	sqsubseteq: sqsubseteq,
-	sqsup: sqsup,
-	sqsupe: sqsupe,
-	sqsupset: sqsupset,
-	sqsupseteq: sqsupseteq,
-	square: square,
-	Square: Square,
-	SquareIntersection: SquareIntersection,
-	SquareSubset: SquareSubset,
-	SquareSubsetEqual: SquareSubsetEqual,
-	SquareSuperset: SquareSuperset,
-	SquareSupersetEqual: SquareSupersetEqual,
-	SquareUnion: SquareUnion,
-	squarf: squarf,
-	squ: squ,
-	squf: squf,
-	srarr: srarr,
-	Sscr: Sscr,
-	sscr: sscr,
-	ssetmn: ssetmn,
-	ssmile: ssmile,
-	sstarf: sstarf,
-	Star: Star,
-	star: star,
-	starf: starf,
-	straightepsilon: straightepsilon,
-	straightphi: straightphi,
-	strns: strns,
-	sub: sub,
-	Sub: Sub,
-	subdot: subdot,
-	subE: subE,
-	sube: sube,
-	subedot: subedot,
-	submult: submult,
-	subnE: subnE,
-	subne: subne,
-	subplus: subplus,
-	subrarr: subrarr,
-	subset: subset,
-	Subset: Subset,
-	subseteq: subseteq,
-	subseteqq: subseteqq,
-	SubsetEqual: SubsetEqual,
-	subsetneq: subsetneq,
-	subsetneqq: subsetneqq,
-	subsim: subsim,
-	subsub: subsub,
-	subsup: subsup,
-	succapprox: succapprox,
-	succ: succ,
-	succcurlyeq: succcurlyeq,
-	Succeeds: Succeeds,
-	SucceedsEqual: SucceedsEqual,
-	SucceedsSlantEqual: SucceedsSlantEqual,
-	SucceedsTilde: SucceedsTilde,
-	succeq: succeq,
-	succnapprox: succnapprox,
-	succneqq: succneqq,
-	succnsim: succnsim,
-	succsim: succsim,
-	SuchThat: SuchThat,
-	sum: sum,
-	Sum: Sum,
-	sung: sung,
-	sup1: sup1$1,
-	sup2: sup2$1,
-	sup3: sup3$1,
-	sup: sup,
-	Sup: Sup,
-	supdot: supdot,
-	supdsub: supdsub,
-	supE: supE,
-	supe: supe,
-	supedot: supedot,
-	Superset: Superset,
-	SupersetEqual: SupersetEqual,
-	suphsol: suphsol,
-	suphsub: suphsub,
-	suplarr: suplarr,
-	supmult: supmult,
-	supnE: supnE,
-	supne: supne,
-	supplus: supplus,
-	supset: supset,
-	Supset: Supset,
-	supseteq: supseteq,
-	supseteqq: supseteqq,
-	supsetneq: supsetneq,
-	supsetneqq: supsetneqq,
-	supsim: supsim,
-	supsub: supsub,
-	supsup: supsup,
-	swarhk: swarhk,
-	swarr: swarr,
-	swArr: swArr,
-	swarrow: swarrow,
-	swnwar: swnwar,
-	szlig: szlig$1,
-	Tab: Tab$1,
-	target: target,
-	Tau: Tau,
-	tau: tau,
-	tbrk: tbrk,
-	Tcaron: Tcaron,
-	tcaron: tcaron,
-	Tcedil: Tcedil,
-	tcedil: tcedil,
-	Tcy: Tcy,
-	tcy: tcy,
-	tdot: tdot,
-	telrec: telrec,
-	Tfr: Tfr,
-	tfr: tfr,
-	there4: there4,
-	therefore: therefore,
-	Therefore: Therefore,
-	Theta: Theta,
-	theta: theta,
-	thetasym: thetasym,
-	thetav: thetav,
-	thickapprox: thickapprox,
-	thicksim: thicksim,
-	ThickSpace: ThickSpace,
-	ThinSpace: ThinSpace,
-	thinsp: thinsp,
-	thkap: thkap,
-	thksim: thksim,
-	THORN: THORN$1,
-	thorn: thorn$1,
-	tilde: tilde,
-	Tilde: Tilde,
-	TildeEqual: TildeEqual,
-	TildeFullEqual: TildeFullEqual,
-	TildeTilde: TildeTilde,
-	timesbar: timesbar,
-	timesb: timesb,
-	times: times$2,
-	timesd: timesd,
-	tint: tint,
-	toea: toea,
-	topbot: topbot,
-	topcir: topcir,
-	top: top,
-	Topf: Topf,
-	topf: topf,
-	topfork: topfork,
-	tosa: tosa,
-	tprime: tprime,
-	trade: trade,
-	TRADE: TRADE,
-	triangle: triangle,
-	triangledown: triangledown,
-	triangleleft: triangleleft,
-	trianglelefteq: trianglelefteq,
-	triangleq: triangleq,
-	triangleright: triangleright,
-	trianglerighteq: trianglerighteq,
-	tridot: tridot,
-	trie: trie,
-	triminus: triminus,
-	TripleDot: TripleDot,
-	triplus: triplus,
-	trisb: trisb,
-	tritime: tritime,
-	trpezium: trpezium,
-	Tscr: Tscr,
-	tscr: tscr,
-	TScy: TScy,
-	tscy: tscy,
-	TSHcy: TSHcy,
-	tshcy: tshcy,
-	Tstrok: Tstrok,
-	tstrok: tstrok,
-	twixt: twixt,
-	twoheadleftarrow: twoheadleftarrow,
-	twoheadrightarrow: twoheadrightarrow,
-	Uacute: Uacute$1,
-	uacute: uacute$1,
-	uarr: uarr,
-	Uarr: Uarr,
-	uArr: uArr,
-	Uarrocir: Uarrocir,
-	Ubrcy: Ubrcy,
-	ubrcy: ubrcy,
-	Ubreve: Ubreve,
-	ubreve: ubreve,
-	Ucirc: Ucirc$1,
-	ucirc: ucirc$1,
-	Ucy: Ucy,
-	ucy: ucy,
-	udarr: udarr,
-	Udblac: Udblac,
-	udblac: udblac,
-	udhar: udhar,
-	ufisht: ufisht,
-	Ufr: Ufr,
-	ufr: ufr,
-	Ugrave: Ugrave$1,
-	ugrave: ugrave$1,
-	uHar: uHar,
-	uharl: uharl,
-	uharr: uharr,
-	uhblk: uhblk,
-	ulcorn: ulcorn,
-	ulcorner: ulcorner,
-	ulcrop: ulcrop,
-	ultri: ultri,
-	Umacr: Umacr,
-	umacr: umacr,
-	uml: uml$1,
-	UnderBar: UnderBar,
-	UnderBrace: UnderBrace,
-	UnderBracket: UnderBracket,
-	UnderParenthesis: UnderParenthesis,
-	Union: Union,
-	UnionPlus: UnionPlus,
-	Uogon: Uogon,
-	uogon: uogon,
-	Uopf: Uopf,
-	uopf: uopf,
-	UpArrowBar: UpArrowBar,
-	uparrow: uparrow,
-	UpArrow: UpArrow,
-	Uparrow: Uparrow,
-	UpArrowDownArrow: UpArrowDownArrow,
-	updownarrow: updownarrow,
-	UpDownArrow: UpDownArrow,
-	Updownarrow: Updownarrow,
-	UpEquilibrium: UpEquilibrium,
-	upharpoonleft: upharpoonleft,
-	upharpoonright: upharpoonright,
-	uplus: uplus,
-	UpperLeftArrow: UpperLeftArrow,
-	UpperRightArrow: UpperRightArrow,
-	upsi: upsi,
-	Upsi: Upsi,
-	upsih: upsih,
-	Upsilon: Upsilon,
-	upsilon: upsilon,
-	UpTeeArrow: UpTeeArrow,
-	UpTee: UpTee,
-	upuparrows: upuparrows,
-	urcorn: urcorn,
-	urcorner: urcorner,
-	urcrop: urcrop,
-	Uring: Uring,
-	uring: uring,
-	urtri: urtri,
-	Uscr: Uscr,
-	uscr: uscr,
-	utdot: utdot,
-	Utilde: Utilde,
-	utilde: utilde,
-	utri: utri,
-	utrif: utrif,
-	uuarr: uuarr,
-	Uuml: Uuml$1,
-	uuml: uuml$1,
-	uwangle: uwangle,
-	vangrt: vangrt,
-	varepsilon: varepsilon,
-	varkappa: varkappa,
-	varnothing: varnothing,
-	varphi: varphi,
-	varpi: varpi,
-	varpropto: varpropto,
-	varr: varr,
-	vArr: vArr,
-	varrho: varrho,
-	varsigma: varsigma,
-	varsubsetneq: varsubsetneq,
-	varsubsetneqq: varsubsetneqq,
-	varsupsetneq: varsupsetneq,
-	varsupsetneqq: varsupsetneqq,
-	vartheta: vartheta,
-	vartriangleleft: vartriangleleft,
-	vartriangleright: vartriangleright,
-	vBar: vBar,
-	Vbar: Vbar,
-	vBarv: vBarv,
-	Vcy: Vcy,
-	vcy: vcy,
-	vdash: vdash,
-	vDash: vDash,
-	Vdash: Vdash,
-	VDash: VDash,
-	Vdashl: Vdashl,
-	veebar: veebar,
-	vee: vee,
-	Vee: Vee,
-	veeeq: veeeq,
-	vellip: vellip,
-	verbar: verbar,
-	Verbar: Verbar,
-	vert: vert,
-	Vert: Vert,
-	VerticalBar: VerticalBar,
-	VerticalLine: VerticalLine,
-	VerticalSeparator: VerticalSeparator,
-	VerticalTilde: VerticalTilde,
-	VeryThinSpace: VeryThinSpace,
-	Vfr: Vfr,
-	vfr: vfr,
-	vltri: vltri,
-	vnsub: vnsub,
-	vnsup: vnsup,
-	Vopf: Vopf,
-	vopf: vopf,
-	vprop: vprop,
-	vrtri: vrtri,
-	Vscr: Vscr,
-	vscr: vscr,
-	vsubnE: vsubnE,
-	vsubne: vsubne,
-	vsupnE: vsupnE,
-	vsupne: vsupne,
-	Vvdash: Vvdash,
-	vzigzag: vzigzag,
-	Wcirc: Wcirc,
-	wcirc: wcirc,
-	wedbar: wedbar,
-	wedge: wedge,
-	Wedge: Wedge,
-	wedgeq: wedgeq,
-	weierp: weierp,
-	Wfr: Wfr,
-	wfr: wfr,
-	Wopf: Wopf,
-	wopf: wopf,
-	wp: wp,
-	wr: wr,
-	wreath: wreath,
-	Wscr: Wscr,
-	wscr: wscr,
-	xcap: xcap,
-	xcirc: xcirc,
-	xcup: xcup,
-	xdtri: xdtri,
-	Xfr: Xfr,
-	xfr: xfr,
-	xharr: xharr,
-	xhArr: xhArr,
-	Xi: Xi,
-	xi: xi,
-	xlarr: xlarr,
-	xlArr: xlArr,
-	xmap: xmap,
-	xnis: xnis,
-	xodot: xodot,
-	Xopf: Xopf,
-	xopf: xopf,
-	xoplus: xoplus,
-	xotime: xotime,
-	xrarr: xrarr,
-	xrArr: xrArr,
-	Xscr: Xscr,
-	xscr: xscr,
-	xsqcup: xsqcup,
-	xuplus: xuplus,
-	xutri: xutri,
-	xvee: xvee,
-	xwedge: xwedge,
-	Yacute: Yacute$1,
-	yacute: yacute$1,
-	YAcy: YAcy,
-	yacy: yacy,
-	Ycirc: Ycirc,
-	ycirc: ycirc,
-	Ycy: Ycy,
-	ycy: ycy,
-	yen: yen$1,
-	Yfr: Yfr,
-	yfr: yfr,
-	YIcy: YIcy,
-	yicy: yicy,
-	Yopf: Yopf,
-	yopf: yopf,
-	Yscr: Yscr,
-	yscr: yscr,
-	YUcy: YUcy,
-	yucy: yucy,
-	yuml: yuml$1,
-	Yuml: Yuml,
-	Zacute: Zacute,
-	zacute: zacute,
-	Zcaron: Zcaron,
-	zcaron: zcaron,
-	Zcy: Zcy,
-	zcy: zcy,
-	Zdot: Zdot,
-	zdot: zdot,
-	zeetrf: zeetrf,
-	ZeroWidthSpace: ZeroWidthSpace,
-	Zeta: Zeta,
-	zeta: zeta,
-	zfr: zfr,
-	Zfr: Zfr,
-	ZHcy: ZHcy,
-	zhcy: zhcy,
-	zigrarr: zigrarr,
-	zopf: zopf,
-	Zopf: Zopf,
-	Zscr: Zscr,
-	zscr: zscr,
-	zwj: zwj,
-	zwnj: zwnj
-};
-
-var Aacute = "Á";
-var aacute = "á";
-var Acirc = "Â";
-var acirc = "â";
-var acute = "´";
-var AElig = "Æ";
-var aelig = "æ";
-var Agrave = "À";
-var agrave = "à";
-var amp$1 = "&";
-var AMP = "&";
-var Aring = "Å";
-var aring = "å";
-var Atilde = "Ã";
-var atilde = "ã";
-var Auml = "Ä";
-var auml = "ä";
-var brvbar = "¦";
-var Ccedil = "Ç";
-var ccedil = "ç";
-var cedil = "¸";
-var cent = "¢";
-var copy$1 = "©";
-var COPY$1 = "©";
-var curren = "¤";
-var deg = "°";
-var divide = "÷";
-var Eacute = "É";
-var eacute = "é";
-var Ecirc = "Ê";
-var ecirc = "ê";
-var Egrave = "È";
-var egrave = "è";
-var ETH = "Ð";
-var eth = "ð";
-var Euml = "Ë";
-var euml = "ë";
-var frac12 = "½";
-var frac14 = "¼";
-var frac34 = "¾";
-var gt$1 = ">";
-var GT = ">";
-var Iacute = "Í";
-var iacute = "í";
-var Icirc = "Î";
-var icirc = "î";
-var iexcl = "¡";
-var Igrave = "Ì";
-var igrave = "ì";
-var iquest = "¿";
-var Iuml = "Ï";
-var iuml = "ï";
-var laquo = "«";
-var lt$1 = "<";
-var LT = "<";
-var macr = "¯";
-var micro = "µ";
-var middot = "·";
-var nbsp = " ";
-var not = "¬";
-var Ntilde = "Ñ";
-var ntilde = "ñ";
-var Oacute = "Ó";
-var oacute = "ó";
-var Ocirc = "Ô";
-var ocirc = "ô";
-var Ograve = "Ò";
-var ograve = "ò";
-var ordf = "ª";
-var ordm = "º";
-var Oslash = "Ø";
-var oslash = "ø";
-var Otilde = "Õ";
-var otilde = "õ";
-var Ouml = "Ö";
-var ouml = "ö";
-var para = "¶";
-var plusmn = "±";
-var pound = "£";
-var quot$1 = "\"";
-var QUOT = "\"";
-var raquo = "»";
-var reg = "®";
-var REG = "®";
-var sect = "§";
-var shy = "­";
-var sup1 = "¹";
-var sup2 = "²";
-var sup3 = "³";
-var szlig = "ß";
-var THORN = "Þ";
-var thorn = "þ";
-var times$1 = "×";
-var Uacute = "Ú";
-var uacute = "ú";
-var Ucirc = "Û";
-var ucirc = "û";
-var Ugrave = "Ù";
-var ugrave = "ù";
-var uml = "¨";
-var Uuml = "Ü";
-var uuml = "ü";
-var Yacute = "Ý";
-var yacute = "ý";
-var yen = "¥";
-var yuml = "ÿ";
-var require$$1 = {
-	Aacute: Aacute,
-	aacute: aacute,
-	Acirc: Acirc,
-	acirc: acirc,
-	acute: acute,
-	AElig: AElig,
-	aelig: aelig,
-	Agrave: Agrave,
-	agrave: agrave,
-	amp: amp$1,
-	AMP: AMP,
-	Aring: Aring,
-	aring: aring,
-	Atilde: Atilde,
-	atilde: atilde,
-	Auml: Auml,
-	auml: auml,
-	brvbar: brvbar,
-	Ccedil: Ccedil,
-	ccedil: ccedil,
-	cedil: cedil,
-	cent: cent,
-	copy: copy$1,
-	COPY: COPY$1,
-	curren: curren,
-	deg: deg,
-	divide: divide,
-	Eacute: Eacute,
-	eacute: eacute,
-	Ecirc: Ecirc,
-	ecirc: ecirc,
-	Egrave: Egrave,
-	egrave: egrave,
-	ETH: ETH,
-	eth: eth,
-	Euml: Euml,
-	euml: euml,
-	frac12: frac12,
-	frac14: frac14,
-	frac34: frac34,
-	gt: gt$1,
-	GT: GT,
-	Iacute: Iacute,
-	iacute: iacute,
-	Icirc: Icirc,
-	icirc: icirc,
-	iexcl: iexcl,
-	Igrave: Igrave,
-	igrave: igrave,
-	iquest: iquest,
-	Iuml: Iuml,
-	iuml: iuml,
-	laquo: laquo,
-	lt: lt$1,
-	LT: LT,
-	macr: macr,
-	micro: micro,
-	middot: middot,
-	nbsp: nbsp,
-	not: not,
-	Ntilde: Ntilde,
-	ntilde: ntilde,
-	Oacute: Oacute,
-	oacute: oacute,
-	Ocirc: Ocirc,
-	ocirc: ocirc,
-	Ograve: Ograve,
-	ograve: ograve,
-	ordf: ordf,
-	ordm: ordm,
-	Oslash: Oslash,
-	oslash: oslash,
-	Otilde: Otilde,
-	otilde: otilde,
-	Ouml: Ouml,
-	ouml: ouml,
-	para: para,
-	plusmn: plusmn,
-	pound: pound,
-	quot: quot$1,
-	QUOT: QUOT,
-	raquo: raquo,
-	reg: reg,
-	REG: REG,
-	sect: sect,
-	shy: shy,
-	sup1: sup1,
-	sup2: sup2,
-	sup3: sup3,
-	szlig: szlig,
-	THORN: THORN,
-	thorn: thorn,
-	times: times$1,
-	Uacute: Uacute,
-	uacute: uacute,
-	Ucirc: Ucirc,
-	ucirc: ucirc,
-	Ugrave: Ugrave,
-	ugrave: ugrave,
-	uml: uml,
-	Uuml: Uuml,
-	uuml: uuml,
-	Yacute: Yacute,
-	yacute: yacute,
-	yen: yen,
-	yuml: yuml
-};
-
-var amp = "&";
-var apos = "'";
-var gt = ">";
-var lt = "<";
-var quot = "\"";
-var require$$0$2 = {
-	amp: amp,
-	apos: apos,
-	gt: gt,
-	lt: lt,
-	quot: quot
-};
-
-var decode_codepoint = {};
-
-var require$$0$1 = {
-	"0": 65533,
-	"128": 8364,
-	"130": 8218,
-	"131": 402,
-	"132": 8222,
-	"133": 8230,
-	"134": 8224,
-	"135": 8225,
-	"136": 710,
-	"137": 8240,
-	"138": 352,
-	"139": 8249,
-	"140": 338,
-	"142": 381,
-	"145": 8216,
-	"146": 8217,
-	"147": 8220,
-	"148": 8221,
-	"149": 8226,
-	"150": 8211,
-	"151": 8212,
-	"152": 732,
-	"153": 8482,
-	"154": 353,
-	"155": 8250,
-	"156": 339,
-	"158": 382,
-	"159": 376
-};
-
-var __importDefault$3 = (commonjsGlobal && commonjsGlobal.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(decode_codepoint, "__esModule", { value: true });
-var decode_json_1 = __importDefault$3(require$$0$1);
-// Adapted from https://github.com/mathiasbynens/he/blob/master/src/he.js#L94-L119
-var fromCodePoint$1 = 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-String.fromCodePoint ||
-    function (codePoint) {
-        var output = "";
-        if (codePoint > 0xffff) {
-            codePoint -= 0x10000;
-            output += String.fromCharCode(((codePoint >>> 10) & 0x3ff) | 0xd800);
-            codePoint = 0xdc00 | (codePoint & 0x3ff);
-        }
-        output += String.fromCharCode(codePoint);
-        return output;
-    };
-function decodeCodePoint(codePoint) {
-    if ((codePoint >= 0xd800 && codePoint <= 0xdfff) || codePoint > 0x10ffff) {
-        return "\uFFFD";
-    }
-    if (codePoint in decode_json_1.default) {
-        codePoint = decode_json_1.default[codePoint];
-    }
-    return fromCodePoint$1(codePoint);
-}
-decode_codepoint.default = decodeCodePoint;
-
-var __importDefault$2 = (commonjsGlobal && commonjsGlobal.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(decode, "__esModule", { value: true });
-decode.decodeHTML = decode.decodeHTMLStrict = decode.decodeXML = void 0;
-var entities_json_1$1 = __importDefault$2(require$$1$1);
-var legacy_json_1 = __importDefault$2(require$$1);
-var xml_json_1$1 = __importDefault$2(require$$0$2);
-var decode_codepoint_1 = __importDefault$2(decode_codepoint);
-var strictEntityRe = /&(?:[a-zA-Z0-9]+|#[xX][\da-fA-F]+|#\d+);/g;
-decode.decodeXML = getStrictDecoder(xml_json_1$1.default);
-decode.decodeHTMLStrict = getStrictDecoder(entities_json_1$1.default);
-function getStrictDecoder(map) {
-    var replace = getReplacer(map);
-    return function (str) { return String(str).replace(strictEntityRe, replace); };
-}
-var sorter = function (a, b) { return (a < b ? 1 : -1); };
-decode.decodeHTML = (function () {
-    var legacy = Object.keys(legacy_json_1.default).sort(sorter);
-    var keys = Object.keys(entities_json_1$1.default).sort(sorter);
-    for (var i = 0, j = 0; i < keys.length; i++) {
-        if (legacy[j] === keys[i]) {
-            keys[i] += ";?";
-            j++;
-        }
-        else {
-            keys[i] += ";";
-        }
-    }
-    var re = new RegExp("&(?:" + keys.join("|") + "|#[xX][\\da-fA-F]+;?|#\\d+;?)", "g");
-    var replace = getReplacer(entities_json_1$1.default);
-    function replacer(str) {
-        if (str.substr(-1) !== ";")
-            str += ";";
-        return replace(str);
-    }
-    // TODO consider creating a merged map
-    return function (str) { return String(str).replace(re, replacer); };
-})();
-function getReplacer(map) {
-    return function replace(str) {
-        if (str.charAt(1) === "#") {
-            var secondChar = str.charAt(2);
-            if (secondChar === "X" || secondChar === "x") {
-                return decode_codepoint_1.default(parseInt(str.substr(3), 16));
-            }
-            return decode_codepoint_1.default(parseInt(str.substr(2), 10));
-        }
-        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-        return map[str.slice(1, -1)] || str;
-    };
-}
-
-var encode = {};
-
-var __importDefault$1 = (commonjsGlobal && commonjsGlobal.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(encode, "__esModule", { value: true });
-encode.escapeUTF8 = encode.escape = encode.encodeNonAsciiHTML = encode.encodeHTML = encode.encodeXML = void 0;
-var xml_json_1 = __importDefault$1(require$$0$2);
-var inverseXML = getInverseObj(xml_json_1.default);
-var xmlReplacer = getInverseReplacer(inverseXML);
 /**
- * Encodes all non-ASCII characters, as well as characters not valid in XML
- * documents using XML entities.
- *
- * If a character has no equivalent entity, a
- * numeric hexadecimal reference (eg. `&#xfc;`) will be used.
+ * Matches a blockquote to a `>` as input.
  */
-encode.encodeXML = getASCIIEncoder(inverseXML);
-var entities_json_1 = __importDefault$1(require$$1$1);
-var inverseHTML = getInverseObj(entities_json_1.default);
-var htmlReplacer = getInverseReplacer(inverseHTML);
-/**
- * Encodes all entities and non-ASCII characters in the input.
- *
- * This includes characters that are valid ASCII characters in HTML documents.
- * For example `#` will be encoded as `&num;`. To get a more compact output,
- * consider using the `encodeNonAsciiHTML` function.
- *
- * If a character has no equivalent entity, a
- * numeric hexadecimal reference (eg. `&#xfc;`) will be used.
- */
-encode.encodeHTML = getInverse(inverseHTML, htmlReplacer);
-/**
- * Encodes all non-ASCII characters, as well as characters not valid in HTML
- * documents using HTML entities.
- *
- * If a character has no equivalent entity, a
- * numeric hexadecimal reference (eg. `&#xfc;`) will be used.
- */
-encode.encodeNonAsciiHTML = getASCIIEncoder(inverseHTML);
-function getInverseObj(obj) {
-    return Object.keys(obj)
-        .sort()
-        .reduce(function (inverse, name) {
-        inverse[obj[name]] = "&" + name + ";";
-        return inverse;
-    }, {});
-}
-function getInverseReplacer(inverse) {
-    var single = [];
-    var multiple = [];
-    for (var _i = 0, _a = Object.keys(inverse); _i < _a.length; _i++) {
-        var k = _a[_i];
-        if (k.length === 1) {
-            // Add value to single array
-            single.push("\\" + k);
-        }
-        else {
-            // Add value to multiple array
-            multiple.push(k);
-        }
-    }
-    // Add ranges to single characters.
-    single.sort();
-    for (var start = 0; start < single.length - 1; start++) {
-        // Find the end of a run of characters
-        var end = start;
-        while (end < single.length - 1 &&
-            single[end].charCodeAt(1) + 1 === single[end + 1].charCodeAt(1)) {
-            end += 1;
-        }
-        var count = 1 + end - start;
-        // We want to replace at least three characters
-        if (count < 3)
-            continue;
-        single.splice(start, count, single[start] + "-" + single[end]);
-    }
-    multiple.unshift("[" + single.join("") + "]");
-    return new RegExp(multiple.join("|"), "g");
-}
-// /[^\0-\x7F]/gu
-var reNonASCII = /(?:[\x80-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/g;
-var getCodePoint = 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-String.prototype.codePointAt != null
-    ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        function (str) { return str.codePointAt(0); }
-    : // http://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
-        function (c) {
-            return (c.charCodeAt(0) - 0xd800) * 0x400 +
-                c.charCodeAt(1) -
-                0xdc00 +
-                0x10000;
-        };
-function singleCharReplacer(c) {
-    return "&#x" + (c.length > 1 ? getCodePoint(c) : c.charCodeAt(0))
-        .toString(16)
-        .toUpperCase() + ";";
-}
-function getInverse(inverse, re) {
-    return function (data) {
-        return data
-            .replace(re, function (name) { return inverse[name]; })
-            .replace(reNonASCII, singleCharReplacer);
-    };
-}
-var reEscapeChars = new RegExp(xmlReplacer.source + "|" + reNonASCII.source, "g");
-/**
- * Encodes all non-ASCII characters, as well as characters not valid in XML
- * documents using numeric hexadecimal reference (eg. `&#xfc;`).
- *
- * Have a look at `escapeUTF8` if you want a more concise output at the expense
- * of reduced transportability.
- *
- * @param data String to escape.
- */
-function escape$1(data) {
-    return data.replace(reEscapeChars, singleCharReplacer);
-}
-encode.escape = escape$1;
-/**
- * Encodes all characters not valid in XML documents using numeric hexadecimal
- * reference (eg. `&#xfc;`).
- *
- * Note that the output will be character-set dependent.
- *
- * @param data String to escape.
- */
-function escapeUTF8(data) {
-    return data.replace(xmlReplacer, singleCharReplacer);
-}
-encode.escapeUTF8 = escapeUTF8;
-function getASCIIEncoder(obj) {
-    return function (data) {
-        return data.replace(reEscapeChars, function (c) { return obj[c] || singleCharReplacer(c); });
-    };
-}
-
-(function (exports) {
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.decodeXMLStrict = exports.decodeHTML5Strict = exports.decodeHTML4Strict = exports.decodeHTML5 = exports.decodeHTML4 = exports.decodeHTMLStrict = exports.decodeHTML = exports.decodeXML = exports.encodeHTML5 = exports.encodeHTML4 = exports.escapeUTF8 = exports.escape = exports.encodeNonAsciiHTML = exports.encodeHTML = exports.encodeXML = exports.encode = exports.decodeStrict = exports.decode = void 0;
-	var decode_1 = decode;
-	var encode_1 = encode;
-	/**
-	 * Decodes a string with entities.
-	 *
-	 * @param data String to decode.
-	 * @param level Optional level to decode at. 0 = XML, 1 = HTML. Default is 0.
-	 * @deprecated Use `decodeXML` or `decodeHTML` directly.
-	 */
-	function decode$1(data, level) {
-	    return (!level || level <= 0 ? decode_1.decodeXML : decode_1.decodeHTML)(data);
-	}
-	exports.decode = decode$1;
-	/**
-	 * Decodes a string with entities. Does not allow missing trailing semicolons for entities.
-	 *
-	 * @param data String to decode.
-	 * @param level Optional level to decode at. 0 = XML, 1 = HTML. Default is 0.
-	 * @deprecated Use `decodeHTMLStrict` or `decodeXML` directly.
-	 */
-	function decodeStrict(data, level) {
-	    return (!level || level <= 0 ? decode_1.decodeXML : decode_1.decodeHTMLStrict)(data);
-	}
-	exports.decodeStrict = decodeStrict;
-	/**
-	 * Encodes a string with entities.
-	 *
-	 * @param data String to encode.
-	 * @param level Optional level to encode at. 0 = XML, 1 = HTML. Default is 0.
-	 * @deprecated Use `encodeHTML`, `encodeXML` or `encodeNonAsciiHTML` directly.
-	 */
-	function encode$1(data, level) {
-	    return (!level || level <= 0 ? encode_1.encodeXML : encode_1.encodeHTML)(data);
-	}
-	exports.encode = encode$1;
-	var encode_2 = encode;
-	Object.defineProperty(exports, "encodeXML", { enumerable: true, get: function () { return encode_2.encodeXML; } });
-	Object.defineProperty(exports, "encodeHTML", { enumerable: true, get: function () { return encode_2.encodeHTML; } });
-	Object.defineProperty(exports, "encodeNonAsciiHTML", { enumerable: true, get: function () { return encode_2.encodeNonAsciiHTML; } });
-	Object.defineProperty(exports, "escape", { enumerable: true, get: function () { return encode_2.escape; } });
-	Object.defineProperty(exports, "escapeUTF8", { enumerable: true, get: function () { return encode_2.escapeUTF8; } });
-	// Legacy aliases (deprecated)
-	Object.defineProperty(exports, "encodeHTML4", { enumerable: true, get: function () { return encode_2.encodeHTML; } });
-	Object.defineProperty(exports, "encodeHTML5", { enumerable: true, get: function () { return encode_2.encodeHTML; } });
-	var decode_2 = decode;
-	Object.defineProperty(exports, "decodeXML", { enumerable: true, get: function () { return decode_2.decodeXML; } });
-	Object.defineProperty(exports, "decodeHTML", { enumerable: true, get: function () { return decode_2.decodeHTML; } });
-	Object.defineProperty(exports, "decodeHTMLStrict", { enumerable: true, get: function () { return decode_2.decodeHTMLStrict; } });
-	// Legacy aliases (deprecated)
-	Object.defineProperty(exports, "decodeHTML4", { enumerable: true, get: function () { return decode_2.decodeHTML; } });
-	Object.defineProperty(exports, "decodeHTML5", { enumerable: true, get: function () { return decode_2.decodeHTML; } });
-	Object.defineProperty(exports, "decodeHTML4Strict", { enumerable: true, get: function () { return decode_2.decodeHTMLStrict; } });
-	Object.defineProperty(exports, "decodeHTML5Strict", { enumerable: true, get: function () { return decode_2.decodeHTMLStrict; } });
-	Object.defineProperty(exports, "decodeXMLStrict", { enumerable: true, get: function () { return decode_2.decodeXML; } }); 
-} (lib$7));
-
-var foreignNames = {};
-
-Object.defineProperty(foreignNames, "__esModule", { value: true });
-foreignNames.attributeNames = foreignNames.elementNames = void 0;
-foreignNames.elementNames = new Map([
-    ["altglyph", "altGlyph"],
-    ["altglyphdef", "altGlyphDef"],
-    ["altglyphitem", "altGlyphItem"],
-    ["animatecolor", "animateColor"],
-    ["animatemotion", "animateMotion"],
-    ["animatetransform", "animateTransform"],
-    ["clippath", "clipPath"],
-    ["feblend", "feBlend"],
-    ["fecolormatrix", "feColorMatrix"],
-    ["fecomponenttransfer", "feComponentTransfer"],
-    ["fecomposite", "feComposite"],
-    ["feconvolvematrix", "feConvolveMatrix"],
-    ["fediffuselighting", "feDiffuseLighting"],
-    ["fedisplacementmap", "feDisplacementMap"],
-    ["fedistantlight", "feDistantLight"],
-    ["fedropshadow", "feDropShadow"],
-    ["feflood", "feFlood"],
-    ["fefunca", "feFuncA"],
-    ["fefuncb", "feFuncB"],
-    ["fefuncg", "feFuncG"],
-    ["fefuncr", "feFuncR"],
-    ["fegaussianblur", "feGaussianBlur"],
-    ["feimage", "feImage"],
-    ["femerge", "feMerge"],
-    ["femergenode", "feMergeNode"],
-    ["femorphology", "feMorphology"],
-    ["feoffset", "feOffset"],
-    ["fepointlight", "fePointLight"],
-    ["fespecularlighting", "feSpecularLighting"],
-    ["fespotlight", "feSpotLight"],
-    ["fetile", "feTile"],
-    ["feturbulence", "feTurbulence"],
-    ["foreignobject", "foreignObject"],
-    ["glyphref", "glyphRef"],
-    ["lineargradient", "linearGradient"],
-    ["radialgradient", "radialGradient"],
-    ["textpath", "textPath"],
-]);
-foreignNames.attributeNames = new Map([
-    ["definitionurl", "definitionURL"],
-    ["attributename", "attributeName"],
-    ["attributetype", "attributeType"],
-    ["basefrequency", "baseFrequency"],
-    ["baseprofile", "baseProfile"],
-    ["calcmode", "calcMode"],
-    ["clippathunits", "clipPathUnits"],
-    ["diffuseconstant", "diffuseConstant"],
-    ["edgemode", "edgeMode"],
-    ["filterunits", "filterUnits"],
-    ["glyphref", "glyphRef"],
-    ["gradienttransform", "gradientTransform"],
-    ["gradientunits", "gradientUnits"],
-    ["kernelmatrix", "kernelMatrix"],
-    ["kernelunitlength", "kernelUnitLength"],
-    ["keypoints", "keyPoints"],
-    ["keysplines", "keySplines"],
-    ["keytimes", "keyTimes"],
-    ["lengthadjust", "lengthAdjust"],
-    ["limitingconeangle", "limitingConeAngle"],
-    ["markerheight", "markerHeight"],
-    ["markerunits", "markerUnits"],
-    ["markerwidth", "markerWidth"],
-    ["maskcontentunits", "maskContentUnits"],
-    ["maskunits", "maskUnits"],
-    ["numoctaves", "numOctaves"],
-    ["pathlength", "pathLength"],
-    ["patterncontentunits", "patternContentUnits"],
-    ["patterntransform", "patternTransform"],
-    ["patternunits", "patternUnits"],
-    ["pointsatx", "pointsAtX"],
-    ["pointsaty", "pointsAtY"],
-    ["pointsatz", "pointsAtZ"],
-    ["preservealpha", "preserveAlpha"],
-    ["preserveaspectratio", "preserveAspectRatio"],
-    ["primitiveunits", "primitiveUnits"],
-    ["refx", "refX"],
-    ["refy", "refY"],
-    ["repeatcount", "repeatCount"],
-    ["repeatdur", "repeatDur"],
-    ["requiredextensions", "requiredExtensions"],
-    ["requiredfeatures", "requiredFeatures"],
-    ["specularconstant", "specularConstant"],
-    ["specularexponent", "specularExponent"],
-    ["spreadmethod", "spreadMethod"],
-    ["startoffset", "startOffset"],
-    ["stddeviation", "stdDeviation"],
-    ["stitchtiles", "stitchTiles"],
-    ["surfacescale", "surfaceScale"],
-    ["systemlanguage", "systemLanguage"],
-    ["tablevalues", "tableValues"],
-    ["targetx", "targetX"],
-    ["targety", "targetY"],
-    ["textlength", "textLength"],
-    ["viewbox", "viewBox"],
-    ["viewtarget", "viewTarget"],
-    ["xchannelselector", "xChannelSelector"],
-    ["ychannelselector", "yChannelSelector"],
-    ["zoomandpan", "zoomAndPan"],
-]);
-
-var __assign = (commonjsGlobal && commonjsGlobal.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
-var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (commonjsGlobal && commonjsGlobal.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (commonjsGlobal && commonjsGlobal.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(lib$9, "__esModule", { value: true });
-/*
- * Module dependencies
- */
-var ElementType = __importStar(lib$8);
-var entities_1 = lib$7;
-/**
- * Mixed-case SVG and MathML tags & attributes
- * recognized by the HTML parser.
- *
- * @see https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inforeign
- */
-var foreignNames_1 = foreignNames;
-var unencodedElements = new Set([
-    "style",
-    "script",
-    "xmp",
-    "iframe",
-    "noembed",
-    "noframes",
-    "plaintext",
-    "noscript",
-]);
-/**
- * Format attributes
- */
-function formatAttributes(attributes, opts) {
-    if (!attributes)
-        return;
-    return Object.keys(attributes)
-        .map(function (key) {
-        var _a, _b;
-        var value = (_a = attributes[key]) !== null && _a !== void 0 ? _a : "";
-        if (opts.xmlMode === "foreign") {
-            /* Fix up mixed-case attribute names */
-            key = (_b = foreignNames_1.attributeNames.get(key)) !== null && _b !== void 0 ? _b : key;
-        }
-        if (!opts.emptyAttrs && !opts.xmlMode && value === "") {
-            return key;
-        }
-        return key + "=\"" + (opts.decodeEntities !== false
-            ? entities_1.encodeXML(value)
-            : value.replace(/"/g, "&quot;")) + "\"";
-    })
-        .join(" ");
-}
-/**
- * Self-enclosing tags
- */
-var singleTag = new Set([
-    "area",
-    "base",
-    "basefont",
-    "br",
-    "col",
-    "command",
-    "embed",
-    "frame",
-    "hr",
-    "img",
-    "input",
-    "isindex",
-    "keygen",
-    "link",
-    "meta",
-    "param",
-    "source",
-    "track",
-    "wbr",
-]);
-/**
- * Renders a DOM node or an array of DOM nodes to a string.
- *
- * Can be thought of as the equivalent of the `outerHTML` of the passed node(s).
- *
- * @param node Node to be rendered.
- * @param options Changes serialization behavior
- */
-function render(node, options) {
-    if (options === void 0) { options = {}; }
-    var nodes = "length" in node ? node : [node];
-    var output = "";
-    for (var i = 0; i < nodes.length; i++) {
-        output += renderNode(nodes[i], options);
-    }
-    return output;
-}
-var _default = lib$9.default = render;
-function renderNode(node, options) {
-    switch (node.type) {
-        case ElementType.Root:
-            return render(node.children, options);
-        case ElementType.Directive:
-        case ElementType.Doctype:
-            return renderDirective(node);
-        case ElementType.Comment:
-            return renderComment(node);
-        case ElementType.CDATA:
-            return renderCdata(node);
-        case ElementType.Script:
-        case ElementType.Style:
-        case ElementType.Tag:
-            return renderTag(node, options);
-        case ElementType.Text:
-            return renderText(node, options);
-    }
-}
-var foreignModeIntegrationPoints = new Set([
-    "mi",
-    "mo",
-    "mn",
-    "ms",
-    "mtext",
-    "annotation-xml",
-    "foreignObject",
-    "desc",
-    "title",
-]);
-var foreignElements = new Set(["svg", "math"]);
-function renderTag(elem, opts) {
-    var _a;
-    // Handle SVG / MathML in HTML
-    if (opts.xmlMode === "foreign") {
-        /* Fix up mixed-case element names */
-        elem.name = (_a = foreignNames_1.elementNames.get(elem.name)) !== null && _a !== void 0 ? _a : elem.name;
-        /* Exit foreign mode at integration points */
-        if (elem.parent &&
-            foreignModeIntegrationPoints.has(elem.parent.name)) {
-            opts = __assign(__assign({}, opts), { xmlMode: false });
-        }
-    }
-    if (!opts.xmlMode && foreignElements.has(elem.name)) {
-        opts = __assign(__assign({}, opts), { xmlMode: "foreign" });
-    }
-    var tag = "<" + elem.name;
-    var attribs = formatAttributes(elem.attribs, opts);
-    if (attribs) {
-        tag += " " + attribs;
-    }
-    if (elem.children.length === 0 &&
-        (opts.xmlMode
-            ? // In XML mode or foreign mode, and user hasn't explicitly turned off self-closing tags
-                opts.selfClosingTags !== false
-            : // User explicitly asked for self-closing tags, even in HTML mode
-                opts.selfClosingTags && singleTag.has(elem.name))) {
-        if (!opts.xmlMode)
-            tag += " ";
-        tag += "/>";
-    }
-    else {
-        tag += ">";
-        if (elem.children.length > 0) {
-            tag += render(elem.children, opts);
-        }
-        if (opts.xmlMode || !singleTag.has(elem.name)) {
-            tag += "</" + elem.name + ">";
-        }
-    }
-    return tag;
-}
-function renderDirective(elem) {
-    return "<" + elem.data + ">";
-}
-function renderText(elem, opts) {
-    var data = elem.data || "";
-    // If entities weren't decoded, no need to encode them back
-    if (opts.decodeEntities !== false &&
-        !(!opts.xmlMode &&
-            elem.parent &&
-            unencodedElements.has(elem.parent.name))) {
-        data = entities_1.encodeXML(data);
-    }
-    return data;
-}
-function renderCdata(elem) {
-    return "<![CDATA[" + elem.children[0].data + "]]>";
-}
-function renderComment(elem) {
-    return "<!--" + elem.data + "-->";
-}
-
 const inputRegex$5 = /^\s*>\s$/;
+/**
+ * This extension allows you to create blockquotes.
+ * @see https://tiptap.dev/api/nodes/blockquote
+ */
 const Blockquote = Node$3.create({
     name: 'blockquote',
     addOptions() {
@@ -28744,10 +24614,26 @@ const Blockquote = Node$3.create({
     },
 });
 
-const starInputRegex$1 = /(?:^|\s)((?:\*\*)((?:[^*]+))(?:\*\*))$/;
-const starPasteRegex$1 = /(?:^|\s)((?:\*\*)((?:[^*]+))(?:\*\*))/g;
-const underscoreInputRegex$1 = /(?:^|\s)((?:__)((?:[^__]+))(?:__))$/;
-const underscorePasteRegex$1 = /(?:^|\s)((?:__)((?:[^__]+))(?:__))/g;
+/**
+ * Matches bold text via `**` as input.
+ */
+const starInputRegex$1 = /(?:^|\s)(\*\*(?!\s+\*\*)((?:[^*]+))\*\*(?!\s+\*\*))$/;
+/**
+ * Matches bold text via `**` while pasting.
+ */
+const starPasteRegex$1 = /(?:^|\s)(\*\*(?!\s+\*\*)((?:[^*]+))\*\*(?!\s+\*\*))/g;
+/**
+ * Matches bold text via `__` as input.
+ */
+const underscoreInputRegex$1 = /(?:^|\s)(__(?!\s+__)((?:[^_]+))__(?!\s+__))$/;
+/**
+ * Matches bold text via `__` while pasting.
+ */
+const underscorePasteRegex$1 = /(?:^|\s)(__(?!\s+__)((?:[^_]+))__(?!\s+__))/g;
+/**
+ * This extension allows you to mark text as bold.
+ * @see https://tiptap.dev/api/marks/bold
+ */
 const Bold = Mark.create({
     name: 'bold',
     addOptions() {
@@ -28818,6 +24704,10 @@ const Bold = Mark.create({
     },
 });
 
+/**
+ * This extension allows you to create list items.
+ * @see https://www.tiptap.dev/api/nodes/list-item
+ */
 const ListItem$2 = Node$3.create({
     name: 'listItem',
     addOptions() {
@@ -28848,6 +24738,11 @@ const ListItem$2 = Node$3.create({
     },
 });
 
+/**
+ * This extension allows you to create text styles. It is required by default
+ * for the `textColor` and `backgroundColor` extensions.
+ * @see https://www.tiptap.dev/api/marks/text-style
+ */
 const TextStyle$2 = Mark.create({
     name: 'textStyle',
     addOptions() {
@@ -28886,7 +24781,16 @@ const TextStyle$2 = Mark.create({
     },
 });
 
+/**
+ * Matches a bullet list to a dash or asterisk.
+ */
 const inputRegex$4 = /^\s*([-+*])\s$/;
+/**
+ * This extension allows you to create bullet lists.
+ * This requires the ListItem extension
+ * @see https://tiptap.dev/api/nodes/bullet-list
+ * @see https://tiptap.dev/api/nodes/list-item.
+ */
 const BulletList = Node$3.create({
     name: 'bulletList',
     addOptions() {
@@ -28945,8 +24849,18 @@ const BulletList = Node$3.create({
     },
 });
 
-const inputRegex$3 = /(?:^|\s)((?:`)((?:[^`]+))(?:`))$/;
-const pasteRegex$1 = /(?:^|\s)((?:`)((?:[^`]+))(?:`))/g;
+/**
+ * Matches inline code.
+ */
+const inputRegex$3 = /(?:^|\s)(`(?!\s+`)((?:[^`]+))`(?!\s+`))$/;
+/**
+ * Matches inline code while pasting.
+ */
+const pasteRegex$1 = /(?:^|\s)(`(?!\s+`)((?:[^`]+))`(?!\s+`))/g;
+/**
+ * This extension allows you to mark text as inline code.
+ * @see https://tiptap.dev/api/marks/code
+ */
 const Code = Mark.create({
     name: 'code',
     addOptions() {
@@ -29001,8 +24915,18 @@ const Code = Mark.create({
     },
 });
 
+/**
+ * Matches a code block with backticks.
+ */
 const backtickInputRegex = /^```([a-z]+)?[\s\n]$/;
+/**
+ * Matches a code block with tildes.
+ */
 const tildeInputRegex = /^~~~([a-z]+)?[\s\n]$/;
+/**
+ * This extension allows you to create code blocks.
+ * @see https://tiptap.dev/api/nodes/code-block
+ */
 const CodeBlock = Node$3.create({
     name: 'codeBlock',
     addOptions() {
@@ -29180,8 +25104,16 @@ const CodeBlock = Node$3.create({
                             return false;
                         }
                         const { tr } = view.state;
-                        // create an empty code block
-                        tr.replaceSelectionWith(this.type.create({ language }));
+                        // create an empty code block´
+                        // if the cursor is at the absolute end of the document, insert the code block before the cursor instead
+                        // of replacing the selection as the replaceSelectionWith function will cause the insertion to
+                        // happen at the previous node
+                        if (view.state.selection.from === view.state.doc.nodeSize - (1 + (view.state.selection.$to.depth * 2))) {
+                            tr.insert(view.state.selection.from - 1, this.type.create({ language }));
+                        }
+                        else {
+                            tr.replaceSelectionWith(this.type.create({ language }));
+                        }
                         // put cursor inside the newly created code block
                         tr.setSelection(TextSelection.near(tr.doc.resolve(Math.max(0, tr.selection.from - 2))));
                         // add text to code block
@@ -29201,6 +25133,10 @@ const CodeBlock = Node$3.create({
     },
 });
 
+/**
+ * The default document node which represents the top level node of the editor.
+ * @see https://tiptap.dev/api/nodes/document
+ */
 const Document$2 = Node$3.create({
     name: 'doc',
     topNode: true,
@@ -29342,6 +25278,12 @@ class DropCursorView {
     }
 }
 
+/**
+ * This extension allows you to add a drop cursor to your editor.
+ * A drop cursor is a line that appears when you drag and drop content
+ * inbetween nodes.
+ * @see https://tiptap.dev/api/extensions/dropcursor
+ */
 const Dropcursor = Extension.create({
     name: 'dropCursor',
     addOptions() {
@@ -29588,6 +25530,12 @@ function drawGapCursor(state) {
     return DecorationSet.create(state.doc, [Decoration.widget(state.selection.head, node, { key: "gapcursor" })]);
 }
 
+/**
+ * This extension allows you to add a gap cursor to your editor.
+ * A gap cursor is a cursor that appears when you click on a place
+ * where no content is present, for example inbetween nodes.
+ * @see https://tiptap.dev/api/extensions/gapcursor
+ */
 const Gapcursor = Extension.create({
     name: 'gapCursor',
     addProseMirrorPlugins() {
@@ -29608,6 +25556,10 @@ const Gapcursor = Extension.create({
     },
 });
 
+/**
+ * This extension allows you to insert hard breaks.
+ * @see https://www.tiptap.dev/api/nodes/hard-break
+ */
 const HardBreak = Node$3.create({
     name: 'hardBreak',
     addOptions() {
@@ -29668,6 +25620,10 @@ const HardBreak = Node$3.create({
     },
 });
 
+/**
+ * This extension allows you to create headings.
+ * @see https://www.tiptap.dev/api/nodes/heading
+ */
 const Heading = Node$3.create({
     name: 'heading',
     addOptions() {
@@ -30262,16 +26218,16 @@ function mapRanges(ranges, mapping) {
 }
 // Apply the latest event from one branch to the document and shift the event
 // onto the other branch.
-function histTransaction(history, state, dispatch, redo) {
+function histTransaction(history, state, redo) {
     let preserveItems = mustPreserveItems(state);
     let histOptions = historyKey.get(state).spec.config;
     let pop = (redo ? history.undone : history.done).popEvent(state, preserveItems);
     if (!pop)
-        return;
+        return null;
     let selection = pop.selection.resolve(pop.transform.doc);
     let added = (redo ? history.done : history.undone).addTransform(pop.transform, state.selection.getBookmark(), histOptions, preserveItems);
     let newHist = new HistoryState(redo ? added : pop.remaining, redo ? pop.remaining : added, null, 0, -1);
-    dispatch(pop.transform.setSelection(selection).setMeta(historyKey, { redo, historyState: newHist }).scrollIntoView());
+    return pop.transform.setSelection(selection).setMeta(historyKey, { redo, historyState: newHist });
 }
 let cachedPreserveItems = false, cachedPreserveItemsPlugins = null;
 // Check whether any plugin in the given state has a
@@ -30330,29 +26286,37 @@ function history(config = {}) {
         }
     });
 }
+function buildCommand(redo, scroll) {
+    return (state, dispatch) => {
+        let hist = historyKey.getState(state);
+        if (!hist || (redo ? hist.undone : hist.done).eventCount == 0)
+            return false;
+        if (dispatch) {
+            let tr = histTransaction(hist, state, redo);
+            if (tr)
+                dispatch(scroll ? tr.scrollIntoView() : tr);
+        }
+        return true;
+    };
+}
 /**
 A command function that undoes the last change, if any.
 */
-const undo = (state, dispatch) => {
-    let hist = historyKey.getState(state);
-    if (!hist || hist.done.eventCount == 0)
-        return false;
-    if (dispatch)
-        histTransaction(hist, state, dispatch, false);
-    return true;
-};
+const undo = buildCommand(false, true);
 /**
 A command function that redoes the last undone change, if any.
 */
-const redo = (state, dispatch) => {
-    let hist = historyKey.getState(state);
-    if (!hist || hist.undone.eventCount == 0)
-        return false;
-    if (dispatch)
-        histTransaction(hist, state, dispatch, true);
-    return true;
-};
+const redo = buildCommand(true, true);
 
+/**
+ * This extension allows you to undo and redo recent changes.
+ * @see https://www.tiptap.dev/api/extensions/history
+ *
+ * **Important**: If the `@tiptap/extension-collaboration` package is used, make sure to remove
+ * the `history` extension, as it is not compatible with the `collaboration` extension.
+ *
+ * `@tiptap/extension-collaboration` uses its own history implementation.
+ */
 const History = Extension.create({
     name: 'history',
     addOptions() {
@@ -30379,11 +26343,8 @@ const History = Extension.create({
     addKeyboardShortcuts() {
         return {
             'Mod-z': () => this.editor.commands.undo(),
-            'Mod-Z': () => this.editor.commands.undo(),
-            'Mod-y': () => this.editor.commands.redo(),
-            'Mod-Y': () => this.editor.commands.redo(),
             'Shift-Mod-z': () => this.editor.commands.redo(),
-            'Shift-Mod-Z': () => this.editor.commands.redo(),
+            'Mod-y': () => this.editor.commands.redo(),
             // Russian keyboard layouts
             'Mod-я': () => this.editor.commands.undo(),
             'Shift-Mod-я': () => this.editor.commands.redo(),
@@ -30391,6 +26352,10 @@ const History = Extension.create({
     },
 });
 
+/**
+ * This extension allows you to insert horizontal rules.
+ * @see https://www.tiptap.dev/api/nodes/horizontal-rule
+ */
 const HorizontalRule = Node$3.create({
     name: 'horizontalRule',
     addOptions() {
@@ -30460,10 +26425,26 @@ const HorizontalRule = Node$3.create({
     },
 });
 
-const starInputRegex = /(?:^|\s)((?:\*)((?:[^*]+))(?:\*))$/;
-const starPasteRegex = /(?:^|\s)((?:\*)((?:[^*]+))(?:\*))/g;
-const underscoreInputRegex = /(?:^|\s)((?:_)((?:[^_]+))(?:_))$/;
-const underscorePasteRegex = /(?:^|\s)((?:_)((?:[^_]+))(?:_))/g;
+/**
+ * Matches an italic to a *italic* on input.
+ */
+const starInputRegex = /(?:^|\s)(\*(?!\s+\*)((?:[^*]+))\*(?!\s+\*))$/;
+/**
+ * Matches an italic to a *italic* on paste.
+ */
+const starPasteRegex = /(?:^|\s)(\*(?!\s+\*)((?:[^*]+))\*(?!\s+\*))/g;
+/**
+ * Matches an italic to a _italic_ on input.
+ */
+const underscoreInputRegex = /(?:^|\s)(_(?!\s+_)((?:[^_]+))_(?!\s+_))$/;
+/**
+ * Matches an italic to a _italic_ on paste.
+ */
+const underscorePasteRegex = /(?:^|\s)(_(?!\s+_)((?:[^_]+))_(?!\s+_))/g;
+/**
+ * This extension allows you to create italic text.
+ * @see https://www.tiptap.dev/api/marks/italic
+ */
 const Italic = Mark.create({
     name: 'italic',
     addOptions() {
@@ -30533,6 +26514,10 @@ const Italic = Mark.create({
     },
 });
 
+/**
+ * This extension allows you to create list items.
+ * @see https://www.tiptap.dev/api/nodes/list-item
+ */
 const ListItem$1 = Node$3.create({
     name: 'listItem',
     addOptions() {
@@ -30563,6 +26548,10 @@ const ListItem$1 = Node$3.create({
     },
 });
 
+/**
+ * This extension allows you to create list items.
+ * @see https://www.tiptap.dev/api/nodes/list-item
+ */
 const ListItem = Node$3.create({
     name: 'listItem',
     addOptions() {
@@ -30593,6 +26582,11 @@ const ListItem = Node$3.create({
     },
 });
 
+/**
+ * This extension allows you to create text styles. It is required by default
+ * for the `textColor` and `backgroundColor` extensions.
+ * @see https://www.tiptap.dev/api/marks/text-style
+ */
 const TextStyle$1 = Mark.create({
     name: 'textStyle',
     addOptions() {
@@ -30631,7 +26625,16 @@ const TextStyle$1 = Mark.create({
     },
 });
 
+/**
+ * Matches an ordered list to a 1. on input (or any number followed by a dot).
+ */
 const inputRegex$2 = /^(\d+)\.\s$/;
+/**
+ * This extension allows you to create ordered lists.
+ * This requires the ListItem extension
+ * @see https://www.tiptap.dev/api/nodes/ordered-list
+ * @see https://www.tiptap.dev/api/nodes/list-item
+ */
 const OrderedList = Node$3.create({
     name: 'orderedList',
     addOptions() {
@@ -30710,6 +26713,10 @@ const OrderedList = Node$3.create({
     },
 });
 
+/**
+ * This extension allows you to create paragraphs.
+ * @see https://www.tiptap.dev/api/nodes/paragraph
+ */
 const Paragraph$1 = Node$3.create({
     name: 'paragraph',
     priority: 1000,
@@ -30742,8 +26749,18 @@ const Paragraph$1 = Node$3.create({
     },
 });
 
-const inputRegex$1 = /(?:^|\s)((?:~~)((?:[^~]+))(?:~~))$/;
-const pasteRegex = /(?:^|\s)((?:~~)((?:[^~]+))(?:~~))/g;
+/**
+ * Matches a strike to a ~~strike~~ on input.
+ */
+const inputRegex$1 = /(?:^|\s)(~~(?!\s+~~)((?:[^~]+))~~(?!\s+~~))$/;
+/**
+ * Matches a strike to a ~~strike~~ on paste.
+ */
+const pasteRegex = /(?:^|\s)(~~(?!\s+~~)((?:[^~]+))~~(?!\s+~~))/g;
+/**
+ * This extension allows you to create strike text.
+ * @see https://www.tiptap.dev/api/marks/strike
+ */
 const Strike = Mark.create({
     name: 'strike',
     addOptions() {
@@ -30786,14 +26803,9 @@ const Strike = Mark.create({
         };
     },
     addKeyboardShortcuts() {
-        const shortcuts = {};
-        if (isMacOS()) {
-            shortcuts['Mod-Shift-s'] = () => this.editor.commands.toggleStrike();
-        }
-        else {
-            shortcuts['Ctrl-Shift-s'] = () => this.editor.commands.toggleStrike();
-        }
-        return shortcuts;
+        return {
+            'Mod-Shift-s': () => this.editor.commands.toggleStrike(),
+        };
     },
     addInputRules() {
         return [
@@ -30813,11 +26825,20 @@ const Strike = Mark.create({
     },
 });
 
+/**
+ * This extension allows you to create text nodes.
+ * @see https://www.tiptap.dev/api/nodes/text
+ */
 const Text$3 = Node$3.create({
     name: 'text',
     group: 'inline',
 });
 
+/**
+ * The starter kit is a collection of essential editor extensions.
+ *
+ * It’s a good starting point for building your own editor.
+ */
 const StarterKit = Extension.create({
     name: 'starterKit',
     addExtensions() {
@@ -30881,6 +26902,10 @@ const StarterKit = Extension.create({
     },
 });
 
+/**
+ * This extension allows you to create superscript text.
+ * @see https://www.tiptap.dev/api/marks/superscript
+ */
 const Superscript = Mark.create({
     name: 'superscript',
     addOptions() {
@@ -30929,6 +26954,11 @@ const Superscript = Mark.create({
     },
 });
 
+/**
+ * This extension allows you to create text styles. It is required by default
+ * for the `textColor` and `backgroundColor` extensions.
+ * @see https://www.tiptap.dev/api/marks/text-style
+ */
 const TextStyle = Mark.create({
     name: 'textStyle',
     addOptions() {
@@ -30967,6 +26997,10 @@ const TextStyle = Mark.create({
     },
 });
 
+/**
+ * This extension allows you to align text.
+ * @see https://www.tiptap.dev/api/extensions/text-align
+ */
 const TextAlign = Extension.create({
     name: 'textAlign',
     addOptions() {
@@ -31001,10 +27035,14 @@ const TextAlign = Extension.create({
                 if (!this.options.alignments.includes(alignment)) {
                     return false;
                 }
-                return this.options.types.every(type => commands.updateAttributes(type, { textAlign: alignment }));
+                return this.options.types
+                    .map(type => commands.updateAttributes(type, { textAlign: alignment }))
+                    .every(response => response);
             },
             unsetTextAlign: () => ({ commands }) => {
-                return this.options.types.every(type => commands.resetAttributes(type, 'textAlign'));
+                return this.options.types
+                    .map(type => commands.resetAttributes(type, 'textAlign'))
+                    .every(response => response);
             },
         };
     },
@@ -32996,12 +29034,46 @@ function find$3(str, type, opts) {
   return filtered;
 }
 
+/**
+ * Check if the provided tokens form a valid link structure, which can either be a single link token
+ * or a link token surrounded by parentheses or square brackets.
+ *
+ * This ensures that only complete and valid text is hyperlinked, preventing cases where a valid
+ * top-level domain (TLD) is immediately followed by an invalid character, like a number. For
+ * example, with the `find` method from Linkify, entering `example.com1` would result in
+ * `example.com` being linked and the trailing `1` left as plain text. By using the `tokenize`
+ * method, we can perform more comprehensive validation on the input text.
+ */
+function isValidLinkStructure(tokens) {
+    if (tokens.length === 1) {
+        return tokens[0].isLink;
+    }
+    if (tokens.length === 3 && tokens[1].isLink) {
+        return ['()', '[]'].includes(tokens[0].value + tokens[2].value);
+    }
+    return false;
+}
+/**
+ * This plugin allows you to automatically add links to your editor.
+ * @param options The plugin options
+ * @returns The plugin instance
+ */
 function autolink(options) {
     return new Plugin({
         key: new PluginKey('autolink'),
         appendTransaction: (transactions, oldState, newState) => {
+            /**
+             * Does the transaction change the document?
+             */
             const docChanges = transactions.some(transaction => transaction.docChanged) && !oldState.doc.eq(newState.doc);
+            /**
+             * Prevent autolink if the transaction is not a document change or if the transaction has the meta `preventAutolink`.
+             */
             const preventAutolink = transactions.some(transaction => transaction.getMeta('preventAutolink'));
+            /**
+             * Prevent autolink if the transaction is not a document change
+             * or if the transaction has the meta `preventAutolink`.
+             */
             if (!docChanges || preventAutolink) {
                 return;
             }
@@ -33034,7 +29106,11 @@ function autolink(options) {
                     if (!lastWordBeforeSpace) {
                         return false;
                     }
-                    find$3(lastWordBeforeSpace)
+                    const linksBeforeSpace = tokenize(lastWordBeforeSpace).map(t => t.toObject());
+                    if (!isValidLinkStructure(linksBeforeSpace)) {
+                        return false;
+                    }
+                    linksBeforeSpace
                         .filter(link => link.isLink)
                         // Calculate link position.
                         .map(link => ({
@@ -33081,11 +29157,19 @@ function clickHandler(options) {
         props: {
             handleClick: (view, pos, event) => {
                 var _a, _b;
+                if (options.whenNotEditable && view.editable) {
+                    return false;
+                }
                 if (event.button !== 0) {
                     return false;
                 }
-                const eventTarget = event.target;
-                if (eventTarget.nodeName !== 'A') {
+                let a = event.target;
+                const els = [];
+                while (a.nodeName !== 'DIV') {
+                    els.push(a);
+                    a = a.parentNode;
+                }
+                if (!els.find(value => value.nodeName === 'A')) {
                     return false;
                 }
                 const attrs = getAttributes(view.state, options.type.name);
@@ -33093,9 +29177,7 @@ function clickHandler(options) {
                 const href = (_a = link === null || link === void 0 ? void 0 : link.href) !== null && _a !== void 0 ? _a : attrs.href;
                 const target = (_b = link === null || link === void 0 ? void 0 : link.target) !== null && _b !== void 0 ? _b : attrs.target;
                 if (link && href) {
-                    if (view.editable) {
-                        window.open(href, target);
-                    }
+                    window.open(href, target);
                     return true;
                 }
                 return false;
@@ -33109,7 +29191,6 @@ function pasteHandler(options) {
         key: new PluginKey('handlePasteLink'),
         props: {
             handlePaste: (view, event, slice) => {
-                var _a;
                 const { state } = view;
                 const { selection } = state;
                 const { empty } = selection;
@@ -33124,19 +29205,18 @@ function pasteHandler(options) {
                 if (!textContent || !link) {
                     return false;
                 }
-                const html = (_a = event.clipboardData) === null || _a === void 0 ? void 0 : _a.getData('text/html');
-                const hrefRegex = /href="([^"]*)"/;
-                const existingLink = html === null || html === void 0 ? void 0 : html.match(hrefRegex);
-                const url = existingLink ? existingLink[1] : link.href;
                 options.editor.commands.setMark(options.type, {
-                    href: url,
+                    href: link.href,
                 });
                 return true;
             },
         },
     });
 }
-
+/**
+ * This extension allows you to create links.
+ * @see https://www.tiptap.dev/api/marks/link
+ */
 const Link = Mark.create({
     name: 'link',
     priority: 1000,
@@ -33190,6 +29270,13 @@ const Link = Mark.create({
         return [{ tag: 'a[href]:not([href *= "javascript:" i])' }];
     },
     renderHTML({ HTMLAttributes }) {
+        var _a;
+        // False positive; we're explicitly checking for javascript: links to ignore them
+        // eslint-disable-next-line no-script-url
+        if ((_a = HTMLAttributes.href) === null || _a === void 0 ? void 0 : _a.startsWith('javascript:')) {
+            // strip out the href
+            return ['a', mergeAttributes(this.options.HTMLAttributes, { ...HTMLAttributes, href: '' }), 0];
+        }
         return ['a', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0];
     },
     addCommands() {
@@ -33214,32 +29301,27 @@ const Link = Mark.create({
     addPasteRules() {
         return [
             markPasteRule({
-                find: text => find$3(text)
-                    .filter(link => {
-                    if (this.options.validate) {
-                        return this.options.validate(link.value);
+                find: text => {
+                    const foundLinks = [];
+                    if (text) {
+                        const links = find$3(text).filter(item => item.isLink);
+                        if (links.length) {
+                            links.forEach(link => (foundLinks.push({
+                                text: link.value,
+                                data: {
+                                    href: link.href,
+                                },
+                                index: link.start,
+                            })));
+                        }
                     }
-                    return true;
-                })
-                    .filter(link => link.isLink)
-                    .map(link => ({
-                    text: link.value,
-                    index: link.start,
-                    data: link,
-                })),
+                    return foundLinks;
+                },
                 type: this.type,
-                getAttributes: (match, pasteEvent) => {
-                    var _a, _b;
-                    const html = (_a = pasteEvent === null || pasteEvent === void 0 ? void 0 : pasteEvent.clipboardData) === null || _a === void 0 ? void 0 : _a.getData('text/html');
-                    const hrefRegex = /href="([^"]*)"/;
-                    const existingLink = html === null || html === void 0 ? void 0 : html.match(hrefRegex);
-                    if (existingLink) {
-                        return {
-                            href: existingLink[1],
-                        };
-                    }
+                getAttributes: match => {
+                    var _a;
                     return {
-                        href: (_b = match.data) === null || _b === void 0 ? void 0 : _b.href,
+                        href: (_a = match.data) === null || _a === void 0 ? void 0 : _a.href,
                     };
                 },
             }),
@@ -33256,6 +29338,7 @@ const Link = Mark.create({
         if (this.options.openOnClick) {
             plugins.push(clickHandler({
                 type: this.type,
+                whenNotEditable: this.options.openOnClick === 'whenNotEditable',
             }));
         }
         if (this.options.linkOnPaste) {
@@ -33650,7 +29733,7 @@ function columnIsHeader(map, table, col) {
 }
 
 // src/cellselection.ts
-var CellSelection = class extends Selection {
+var CellSelection = class _CellSelection extends Selection {
   // A table selection is identified by its anchor and head cells. The
   // positions given to this constructor should point _before_ two
   // cells in the same table. They may be the same, to select a single
@@ -33687,11 +29770,11 @@ var CellSelection = class extends Selection {
     if (pointsAtCell($anchorCell) && pointsAtCell($headCell) && inSameTable($anchorCell, $headCell)) {
       const tableChanged = this.$anchorCell.node(-1) != $anchorCell.node(-1);
       if (tableChanged && this.isRowSelection())
-        return CellSelection.rowSelection($anchorCell, $headCell);
+        return _CellSelection.rowSelection($anchorCell, $headCell);
       else if (tableChanged && this.isColSelection())
-        return CellSelection.colSelection($anchorCell, $headCell);
+        return _CellSelection.colSelection($anchorCell, $headCell);
       else
-        return new CellSelection($anchorCell, $headCell);
+        return new _CellSelection($anchorCell, $headCell);
     }
     return TextSelection.between($anchorCell, $headCell);
   }
@@ -33831,7 +29914,7 @@ var CellSelection = class extends Selection {
           tableStart + map.map[map.width * (map.height - 1) + anchorRect.right - 1]
         );
     }
-    return new CellSelection($anchorCell, $headCell);
+    return new _CellSelection($anchorCell, $headCell);
   }
   // True if this selection goes all the way from the left to the
   // right of the table.
@@ -33848,7 +29931,7 @@ var CellSelection = class extends Selection {
     return Math.max(anchorRight, headRight) == map.width;
   }
   eq(other) {
-    return other instanceof CellSelection && other.$anchorCell.pos == this.$anchorCell.pos && other.$headCell.pos == this.$headCell.pos;
+    return other instanceof _CellSelection && other.$anchorCell.pos == this.$anchorCell.pos && other.$headCell.pos == this.$headCell.pos;
   }
   // Returns the smallest row selection that covers the given anchor
   // and head cell.
@@ -33876,7 +29959,7 @@ var CellSelection = class extends Selection {
           tableStart + map.map[map.width * (anchorRect.top + 1) - 1]
         );
     }
-    return new CellSelection($anchorCell, $headCell);
+    return new _CellSelection($anchorCell, $headCell);
   }
   toJSON() {
     return {
@@ -33886,10 +29969,10 @@ var CellSelection = class extends Selection {
     };
   }
   static fromJSON(doc, json) {
-    return new CellSelection(doc.resolve(json.anchor), doc.resolve(json.head));
+    return new _CellSelection(doc.resolve(json.anchor), doc.resolve(json.head));
   }
   static create(doc, anchorCell, headCell = anchorCell) {
-    return new CellSelection(doc.resolve(anchorCell), doc.resolve(headCell));
+    return new _CellSelection(doc.resolve(anchorCell), doc.resolve(headCell));
   }
   getBookmark() {
     return new CellBookmark(this.$anchorCell.pos, this.$headCell.pos);
@@ -33897,13 +29980,13 @@ var CellSelection = class extends Selection {
 };
 CellSelection.prototype.visible = false;
 Selection.jsonID("cell", CellSelection);
-var CellBookmark = class {
+var CellBookmark = class _CellBookmark {
   constructor(anchor, head) {
     this.anchor = anchor;
     this.head = head;
   }
   map(mapping) {
-    return new CellBookmark(mapping.map(this.anchor), mapping.map(this.head));
+    return new _CellBookmark(mapping.map(this.anchor), mapping.map(this.head));
   }
   resolve(doc) {
     const $anchorCell = doc.resolve(this.anchor), $headCell = doc.resolve(this.head);
@@ -34701,7 +30784,7 @@ function columnResizing({
   });
   return plugin;
 }
-var ResizeState = class {
+var ResizeState = class _ResizeState {
   constructor(activeHandle, dragging) {
     this.activeHandle = activeHandle;
     this.dragging = dragging;
@@ -34710,15 +30793,15 @@ var ResizeState = class {
     const state = this;
     const action = tr.getMeta(columnResizingPluginKey);
     if (action && action.setHandle != null)
-      return new ResizeState(action.setHandle, false);
+      return new _ResizeState(action.setHandle, false);
     if (action && action.setDragging !== void 0)
-      return new ResizeState(state.activeHandle, action.setDragging);
+      return new _ResizeState(state.activeHandle, action.setDragging);
     if (state.activeHandle > -1 && tr.docChanged) {
       let handle = tr.mapping.map(state.activeHandle, -1);
       if (!pointsAtCell(tr.doc.resolve(handle))) {
         handle = -1;
       }
-      return new ResizeState(handle, state.dragging);
+      return new _ResizeState(handle, state.dragging);
     }
     return state;
   }
@@ -34758,6 +30841,8 @@ function handleMouseLeave(view) {
     updateHandle(view, -1);
 }
 function handleMouseDown2(view, event, cellMinWidth) {
+  var _a;
+  const win = (_a = view.dom.ownerDocument.defaultView) != null ? _a : window;
   const pluginState = columnResizingPluginKey.getState(view.state);
   if (!pluginState || pluginState.activeHandle == -1 || pluginState.dragging)
     return false;
@@ -34769,8 +30854,8 @@ function handleMouseDown2(view, event, cellMinWidth) {
     })
   );
   function finish(event2) {
-    window.removeEventListener("mouseup", finish);
-    window.removeEventListener("mousemove", move);
+    win.removeEventListener("mouseup", finish);
+    win.removeEventListener("mousemove", move);
     const pluginState2 = columnResizingPluginKey.getState(view.state);
     if (pluginState2 == null ? void 0 : pluginState2.dragging) {
       updateColumnWidth(
@@ -34794,8 +30879,8 @@ function handleMouseDown2(view, event, cellMinWidth) {
       displayColumnWidth(view, pluginState2.activeHandle, dragged, cellMinWidth);
     }
   }
-  window.addEventListener("mouseup", finish);
-  window.addEventListener("mousemove", move);
+  win.addEventListener("mouseup", finish);
+  win.addEventListener("mousemove", move);
   event.preventDefault();
   return true;
 }
@@ -35070,8 +31155,12 @@ function removeRow(tr, { map, table, tableStart }, row) {
   const nextRow = rowPos + table.child(row).nodeSize;
   const mapFrom = tr.mapping.maps.length;
   tr.delete(rowPos + tableStart, nextRow + tableStart);
+  const seen = /* @__PURE__ */ new Set();
   for (let col = 0, index = row * map.width; col < map.width; col++, index++) {
     const pos = map.map[index];
+    if (seen.has(pos))
+      continue;
+    seen.add(pos);
     if (row > 0 && pos == map.map[index - map.width]) {
       const attrs = table.nodeAt(pos).attrs;
       tr.setNodeMarkup(tr.mapping.slice(mapFrom).map(pos + tableStart), null, {
@@ -35079,7 +31168,7 @@ function removeRow(tr, { map, table, tableStart }, row) {
         rowspan: attrs.rowspan - 1
       });
       col += attrs.colspan - 1;
-    } else if (row < map.width && pos == map.map[index + map.width]) {
+    } else if (row < map.height && pos == map.map[index + map.width]) {
       const cell = table.nodeAt(pos);
       const attrs = cell.attrs;
       const copy = cell.type.create(
@@ -35565,6 +31654,41 @@ class TableView {
     }
 }
 
+/**
+ * Creates a colgroup element for a table node in ProseMirror.
+ *
+ * @param node - The ProseMirror node representing the table.
+ * @param cellMinWidth - The minimum width of a cell in the table.
+ * @param overrideCol - (Optional) The index of the column to override the width of.
+ * @param overrideValue - (Optional) The width value to use for the overridden column.
+ * @returns An object containing the colgroup element, the total width of the table, and the minimum width of the table.
+ */
+function createColGroup(node, cellMinWidth, overrideCol, overrideValue) {
+    let totalWidth = 0;
+    let fixedWidth = true;
+    const cols = [];
+    const row = node.firstChild;
+    if (!row) {
+        return {};
+    }
+    for (let i = 0, col = 0; i < row.childCount; i += 1) {
+        const { colspan, colwidth } = row.child(i).attrs;
+        for (let j = 0; j < colspan; j += 1, col += 1) {
+            const hasWidth = overrideCol === col ? overrideValue : colwidth && colwidth[j];
+            const cssWidth = hasWidth ? `${hasWidth}px` : '';
+            totalWidth += hasWidth || cellMinWidth;
+            if (!hasWidth) {
+                fixedWidth = false;
+            }
+            cols.push(['col', cssWidth ? { style: `width: ${cssWidth}` } : {}]);
+        }
+    }
+    const tableWidth = fixedWidth ? `${totalWidth}px` : '';
+    const tableMinWidth = fixedWidth ? '' : `${totalWidth}px`;
+    const colgroup = ['colgroup', {}, ...cols];
+    return { colgroup, tableWidth, tableMinWidth };
+}
+
 function createCell(cellType, cellContent) {
     if (cellContent) {
         return cellType.createChecked(null, cellContent);
@@ -35639,6 +31763,10 @@ const deleteTableWhenAllCellsSelected = ({ editor }) => {
     return true;
 };
 
+/**
+ * This extension allows you to create tables.
+ * @see https://www.tiptap.dev/api/nodes/table
+ */
 const Table$1 = Node$3.create({
     name: 'table',
     // @ts-ignore
@@ -35661,8 +31789,19 @@ const Table$1 = Node$3.create({
     parseHTML() {
         return [{ tag: 'table' }];
     },
-    renderHTML({ HTMLAttributes }) {
-        return ['table', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), ['tbody', 0]];
+    renderHTML({ node, HTMLAttributes }) {
+        const { colgroup, tableWidth, tableMinWidth } = createColGroup(node, this.options.cellMinWidth);
+        const table = [
+            'table',
+            mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
+                style: tableWidth
+                    ? `width: ${tableWidth}`
+                    : `minWidth: ${tableMinWidth}`,
+            }),
+            colgroup,
+            ['tbody', 0],
+        ];
+        return table;
     },
     addCommands() {
         return {
@@ -35794,6 +31933,10 @@ const Table$1 = Node$3.create({
     },
 });
 
+/**
+ * This extension allows you to create table rows.
+ * @see https://www.tiptap.dev/api/nodes/table-row
+ */
 const TableRow$1 = Node$3.create({
     name: 'tableRow',
     addOptions() {
@@ -35813,6 +31956,10 @@ const TableRow$1 = Node$3.create({
     },
 });
 
+/**
+ * This extension allows you to create table cells.
+ * @see https://www.tiptap.dev/api/nodes/table-cell
+ */
 const TableCell$1 = Node$3.create({
     name: 'tableCell',
     addOptions() {
@@ -35853,6 +32000,10 @@ const TableCell$1 = Node$3.create({
     },
 });
 
+/**
+ * This extension allows you to create table headers.
+ * @see https://www.tiptap.dev/api/nodes/table-header
+ */
 const TableHeader = Node$3.create({
     name: 'tableHeader',
     addOptions() {
@@ -35893,7 +32044,14 @@ const TableHeader = Node$3.create({
     },
 });
 
+/**
+ * Matches an image to a ![image](src "title") on input.
+ */
 const inputRegex = /(?:^|\s)(!\[(.+|:?)]\((\S+)(?:(?:\s+)["'](\S+)["'])?\))$/;
+/**
+ * This extension allows you to insert images.
+ * @see https://www.tiptap.dev/api/nodes/image
+ */
 const Image$1 = Node$3.create({
     name: 'image',
     addOptions() {
@@ -36071,6 +32229,8 @@ var e0 = ({ filter }) => {
     "content"
   );
   transformItemsFieldFromToHTML(filter, "Abstract.items.read", "content");
+
+  transformItemsFieldFromToHTML(filter, "Pages.items.read", "content");
 };
 
 function setLatestContentFromContentVersions(item) {
@@ -36090,7 +32250,7 @@ function generateLinkFromFootnoteTags(item) {
   getElements({ tag_name: "footnote" }, dom).forEach(
     (el) => {
       const id = el.attribs.uid;
-      const content = el.children.map((child) => _default(child)).join("");
+      const content = el.children.map((child) => render(child)).join("");
       el.name = "a";
       el.attribs = {
         class: "footnote-link ",
@@ -36104,7 +32264,7 @@ function generateLinkFromFootnoteTags(item) {
       el.children = [];
     }
   );
-  return _default(dom);
+  return render(dom);
 }
 
 function transformAbstractsToHTML(item) {
@@ -36202,6 +32362,37 @@ var e1 = ({ filter }) => {
     });
   });
 };
+
+var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+function getDefaultExportFromCjs (x) {
+	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
+}
+
+function getAugmentedNamespace(n) {
+  if (n.__esModule) return n;
+  var f = n.default;
+	if (typeof f == "function") {
+		var a = function a () {
+			if (this instanceof a) {
+        return Reflect.construct(f, arguments, this.constructor);
+			}
+			return f.apply(this, arguments);
+		};
+		a.prototype = f.prototype;
+  } else a = {};
+  Object.defineProperty(a, '__esModule', {value: true});
+	Object.keys(n).forEach(function (k) {
+		var d = Object.getOwnPropertyDescriptor(n, k);
+		Object.defineProperty(a, k, d.get ? d : {
+			enumerable: true,
+			get: function () {
+				return n[k];
+			}
+		});
+	});
+	return a;
+}
 
 function parseContentType$2(str) {
   if (str.length === 0)
@@ -37065,7 +33256,7 @@ function matchNeedle(self, data, pos, len) {
 
 var sbmh = SBMH;
 
-const { Readable, Writable: Writable$1 } = require$$0$3;
+const { Readable, Writable: Writable$1 } = require$$0$1;
 
 const StreamSearch = sbmh;
 
@@ -37717,7 +33908,7 @@ const FIELD_VCHAR = [
 
 var multipart = Multipart;
 
-const { Writable } = require$$0$3;
+const { Writable } = require$$0$1;
 
 const { getDecoder } = utils$r;
 
@@ -39992,6 +36183,7 @@ each$1(['concat', 'join', 'slice'], function(name) {
 });
 
 // Named Exports
+// =============
 
 var allExports = /*#__PURE__*/Object.freeze({
   __proto__: null,
@@ -40144,6 +36336,23 @@ var allExports = /*#__PURE__*/Object.freeze({
 });
 
 // Default Export
+// ==============
+// In this module, we mix our bundled exports into the `_` object and export
+// the result. This is analogous to setting `module.exports = _` in CommonJS.
+// Hence, this module is also the entry point of our UMD bundle and the package
+// entry point for CommonJS and AMD users. In other words, this is (the source
+// of) the module you are interfacing with when you do any of the following:
+//
+// ```js
+// // CommonJS
+// var _ = require('underscore');
+//
+// // AMD
+// define(['underscore'], function(_) {...});
+//
+// // UMD in the browser
+// // _ is available as a global variable
+// ```
 
 // Add all of the Underscore functions to the wrapper object.
 var _$h = mixin(allExports);
@@ -40151,6 +36360,21 @@ var _$h = mixin(allExports);
 _$h._ = _$h;
 
 // ESM Exports
+// ===========
+// This module is the package entry point for ES module users. In other words,
+// it is the module they are interfacing with when they import from the whole
+// package instead of from a submodule, like this:
+//
+// ```js
+// import { map } from 'underscore';
+// ```
+//
+// The difference with `./index-default`, which is the package entry point for
+// CommonJS, AMD and UMD users, is purely technical. In ES modules, named and
+// default exports are considered to be siblings, so when you have a default
+// export, its properties are not automatically available as named exports. For
+// this reason, we re-export the named exports in addition to providing the same
+// default export as in `./index-default`.
 
 var indexAll = /*#__PURE__*/Object.freeze({
   __proto__: null,
@@ -46147,7 +42371,8 @@ function Run(children, properties) {
         isSmallCaps: !!properties.isSmallCaps,
         verticalAlignment: properties.verticalAlignment || verticalAlignment.baseline,
         font: properties.font || null,
-        fontSize: properties.fontSize || null
+        fontSize: properties.fontSize || null,
+        highlight: properties.highlight || null
     };
 }
 
@@ -46636,7 +42861,7 @@ var hasRequiredStream;
 function requireStream () {
 	if (hasRequiredStream) return stream;
 	hasRequiredStream = 1;
-	stream = require$$0$3;
+	stream = require$$0$1;
 	return stream;
 }
 
@@ -46650,7 +42875,7 @@ function requireSafeBuffer () {
 	if (hasRequiredSafeBuffer) return safeBuffer.exports;
 	hasRequiredSafeBuffer = 1;
 	(function (module, exports) {
-		var buffer = require$$0$4;
+		var buffer = require$$0$2;
 		var Buffer = buffer.Buffer;
 
 		// alternative to using Object.keys for old browsers
@@ -46824,7 +43049,7 @@ function requireUtil () {
 	}
 	util$1.isPrimitive = isPrimitive;
 
-	util$1.isBuffer = Buffer.isBuffer;
+	util$1.isBuffer = require$$0$2.Buffer.isBuffer;
 
 	function objectToString(o) {
 	  return Object.prototype.toString.call(o);
@@ -46900,7 +43125,7 @@ function requireBufferList () {
 		function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 		var Buffer = requireSafeBuffer().Buffer;
-		var util = require$$0$5;
+		var util = require$$0$3;
 
 		function copyBuffer(src, target, offset) {
 		  src.copy(target, offset);
@@ -47079,7 +43304,7 @@ function requireNode () {
 	 * For Node.js, simply re-export the core `util.deprecate` function.
 	 */
 
-	node = require$$0$5.deprecate;
+	node = require$$0$3.deprecate;
 	return node;
 }
 
@@ -48194,7 +44419,7 @@ function require_stream_readable () {
 	/*</replacement>*/
 
 	/*<replacement>*/
-	var debugUtil = require$$0$5;
+	var debugUtil = require$$0$3;
 	var debug = void 0;
 	if (debugUtil && debugUtil.debuglog) {
 	  debug = debugUtil.debuglog('stream');
@@ -49340,7 +45565,7 @@ function requireReadable () {
 	if (hasRequiredReadable) return readable.exports;
 	hasRequiredReadable = 1;
 	(function (module, exports) {
-		var Stream = require$$0$3;
+		var Stream = require$$0$1;
 		if (process.env.READABLE_STREAM === 'disable' && Stream) {
 		  module.exports = Stream;
 		  exports = module.exports = Stream.Readable;
@@ -49978,200 +46203,191 @@ var external$3 = {
     Promise: ES6Promise
 };
 
-var setImmediate$1 = {};
+(function (global, undefined$1) {
 
-var hasRequiredSetImmediate;
+    if (global.setImmediate) {
+        return;
+    }
 
-function requireSetImmediate () {
-	if (hasRequiredSetImmediate) return setImmediate$1;
-	hasRequiredSetImmediate = 1;
-	(function (global, undefined$1) {
+    var nextHandle = 1; // Spec says greater than zero
+    var tasksByHandle = {};
+    var currentlyRunningATask = false;
+    var doc = global.document;
+    var registerImmediate;
 
-	    if (global.setImmediate) {
-	        return;
-	    }
+    function setImmediate(callback) {
+      // Callback can either be a function or a string
+      if (typeof callback !== "function") {
+        callback = new Function("" + callback);
+      }
+      // Copy function arguments
+      var args = new Array(arguments.length - 1);
+      for (var i = 0; i < args.length; i++) {
+          args[i] = arguments[i + 1];
+      }
+      // Store and register the task
+      var task = { callback: callback, args: args };
+      tasksByHandle[nextHandle] = task;
+      registerImmediate(nextHandle);
+      return nextHandle++;
+    }
 
-	    var nextHandle = 1; // Spec says greater than zero
-	    var tasksByHandle = {};
-	    var currentlyRunningATask = false;
-	    var doc = global.document;
-	    var registerImmediate;
+    function clearImmediate(handle) {
+        delete tasksByHandle[handle];
+    }
 
-	    function setImmediate(callback) {
-	      // Callback can either be a function or a string
-	      if (typeof callback !== "function") {
-	        callback = new Function("" + callback);
-	      }
-	      // Copy function arguments
-	      var args = new Array(arguments.length - 1);
-	      for (var i = 0; i < args.length; i++) {
-	          args[i] = arguments[i + 1];
-	      }
-	      // Store and register the task
-	      var task = { callback: callback, args: args };
-	      tasksByHandle[nextHandle] = task;
-	      registerImmediate(nextHandle);
-	      return nextHandle++;
-	    }
+    function run(task) {
+        var callback = task.callback;
+        var args = task.args;
+        switch (args.length) {
+        case 0:
+            callback();
+            break;
+        case 1:
+            callback(args[0]);
+            break;
+        case 2:
+            callback(args[0], args[1]);
+            break;
+        case 3:
+            callback(args[0], args[1], args[2]);
+            break;
+        default:
+            callback.apply(undefined$1, args);
+            break;
+        }
+    }
 
-	    function clearImmediate(handle) {
-	        delete tasksByHandle[handle];
-	    }
+    function runIfPresent(handle) {
+        // From the spec: "Wait until any invocations of this algorithm started before this one have completed."
+        // So if we're currently running a task, we'll need to delay this invocation.
+        if (currentlyRunningATask) {
+            // Delay by doing a setTimeout. setImmediate was tried instead, but in Firefox 7 it generated a
+            // "too much recursion" error.
+            setTimeout(runIfPresent, 0, handle);
+        } else {
+            var task = tasksByHandle[handle];
+            if (task) {
+                currentlyRunningATask = true;
+                try {
+                    run(task);
+                } finally {
+                    clearImmediate(handle);
+                    currentlyRunningATask = false;
+                }
+            }
+        }
+    }
 
-	    function run(task) {
-	        var callback = task.callback;
-	        var args = task.args;
-	        switch (args.length) {
-	        case 0:
-	            callback();
-	            break;
-	        case 1:
-	            callback(args[0]);
-	            break;
-	        case 2:
-	            callback(args[0], args[1]);
-	            break;
-	        case 3:
-	            callback(args[0], args[1], args[2]);
-	            break;
-	        default:
-	            callback.apply(undefined$1, args);
-	            break;
-	        }
-	    }
+    function installNextTickImplementation() {
+        registerImmediate = function(handle) {
+            process.nextTick(function () { runIfPresent(handle); });
+        };
+    }
 
-	    function runIfPresent(handle) {
-	        // From the spec: "Wait until any invocations of this algorithm started before this one have completed."
-	        // So if we're currently running a task, we'll need to delay this invocation.
-	        if (currentlyRunningATask) {
-	            // Delay by doing a setTimeout. setImmediate was tried instead, but in Firefox 7 it generated a
-	            // "too much recursion" error.
-	            setTimeout(runIfPresent, 0, handle);
-	        } else {
-	            var task = tasksByHandle[handle];
-	            if (task) {
-	                currentlyRunningATask = true;
-	                try {
-	                    run(task);
-	                } finally {
-	                    clearImmediate(handle);
-	                    currentlyRunningATask = false;
-	                }
-	            }
-	        }
-	    }
+    function canUsePostMessage() {
+        // The test against `importScripts` prevents this implementation from being installed inside a web worker,
+        // where `global.postMessage` means something completely different and can't be used for this purpose.
+        if (global.postMessage && !global.importScripts) {
+            var postMessageIsAsynchronous = true;
+            var oldOnMessage = global.onmessage;
+            global.onmessage = function() {
+                postMessageIsAsynchronous = false;
+            };
+            global.postMessage("", "*");
+            global.onmessage = oldOnMessage;
+            return postMessageIsAsynchronous;
+        }
+    }
 
-	    function installNextTickImplementation() {
-	        registerImmediate = function(handle) {
-	            process.nextTick(function () { runIfPresent(handle); });
-	        };
-	    }
+    function installPostMessageImplementation() {
+        // Installs an event handler on `global` for the `message` event: see
+        // * https://developer.mozilla.org/en/DOM/window.postMessage
+        // * http://www.whatwg.org/specs/web-apps/current-work/multipage/comms.html#crossDocumentMessages
 
-	    function canUsePostMessage() {
-	        // The test against `importScripts` prevents this implementation from being installed inside a web worker,
-	        // where `global.postMessage` means something completely different and can't be used for this purpose.
-	        if (global.postMessage && !global.importScripts) {
-	            var postMessageIsAsynchronous = true;
-	            var oldOnMessage = global.onmessage;
-	            global.onmessage = function() {
-	                postMessageIsAsynchronous = false;
-	            };
-	            global.postMessage("", "*");
-	            global.onmessage = oldOnMessage;
-	            return postMessageIsAsynchronous;
-	        }
-	    }
+        var messagePrefix = "setImmediate$" + Math.random() + "$";
+        var onGlobalMessage = function(event) {
+            if (event.source === global &&
+                typeof event.data === "string" &&
+                event.data.indexOf(messagePrefix) === 0) {
+                runIfPresent(+event.data.slice(messagePrefix.length));
+            }
+        };
 
-	    function installPostMessageImplementation() {
-	        // Installs an event handler on `global` for the `message` event: see
-	        // * https://developer.mozilla.org/en/DOM/window.postMessage
-	        // * http://www.whatwg.org/specs/web-apps/current-work/multipage/comms.html#crossDocumentMessages
+        if (global.addEventListener) {
+            global.addEventListener("message", onGlobalMessage, false);
+        } else {
+            global.attachEvent("onmessage", onGlobalMessage);
+        }
 
-	        var messagePrefix = "setImmediate$" + Math.random() + "$";
-	        var onGlobalMessage = function(event) {
-	            if (event.source === global &&
-	                typeof event.data === "string" &&
-	                event.data.indexOf(messagePrefix) === 0) {
-	                runIfPresent(+event.data.slice(messagePrefix.length));
-	            }
-	        };
+        registerImmediate = function(handle) {
+            global.postMessage(messagePrefix + handle, "*");
+        };
+    }
 
-	        if (global.addEventListener) {
-	            global.addEventListener("message", onGlobalMessage, false);
-	        } else {
-	            global.attachEvent("onmessage", onGlobalMessage);
-	        }
+    function installMessageChannelImplementation() {
+        var channel = new MessageChannel();
+        channel.port1.onmessage = function(event) {
+            var handle = event.data;
+            runIfPresent(handle);
+        };
 
-	        registerImmediate = function(handle) {
-	            global.postMessage(messagePrefix + handle, "*");
-	        };
-	    }
+        registerImmediate = function(handle) {
+            channel.port2.postMessage(handle);
+        };
+    }
 
-	    function installMessageChannelImplementation() {
-	        var channel = new MessageChannel();
-	        channel.port1.onmessage = function(event) {
-	            var handle = event.data;
-	            runIfPresent(handle);
-	        };
+    function installReadyStateChangeImplementation() {
+        var html = doc.documentElement;
+        registerImmediate = function(handle) {
+            // Create a <script> element; its readystatechange event will be fired asynchronously once it is inserted
+            // into the document. Do so, thus queuing up the task. Remember to clean up once it's been called.
+            var script = doc.createElement("script");
+            script.onreadystatechange = function () {
+                runIfPresent(handle);
+                script.onreadystatechange = null;
+                html.removeChild(script);
+                script = null;
+            };
+            html.appendChild(script);
+        };
+    }
 
-	        registerImmediate = function(handle) {
-	            channel.port2.postMessage(handle);
-	        };
-	    }
+    function installSetTimeoutImplementation() {
+        registerImmediate = function(handle) {
+            setTimeout(runIfPresent, 0, handle);
+        };
+    }
 
-	    function installReadyStateChangeImplementation() {
-	        var html = doc.documentElement;
-	        registerImmediate = function(handle) {
-	            // Create a <script> element; its readystatechange event will be fired asynchronously once it is inserted
-	            // into the document. Do so, thus queuing up the task. Remember to clean up once it's been called.
-	            var script = doc.createElement("script");
-	            script.onreadystatechange = function () {
-	                runIfPresent(handle);
-	                script.onreadystatechange = null;
-	                html.removeChild(script);
-	                script = null;
-	            };
-	            html.appendChild(script);
-	        };
-	    }
+    // If supported, we should attach to the prototype of global, since that is where setTimeout et al. live.
+    var attachTo = Object.getPrototypeOf && Object.getPrototypeOf(global);
+    attachTo = attachTo && attachTo.setTimeout ? attachTo : global;
 
-	    function installSetTimeoutImplementation() {
-	        registerImmediate = function(handle) {
-	            setTimeout(runIfPresent, 0, handle);
-	        };
-	    }
+    // Don't get fooled by e.g. browserify environments.
+    if ({}.toString.call(global.process) === "[object process]") {
+        // For Node.js before 0.9
+        installNextTickImplementation();
 
-	    // If supported, we should attach to the prototype of global, since that is where setTimeout et al. live.
-	    var attachTo = Object.getPrototypeOf && Object.getPrototypeOf(global);
-	    attachTo = attachTo && attachTo.setTimeout ? attachTo : global;
+    } else if (canUsePostMessage()) {
+        // For non-IE10 modern browsers
+        installPostMessageImplementation();
 
-	    // Don't get fooled by e.g. browserify environments.
-	    if ({}.toString.call(global.process) === "[object process]") {
-	        // For Node.js before 0.9
-	        installNextTickImplementation();
+    } else if (global.MessageChannel) {
+        // For web workers, where supported
+        installMessageChannelImplementation();
 
-	    } else if (canUsePostMessage()) {
-	        // For non-IE10 modern browsers
-	        installPostMessageImplementation();
+    } else if (doc && "onreadystatechange" in doc.createElement("script")) {
+        // For IE 6–8
+        installReadyStateChangeImplementation();
 
-	    } else if (global.MessageChannel) {
-	        // For web workers, where supported
-	        installMessageChannelImplementation();
+    } else {
+        // For older browsers
+        installSetTimeoutImplementation();
+    }
 
-	    } else if (doc && "onreadystatechange" in doc.createElement("script")) {
-	        // For IE 6–8
-	        installReadyStateChangeImplementation();
-
-	    } else {
-	        // For older browsers
-	        installSetTimeoutImplementation();
-	    }
-
-	    attachTo.setImmediate = setImmediate;
-	    attachTo.clearImmediate = clearImmediate;
-	}(typeof self === "undefined" ? typeof commonjsGlobal === "undefined" ? commonjsGlobal : commonjsGlobal : self));
-	return setImmediate$1;
-}
+    attachTo.setImmediate = setImmediate;
+    attachTo.clearImmediate = clearImmediate;
+}(typeof self === "undefined" ? typeof commonjsGlobal === "undefined" ? commonjsGlobal : commonjsGlobal : self));
 
 var hasRequiredUtils;
 
@@ -50184,7 +46400,7 @@ function requireUtils () {
 		var base64 = requireBase64();
 		var nodejsUtils = nodejsUtils$2;
 		var external = external$3;
-		requireSetImmediate();
+
 
 
 		/**
@@ -69217,15 +65433,27 @@ officeXmlReader.read = read$1;
 officeXmlReader.readXmlFromZipFile = readXmlFromZipFile$1;
 
 var xmlNamespaceMap = {
+    // Transitional format
     "http://schemas.openxmlformats.org/wordprocessingml/2006/main": "w",
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships": "r",
     "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing": "wp",
     "http://schemas.openxmlformats.org/drawingml/2006/main": "a",
     "http://schemas.openxmlformats.org/drawingml/2006/picture": "pic",
+
+    // Strict format
+    "http://purl.oclc.org/ooxml/wordprocessingml/main": "w",
+    "http://purl.oclc.org/ooxml/officeDocument/relationships": "r",
+    "http://purl.oclc.org/ooxml/drawingml/wordprocessingDrawing": "wp",
+    "http://purl.oclc.org/ooxml/drawingml/main": "a",
+    "http://purl.oclc.org/ooxml/drawingml/picture": "pic",
+
+    // Common
     "http://schemas.openxmlformats.org/package/2006/content-types": "content-types",
-    "urn:schemas-microsoft-com:vml": "v",
+    "http://schemas.openxmlformats.org/package/2006/relationships": "relationships",
     "http://schemas.openxmlformats.org/markup-compatibility/2006": "mc",
+    "urn:schemas-microsoft-com:vml": "v",
     "urn:schemas-microsoft-com:office:word": "office-word"
+
 };
 
 
@@ -70501,7 +66729,8 @@ function BodyReader(options) {
                 isItalic: readBooleanElement(element.first("w:i")),
                 isStrikethrough: readBooleanElement(element.first("w:strike")),
                 isAllCaps: readBooleanElement(element.first("w:caps")),
-                isSmallCaps: readBooleanElement(element.first("w:smallCaps"))
+                isSmallCaps: readBooleanElement(element.first("w:smallCaps")),
+                highlight: readHighlightValue(element.firstOrEmpty("w:highlight").attributes["w:val"])
             };
         });
     }
@@ -70521,6 +66750,14 @@ function BodyReader(options) {
             return value !== "false" && value !== "0";
         } else {
             return false;
+        }
+    }
+
+    function readHighlightValue(value) {
+        if (!value || value === "none") {
+            return null;
+        } else {
+            return value;
         }
     }
 
@@ -70960,6 +67197,12 @@ function BodyReader(options) {
 
 
 function readNumberingProperties(styleId, element, numbering) {
+    var level = element.firstOrEmpty("w:ilvl").attributes["w:val"];
+    var numId = element.firstOrEmpty("w:numId").attributes["w:val"];
+    if (level !== undefined && numId !== undefined) {
+        return numbering.findLevel(numId, level);
+    }
+
     if (styleId != null) {
         var levelByStyleId = numbering.findLevelByParagraphStyleId(styleId);
         if (levelByStyleId != null) {
@@ -70967,13 +67210,7 @@ function readNumberingProperties(styleId, element, numbering) {
         }
     }
 
-    var level = element.firstOrEmpty("w:ilvl").attributes["w:val"];
-    var numId = element.firstOrEmpty("w:numId").attributes["w:val"];
-    if (level === undefined || numId === undefined) {
-        return null;
-    } else {
-        return numbering.findLevel(numId, level);
-    }
+    return null;
 }
 
 var supportedImageTypes = {
@@ -71094,10 +67331,14 @@ var Result$5 = results$2.Result;
 
 function DocumentXmlReader$1(options) {
     var bodyReader = options.bodyReader;
-    
+
     function convertXmlToDocument(element) {
         var body = element.first("w:body");
-        
+
+        if (body == null) {
+            throw new Error("Could not find the body element: are you sure this is a docx file?");
+        }
+
         var result = bodyReader.readXmlElements(body.children)
             .map(function(children) {
                 return new documents$5.Document(children, {
@@ -71107,7 +67348,7 @@ function DocumentXmlReader$1(options) {
             });
         return new Result$5(result.value, result.messages);
     }
-    
+
     return {
         convertXmlToDocument: convertXmlToDocument
     };
@@ -71123,7 +67364,7 @@ relationshipsReader$1.Relationships = Relationships;
 function readRelationships(element) {
     var relationships = [];
     element.children.forEach(function(child) {
-        if (child.name === "{http://schemas.openxmlformats.org/package/2006/relationships}Relationship") {
+        if (child.name === "relationships:Relationship") {
             var relationship = {
                 relationshipId: child.attributes.Id,
                 target: child.attributes.Target,
@@ -71140,7 +67381,7 @@ function Relationships(relationships) {
     relationships.forEach(function(relationship) {
         targetsByRelationshipId[relationship.relationshipId] = relationship.target;
     });
-    
+
     var targetsByType = {};
     relationships.forEach(function(relationship) {
         if (!targetsByType[relationship.type]) {
@@ -71148,7 +67389,7 @@ function Relationships(relationships) {
         }
         targetsByType[relationship.type].push(relationship.target);
     });
-            
+
     return {
         findTargetByRelationshipId: function(relationshipId) {
             return targetsByRelationshipId[relationshipId];
@@ -71290,7 +67531,7 @@ function readAbstractNum(element) {
     var levels = {};
     element.getElementsByTagName("w:lvl").forEach(function(levelElement) {
         var levelIndex = levelElement.attributes["w:ilvl"];
-        var numFmt = levelElement.first("w:numFmt").attributes["w:val"];
+        var numFmt = levelElement.firstOrEmpty("w:numFmt").attributes["w:val"];
         var paragraphStyleId = levelElement.firstOrEmpty("w:pStyle").attributes["w:val"];
 
         levels[levelIndex] = {
@@ -71478,9 +67719,10 @@ pathIsAbsolute.exports.win32 = win32;
 
 var pathIsAbsoluteExports = pathIsAbsolute.exports;
 
-var fs$1 = require$$0$6;
-var url = require$$1$2;
+var fs$1 = require$$0$4;
+var url = require$$1;
 var os$1 = require$$2$1;
+var dirname = require$$3.dirname;
 var resolvePath = require$$3.resolve;
 var isAbsolutePath = pathIsAbsoluteExports;
 
@@ -71500,7 +67742,7 @@ function Files$1(base) {
             });
         });
     }
-    
+
     function resolveUri(uri) {
         var path = uriToPath(uri);
         if (isAbsolutePath(path)) {
@@ -71511,11 +67753,19 @@ function Files$1(base) {
             return promises$4.reject(new Error("could not find external image '" + uri + "', path of input document is unknown"));
         }
     }
-    
+
     return {
         read: read
     };
 }
+
+
+function relativeToFile(filePath) {
+    return new Files$1(dirname(filePath));
+}
+
+Files$1.relativeToFile = relativeToFile;
+
 
 var readFile$1 = promises$4.promisify(fs$1.readFile.bind(fs$1));
 
@@ -71524,7 +67774,7 @@ function uriToPath(uriString, platform) {
     if (!platform) {
         platform = os$1.platform();
     }
-    
+
     var uri = url.parse(uriString);
     if (isLocalFileUri(uri) || isRelativeUri(uri)) {
         var path = decodeURIComponent(uri.path);
@@ -71548,8 +67798,6 @@ function isRelativeUri(uri) {
 
 docxReader$1.read = read;
 docxReader$1._findPartPaths = findPartPaths;
-
-var path = require$$3;
 
 var promises$3 = promises$7;
 var documents$2 = documents$7;
@@ -71575,7 +67823,7 @@ function read(docxFile, input) {
         contentTypes: readContentTypesFromZipFile(docxFile),
         partPaths: findPartPaths(docxFile),
         docxFile: docxFile,
-        files: new Files(input.path ? path.dirname(input.path) : null)
+        files: input.path ? Files.relativeToFile(input.path) : new Files(null)
     }).also(function(result) {
         return {
             styles: readStylesFromZipFile(docxFile, result.partPaths.styles)
@@ -72652,6 +68900,12 @@ function DocumentConversion(options, comments) {
             return convertElements(run.children, messages, options);
         };
         var paths = [];
+        if (run.highlight !== null) {
+            var path = findHtmlPath({type: "highlight", color: run.highlight});
+            if (path) {
+                paths.push(path);
+            }
+        }
         if (run.isSmallCaps) {
             paths.push(findHtmlPathForRunProperty("smallCaps"));
         }
@@ -73674,7 +69928,7 @@ LazyIterator.prototype.toArray = function() {
 
 var StringSource$1 = {exports: {}};
 
-var util = require$$0$5;
+var util = require$$0$3;
 
 StringSource$1.exports = function(string, description) {
     var self = {
@@ -73975,10 +70229,11 @@ documentMatchers$1.underline = new Matcher("underline");
 documentMatchers$1.strikethrough = new Matcher("strikethrough");
 documentMatchers$1.allCaps = new Matcher("allCaps");
 documentMatchers$1.smallCaps = new Matcher("smallCaps");
+documentMatchers$1.highlight = highlight;
 documentMatchers$1.commentReference = new Matcher("commentReference");
-documentMatchers$1.lineBreak = new Matcher("break", {breakType: "line"});
-documentMatchers$1.pageBreak = new Matcher("break", {breakType: "page"});
-documentMatchers$1.columnBreak = new Matcher("break", {breakType: "column"});
+documentMatchers$1.lineBreak = new BreakMatcher({breakType: "line"});
+documentMatchers$1.pageBreak = new BreakMatcher({breakType: "page"});
+documentMatchers$1.columnBreak = new BreakMatcher({breakType: "column"});
 documentMatchers$1.equalTo = equalTo;
 documentMatchers$1.startsWith = startsWith;
 
@@ -73993,6 +70248,10 @@ function run$1(options) {
 
 function table(options) {
     return new Matcher("table", options);
+}
+
+function highlight(options) {
+    return new HighlightMatcher(options);
 }
 
 function Matcher(elementType, options) {
@@ -74012,6 +70271,26 @@ Matcher.prototype.matches = function(element) {
         (this._styleName === undefined || (element.styleName && this._styleName.operator(this._styleName.operand, element.styleName))) &&
         (this._listIndex === undefined || isList(element, this._listIndex, this._listIsOrdered)) &&
         (this._breakType === undefined || this._breakType === element.breakType);
+};
+
+function HighlightMatcher(options) {
+    options = options || {};
+    this._color = options.color;
+}
+
+HighlightMatcher.prototype.matches = function(element) {
+    return element.type === "highlight" &&
+        (this._color === undefined || element.color === this._color);
+};
+
+function BreakMatcher(options) {
+    options = options || {};
+    this._breakType = options.breakType;
+}
+
+BreakMatcher.prototype.matches = function(element) {
+    return element.type === "break" &&
+        (this._breakType === undefined || element.breakType === this._breakType);
 };
 
 function isList(element, levelIndex, isOrdered) {
@@ -74134,12 +70413,13 @@ function documentMatcherRule() {
         runRule
     );
 
-    var styleIdRule = lop.rules.then(
-        classRule,
-        function(styleId) {
-            return {styleId: styleId};
-        }
-    );
+    var styleIdRule = lop.rules.sequence(
+        lop.rules.tokenOfType("dot"),
+        lop.rules.sequence.cut(),
+        lop.rules.sequence.capture(identifierRule)
+    ).map(function(styleId) {
+        return {styleId: styleId};
+    });
 
     var styleNameMatcherRule = lop.rules.firstOf("style name matcher",
         lop.rules.then(
@@ -74235,6 +70515,23 @@ function documentMatcherRule() {
     var strikethrough = identifierToConstant("strike", documentMatchers.strikethrough);
     var allCaps = identifierToConstant("all-caps", documentMatchers.allCaps);
     var smallCaps = identifierToConstant("small-caps", documentMatchers.smallCaps);
+
+    var highlight = sequence(
+        lop.rules.token("identifier", "highlight"),
+        lop.rules.sequence.capture(lop.rules.optional(lop.rules.sequence(
+            lop.rules.tokenOfType("open-square-bracket"),
+            lop.rules.sequence.cut(),
+            lop.rules.token("identifier", "color"),
+            lop.rules.tokenOfType("equals"),
+            lop.rules.sequence.capture(stringRule),
+            lop.rules.tokenOfType("close-square-bracket")
+        ).head()))
+    ).map(function(color) {
+        return documentMatchers.highlight({
+            color: color.valueOrElse(undefined)
+        });
+    });
+
     var commentReference = identifierToConstant("comment-reference", documentMatchers.commentReference);
 
     var breakMatcher = sequence(
@@ -74266,6 +70563,7 @@ function documentMatcherRule() {
         strikethrough,
         allCaps,
         smallCaps,
+        highlight,
         commentReference,
         breakMatcher
     );
@@ -74310,15 +70608,19 @@ function htmlPathRule() {
 
     var styleElementRule = lop.rules.sequence(
         capture(tagNamesRule),
-        capture(lop.rules.zeroOrMore(classRule)),
+        capture(lop.rules.zeroOrMore(attributeOrClassRule)),
         capture(freshRule),
         capture(separatorRule)
-    ).map(function(tagName, classNames, fresh, separator) {
+    ).map(function(tagName, attributesList, fresh, separator) {
         var attributes = {};
         var options = {};
-        if (classNames.length > 0) {
-            attributes["class"] = classNames.join(" ");
-        }
+        attributesList.forEach(function(attribute) {
+            if (attribute.append && attributes[attribute.name]) {
+                attributes[attribute.name] += " " + attribute.value;
+            } else {
+                attributes[attribute.name] = attribute.value;
+            }
+        });
         if (fresh) {
             options.fresh = true;
         }
@@ -74369,11 +70671,30 @@ function decodeEscapeSequences(value) {
     });
 }
 
+var attributeRule = lop.rules.sequence(
+    lop.rules.tokenOfType("open-square-bracket"),
+    lop.rules.sequence.cut(),
+    lop.rules.sequence.capture(identifierRule),
+    lop.rules.tokenOfType("equals"),
+    lop.rules.sequence.capture(stringRule),
+    lop.rules.tokenOfType("close-square-bracket")
+).map(function(name, value) {
+    return {name: name, value: value, append: false};
+});
+
 var classRule = lop.rules.sequence(
     lop.rules.tokenOfType("dot"),
     lop.rules.sequence.cut(),
     lop.rules.sequence.capture(identifierRule)
-).head();
+).map(function(className) {
+    return {name: "class", value: className, append: true};
+});
+
+var attributeOrClassRule = lop.rules.firstOf(
+    "attribute or class",
+    attributeRule,
+    classRule
+);
 
 function parseString(rule, string) {
     var tokens = tokenise(string);
@@ -74501,9 +70822,7 @@ function identity(value) {
 
 var unzip$1 = {};
 
-unzip$1.openZip = openZip;
-
-var fs = require$$0$6;
+var fs = require$$0$4;
 
 var promises = promises$7;
 var zipfile = zipfile$2;
@@ -74765,7 +71084,7 @@ function extractFootnotes(html) {
   getElements({ tag_name: "li" }, dom).forEach((el, i) => {
     let id = el.attribs.id;
     if (id && id.startsWith("footnote-")) {
-      let content = _default(el.children[0]).replace(/<a.*?<\/a>/, "");
+      let content = render(el.children[0]).replace(/<a.*?<\/a>/, "");
       content = transformHTML(content);
       content = htmlToTiptap(content);
       if (content.type = "doc") {
@@ -74793,7 +71112,7 @@ function extractFootnotes(html) {
     dom.children.splice(parentListIndex, 1);
   }
 
-  return { html: _default(dom), footnotes };
+  return { html: render(dom), footnotes };
 }
 
 const modifyJsonToMatchTiptapSchema = (json, footnotes = []) => {
@@ -74877,7 +71196,7 @@ var e2 = {
 
       busboy.on("file", (name, file, info) => {
         const saveTo = require$$3.join(require$$2$1.tmpdir(), `busboy-upload-${name}`);
-        file.pipe(require$$0$6.createWriteStream(saveTo));
+        file.pipe(require$$0$4.createWriteStream(saveTo));
         const options = {
           styleMap: [
             "small-caps => span.small-caps",

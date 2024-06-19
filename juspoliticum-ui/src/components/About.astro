@@ -1,23 +1,30 @@
 ---
+import { getDirectusClient } from "../utils/get-directus-client.js";
+import { readItems, readItem } from "@directus/sdk";
 
+const directus = await getDirectusClient();
+const home = await directus.request(
+  readItems("Pages", {
+  fields: ["id","key", "content"],
+    filter: {
+      key: {
+        _eq: "jp_home",
+      },
+    },
+  }),
+);
+
+const content = home[0].content;
 ---
 <div class="aboutbox flex flex-col justify-end pb-10 mr-10 sm:mr-1">
   <div class="abouttext py-2 md:px-4 sm:px-3 pl-6">
     <h3 class="font-normal uppercase dark:!text-accent-dark">La Revue</h3>
     <p>
-    <em>Jus Politicum</em> est une revue électronique spécialisée dans le droit
-      politique, surtout le droit constitutionnel. Elle va au-delà des analyses
-      juridiques traditionnelles, intégrant des perspectives historiques,
-      philosophiques et pratiques. La revue, multilingue et soutenue par
-      diverses institutions académiques, favorise le dialogue interdisciplinaire
-      et interculturel. Elle publie des articles complets et des travaux en
-      cours, tous évalués en double aveugle.
-    </p>
+    <div set:html={content} />
     <div class="pt-5 ">
       <a  class="!text-secondary-light dark:!text-accent-dark" href="/about">En savoir plus [...]</a>
     </div>
   </div>
-</div>
 </div>
 
 <style>

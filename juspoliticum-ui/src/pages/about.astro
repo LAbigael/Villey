@@ -1,120 +1,27 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import PageLayout from "../layouts/PageLayout.astro";
+
+import { getDirectusClient } from "../utils/get-directus-client.js";
+import { readItems, readItem } from "@directus/sdk";
+
+const directus = await getDirectusClient();
+const home = await directus.request(
+  readItems("Pages", {
+  fields: ["id","key", "content"],
+    filter: {
+      key: {
+        _eq: "jp_presentation",
+      },
+    },
+  }),
+);
+
+const content = home[0].content;
 ---
 
 <Layout title="Présentation">
   <PageLayout title="Présentation de la revue" className="max-w-screen-2xl lg:px-24 px-10">
-    <p>
-      <em>Jus Politicum</em>&nbsp;est une revue électronique consacrée au droit
-      politique. Le droit constitutionnel est de plus en plus analysé à partir
-      du seul contrôle effectué par le juge. Il pose néanmoins des questions
-      plus vastes, qui ne peuvent se ramener à une approche purement
-      contentieuse, ni même à une simple analyse des normes. Loin d’opposer les
-      phénomènes juridiques aux questions politiques, les initiateurs de la
-      revue sont au contraire convaincus que le droit constitutionnel ne prend
-      toute sa signification qu’en se plaçant à leur point de convergence,
-      lorsqu’il est pleinement appréhendé comme droit politique&nbsp;; lorsque
-      la règle est comprise à la lumière de sa pratique, de son histoire, de son
-      soubassement philosophique&nbsp;: à la lumière de cette culture, en un
-      mot, qui seule lui donne son véritable sens (V. également,&nbsp;<a
-        href="http://www.nonfiction.fr/articleprint-4108-jus_politicum__le_droit_ressaisi_par_la_politique_.htm"
-        target="_blank"
-        >«&nbsp;Jus Politicum&nbsp;: le droit ressaisi par la
-        politique&nbsp;?&nbsp;», www.nonfiction.fr, 6 janvier 2011</a
-      >).
-    </p>
-    <p>
-      Aussi la revue se propose d’être un lieu de dialogue entre juristes,
-      philosophes, historiens et politistes, ainsi qu’un point de rencontre
-      entre cultures nationales, comme en témoignent la diversité de ses organes
-      éditoriaux, ainsi que ses trois langues de travail (français, anglais et
-      allemand).
-    </p>
-    <p>
-      La revue publie différents types de contributions&nbsp;: une
-      rubrique&nbsp;<em>Articles</em>&nbsp;regroupe les travaux les plus
-      achevés, tandis qu’une rubrique&nbsp;<em>Papiers</em>&nbsp;fait une place
-      à des travaux en cours d’élaboration. Tous sont soumis à un comité de
-      lecture, selon la règle du double anonymat&nbsp;: anonymat de l’auteur
-      pour les deux relecteurs, anonymat des relecteurs pour l’auteur. Enfin, la
-      revue regroupe des textes de référence difficiles d’accès, qui ont
-      vocation à constituer peu à peu un corpus d’archives en ligne.
-    </p>
-    <p>
-      Le site Internet de la revue a pu être créé grâce au concours financier de
-      l’Université de Versailles- Saint Quentin en Yvelines, de l’Institut
-      Michel Villey, ainsi que des laboratoires de droit public et de science
-      politique de Versailles Saint Quentin en Yvelines. Qu’ils en soient ici
-      chaleureusement remerciés. Nous souhaitons également exprimer notre
-      gratitude à Abel Poucet et Catherine Szpira pour la conception et la
-      réalisation du site.
-    </p>
-    <p>
-      <em>Jus Politicum</em>&nbsp;est également disponible sous la forme d’un
-      volume papier publié une fois par an par les éditions Dalloz. Il regroupe
-      autour d’un thème monographique la majeure partie des contributions de la
-      revue électronique (<a
-        href="http://www.editions-dalloz.fr/ouvrages-universitaires/connaitre-l-etat-de-la-recherche/les-fondements-du-droit.html"
-        target="_blank">voir le sommaire des volumes publiés</a
-      >).
-    </p>
-    <p>
-      <em>Jus politicum</em>&nbsp;fait partie des revues avec comité de lecture
-      répertoriées par l’AERES dans le domaine du droit.
-    </p>
-    <p>&nbsp;</p>
-    <p style="text-align: center;"><strong>Directeurs</strong></p>
-    <p style="text-align: center;">
-      Professeurs&nbsp;<a
-        href="http://www.institutvilley.com/Denis-Baranger,21"
-        target="_blank">Denis Baranger</a
-      >&nbsp;(Paris II) et <a
-        href="http://www.institutvilley.com/Olivier-Beaud"
-        target="_blank">Olivier Beaud</a
-      >&nbsp;(Paris II, Institut Universitaire de France)
-    </p>
-    <p>&nbsp;</p>
-    <p style="text-align: center;"><strong>Fondateurs</strong></p>
-    <p style="text-align: center;">
-      Professeurs Denis Baranger (Paris II), Armel Le Divellec (Paris II),
-      Carlos-Miguel Pimentel (Versailles-St. Quentin-en-Yvelines)
-    </p>
-    <p>&nbsp;</p>
-    <p style="text-align: center;"><strong>Conseil scientifique</strong></p>
-    <p style="text-align: center;">
-      Klaus von Beyme (Heidelberg), Dominique Chagnollaud (Paris II),
-      Jean-Claude Colliard (Paris I), Vlad Constantinesco (Strasbourg III),
-      Jean-Marie Denquin (Paris X), Christoph Gusy (Bielefeld), Ran Halévi
-      (CNRS), Josef Isensee (Bonn), Lucien Jaume (Cevipof / Paris), Olivier
-      Jouanjan (Paris II), Claude Klein (Jérusalem), Franck Lessay (Paris III),
-      Corinne Leveleux-Teixeira (Orléans), Martin Loughlin (Londres), Ulrich K.
-      Preuss (Berlin), Philippe Raynaud (Paris II, Institut Universitaire de
-      France), Pierre Rosanvallon (Collège de France / Paris), François
-      Saint-Bonnet (Paris II), Cheryl Saunders (Melbourne), Michel Troper (Paris
-      X), Neil Walker (Edimbourg / Florence).
-    </p>
-    <p>&nbsp;</p>
-    <p style="text-align: center;"><strong>Conseil de rédaction</strong></p>
-    <p style="text-align: center;">
-      Manon Altwegg-Boussac (<span data-offset-key="5j48d-0-0"
-        ><span data-text="true">Paris-Est Créteil</span></span
-      >), Denis Baranger (Paris II), Renaud Baumert (Cergy-Pontoise), Olivier
-      Beaud (Paris II, Institut Universitaire de France), Bruno Daugeron (Paris
-      V), Quentin Epron (Paris II), Cécile Guérin-Bargues (Paris II), Thibault
-      Guilluy (Nancy), Jacky Hummel (Rennes I&nbsp;; responsable de la rubrique
-      Notes de lecture), Philippe Lauvaux (Paris II), Elina Lemaire (Bourgogne),
-      Carlos-Miguel Pimentel (Versailles-St. Quentin-en-Yvelines), Céline
-      Roynier (Cergy-Pontoise), Christoph Schönberger (Konstanz), Adam Tomkins
-      (Glasgow)
-    </p>
-    <p>&nbsp;</p>
-    <p style="text-align: center;">
-      <strong>Secrétaire de rédaction</strong>
-    </p>
-    <p style="text-align: center;">Thibault Desmoulins (Paris II)</p>
-    <p style="text-align: center;">&nbsp;</p>
-    <p style="text-align: center;"><strong>Assistant d'édition</strong></p>
-    <p style="text-align: center;">&nbsp;Romane Lerenard&nbsp;(Rennes)</p>
+    <div set:html={content} />
   </PageLayout>
 </Layout>

@@ -1,19 +1,26 @@
 ---
+import { getDirectusClient } from "../utils/get-directus-client.js";
+import { readItems, readItem } from "@directus/sdk";
 
+const directus = await getDirectusClient();
+const home = await directus.request(
+  readItems("Pages", {
+  fields: ["id","key", "content"],
+    filter: {
+      key: {
+        _eq: "jp_home",
+      },
+    },
+  }),
+);
+
+const content = home[0].content;
 ---
 
-<div class="aboutbox flex flex-col justify-end pb-10">
+<div class="aboutbox flex flex-col justify-center pb-10">
   <div class="abouttext py-2 md:px-4 sm:px-3 pl-6">
     <h3 class="font-normal uppercase">La Revue</h3>
-    <p>
-      <em> Droit & Philosophie</em> est la revue française consacrée à l'étude
-      critique des liens entre droit, philosophie, théorie et culture
-      juridiques. Elle se situe à leur intersection et se veut également un lieu
-      de rencontre des doctrines françaises et étrangères dans ces matières.
-      Cette ligne éditoriale ainsi que la qualité de ses publications sont
-      garanties par un comité de lecture et une procédure d'évaluation
-      systématique en double aveugle.
-    </p>
+    <div set:html={content} />
     <div class="pt-5">
       <a href="/about">En savoir plus [...]</a>
     </div>
