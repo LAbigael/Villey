@@ -9,3 +9,5 @@ directus/uploads/*
 .DS_store
 dev-mariadb
 Factures/*
+**/astro.config*
+juspoliticum-ui/astro.config.mjs
