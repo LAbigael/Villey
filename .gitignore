@@ -8,3 +8,4 @@ data-migration/villey_db.sql
 directus/uploads/*
 .DS_store
 dev-mariadb
+Factures/*
