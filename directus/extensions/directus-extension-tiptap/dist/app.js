@@ -242,20 +242,25 @@ class Fragment {
     [`Node`](https://prosemirror.net/docs/ref/#model.Node.textBetween).
     */
     textBetween(from, to, blockSeparator, leafText) {
-        let text = "", first = true;
+        let text = "", separated = true;
         this.nodesBetween(from, to, (node, pos) => {
-            let nodeText = node.isText ? node.text.slice(Math.max(from, pos) - pos, to - pos)
-                : !node.isLeaf ? ""
-                    : leafText ? (typeof leafText === "function" ? leafText(node) : leafText)
-                        : node.type.spec.leafText ? node.type.spec.leafText(node)
-                            : "";
-            if (node.isBlock && (node.isLeaf && nodeText || node.isTextblock) && blockSeparator) {
-                if (first)
-                    first = false;
-                else
-                    text += blockSeparator;
+            if (node.isText) {
+                text += node.text.slice(Math.max(from, pos) - pos, to - pos);
+                separated = !blockSeparator;
             }
-            text += nodeText;
+            else if (node.isLeaf) {
+                if (leafText) {
+                    text += typeof leafText === "function" ? leafText(node) : leafText;
+                }
+                else if (node.type.spec.leafText) {
+                    text += node.type.spec.leafText(node);
+                }
+                separated = !blockSeparator;
+            }
+            else if (!separated && node.isBlock) {
+                text += blockSeparator;
+                separated = true;
+            }
         }, 0);
         return text;
     }
@@ -2312,7 +2317,7 @@ let NodeType$1 = class NodeType {
     }
     /**
     Returns true if the given fragment is valid content for this node
-    type.
+    type with the given attributes.
     */
     validContent(content) {
         let result = this.contentMatch.matchFragment(content);
@@ -2491,12 +2496,6 @@ class Schema {
     */
     constructor(spec) {
         /**
-        The [linebreak
-        replacement](https://prosemirror.net/docs/ref/#model.NodeSpec.linebreakReplacement) node defined
-        in this schema, if any.
-        */
-        this.linebreakReplacement = null;
-        /**
         An object for storing whatever values modules may want to
         compute and cache per schema. (If you want to store something
         in it, try to use property names unlikely to clash.)
@@ -2517,13 +2516,6 @@ class Schema {
             type.contentMatch = contentExprCache[contentExpr] ||
                 (contentExprCache[contentExpr] = ContentMatch.parse(contentExpr, this.nodes));
             type.inlineContent = type.contentMatch.inlineContent;
-            if (type.spec.linebreakReplacement) {
-                if (this.linebreakReplacement)
-                    throw new RangeError("Multiple linebreak nodes defined");
-                if (!type.isInline || !type.isLeaf)
-                    throw new RangeError("Linebreak replacement nodes must be inline leaf nodes");
-                this.linebreakReplacement = type;
-            }
             type.markSet = markExpr == "_" ? null :
                 markExpr ? gatherMarks(this, markExpr.split(" ")) :
                     markExpr == "" || !type.inlineContent ? [] : null;
@@ -2612,8 +2604,6 @@ function gatherMarks(schema, marks) {
     return found;
 }
 
-function isTagRule(rule) { return rule.tag != null; }
-function isStyleRule(rule) { return rule.style != null; }
 /**
 A DOM parser represents a strategy for parsing DOM content into a
 ProseMirror document conforming to a given schema. Its behavior is
@@ -2645,9 +2635,9 @@ class DOMParser {
         */
         this.styles = [];
         rules.forEach(rule => {
-            if (isTagRule(rule))
+            if (rule.tag)
                 this.tags.push(rule);
-            else if (isStyleRule(rule))
+            else if (rule.style)
                 this.styles.push(rule);
         });
         // Only normalize list elements when lists in the schema can't directly contain themselves
@@ -2898,10 +2888,10 @@ class ParseContext {
             this.addElement(dom);
     }
     withStyleRules(dom, f) {
-        let style = dom.style;
-        if (!style || !style.length)
+        let style = dom.getAttribute("style");
+        if (!style)
             return f();
-        let marks = this.readStyles(dom.style);
+        let marks = this.readStyles(parseStyles(style));
         if (!marks)
             return; // A style with ignore: true
         let [addMarks, removeMarks] = marks, top = this.top;
@@ -3010,10 +3000,9 @@ class ParseContext {
     // had a rule with `ignore` set.
     readStyles(styles) {
         let add = Mark$1.none, remove = Mark$1.none;
-        for (let i = 0, l = styles.length; i < l; i++) {
-            let name = styles.item(i);
+        for (let i = 0; i < styles.length; i += 2) {
             for (let after = undefined;;) {
-                let rule = this.parser.matchStyle(name, styles.getPropertyValue(name), this, after);
+                let rule = this.parser.matchStyle(styles[i], styles[i + 1], this, after);
                 if (!rule)
                     break;
                 if (rule.ignore)
@@ -3315,6 +3304,13 @@ function normalizeList(dom) {
 // Apply a CSS selector.
 function matches(dom, selector) {
     return (dom.matches || dom.msMatchesSelector || dom.webkitMatchesSelector || dom.mozMatchesSelector).call(dom, selector);
+}
+// Tokenize a style attribute into property/value pairs.
+function parseStyles(style) {
+    let re = /\s*([\w-]+)\s*:\s*([^;]+)/g, m, result = [];
+    while (m = re.exec(style))
+        result.push(m[1], m[2].trim());
+    return result;
 }
 function copy(obj) {
     let copy = {};
@@ -4367,8 +4363,7 @@ class ReplaceAroundStep extends Step {
     }
     map(mapping) {
         let from = mapping.mapResult(this.from, 1), to = mapping.mapResult(this.to, -1);
-        let gapFrom = this.from == this.gapFrom ? from.pos : mapping.map(this.gapFrom, -1);
-        let gapTo = this.to == this.gapTo ? to.pos : mapping.map(this.gapTo, 1);
+        let gapFrom = mapping.map(this.gapFrom, -1), gapTo = mapping.map(this.gapTo, 1);
         if ((from.deletedAcross && to.deletedAcross) || gapFrom < from.pos || gapTo > to.pos)
             return null;
         return new ReplaceAroundStep(from.pos, to.pos, gapFrom, gapTo, this.slice, this.insert, this.structure);
@@ -4480,7 +4475,7 @@ function removeMark(tr, from, to, mark) {
     });
     matched.forEach(m => tr.step(new RemoveMarkStep(m.from, m.to, m.style)));
 }
-function clearIncompatible(tr, pos, parentType, match = parentType.contentMatch, clearNewlines = true) {
+function clearIncompatible(tr, pos, parentType, match = parentType.contentMatch) {
     let node = tr.doc.nodeAt(pos);
     let replSteps = [], cur = pos + 1;
     for (let i = 0; i < node.childCount; i++) {
@@ -4494,7 +4489,7 @@ function clearIncompatible(tr, pos, parentType, match = parentType.contentMatch,
             for (let j = 0; j < child.marks.length; j++)
                 if (!parentType.allowsMarkType(child.marks[j].type))
                     tr.step(new RemoveMarkStep(cur, end, child.marks[j]));
-            if (clearNewlines && child.isText && parentType.whitespace != "pre") {
+            if (child.isText && !parentType.spec.code) {
                 let m, newline = /\r?\n|\r/g, slice;
                 while (m = newline.exec(child.text)) {
                     if (!slice)
@@ -4619,43 +4614,12 @@ function setBlockType$1(tr, from, to, type, attrs) {
     let mapFrom = tr.steps.length;
     tr.doc.nodesBetween(from, to, (node, pos) => {
         if (node.isTextblock && !node.hasMarkup(type, attrs) && canChangeType(tr.doc, tr.mapping.slice(mapFrom).map(pos), type)) {
-            let convertNewlines = null;
-            if (type.schema.linebreakReplacement) {
-                let pre = type.whitespace == "pre", supportLinebreak = !!type.contentMatch.matchType(type.schema.linebreakReplacement);
-                if (pre && !supportLinebreak)
-                    convertNewlines = false;
-                else if (!pre && supportLinebreak)
-                    convertNewlines = true;
-            }
             // Ensure all markup that isn't allowed in the new node type is cleared
-            if (convertNewlines === false)
-                replaceLinebreaks(tr, node, pos, mapFrom);
-            clearIncompatible(tr, tr.mapping.slice(mapFrom).map(pos, 1), type, undefined, convertNewlines === null);
+            tr.clearIncompatible(tr.mapping.slice(mapFrom).map(pos, 1), type);
             let mapping = tr.mapping.slice(mapFrom);
             let startM = mapping.map(pos, 1), endM = mapping.map(pos + node.nodeSize, 1);
             tr.step(new ReplaceAroundStep(startM, endM, startM + 1, endM - 1, new Slice(Fragment.from(type.create(attrs, null, node.marks)), 0, 0), 1, true));
-            if (convertNewlines === true)
-                replaceNewlines(tr, node, pos, mapFrom);
             return false;
-        }
-    });
-}
-function replaceNewlines(tr, node, pos, mapFrom) {
-    node.forEach((child, offset) => {
-        if (child.isText) {
-            let m, newline = /\r?\n|\r/g;
-            while (m = newline.exec(child.text)) {
-                let start = tr.mapping.slice(mapFrom).map(pos + 1 + offset + m.index);
-                tr.replaceWith(start, start + 1, node.type.schema.linebreakReplacement.create());
-            }
-        }
-    });
-}
-function replaceLinebreaks(tr, node, pos, mapFrom) {
-    node.forEach((child, offset) => {
-        if (child.type == child.type.schema.linebreakReplacement) {
-            let start = tr.mapping.slice(mapFrom).map(pos + 1 + offset);
-            tr.replaceWith(start, start + 1, node.type.schema.text("\n"));
         }
     });
 }
@@ -6667,9 +6631,6 @@ const textRange = function (node, from, to) {
     range.setStart(node, from || 0);
     return range;
 };
-const clearReusedRange = function () {
-    reusedRange = null;
-};
 // Scans forward and backward through DOM positions equivalent to the
 // given one to see if the two are in the same place (i.e. after a
 // text node vs at the end of that text node)
@@ -6703,44 +6664,6 @@ function scanFor(node, off, targetNode, targetOff, dir) {
 }
 function nodeSize(node) {
     return node.nodeType == 3 ? node.nodeValue.length : node.childNodes.length;
-}
-function textNodeBefore$1(node, offset) {
-    for (;;) {
-        if (node.nodeType == 3 && offset)
-            return node;
-        if (node.nodeType == 1 && offset > 0) {
-            if (node.contentEditable == "false")
-                return null;
-            node = node.childNodes[offset - 1];
-            offset = nodeSize(node);
-        }
-        else if (node.parentNode && !hasBlockDesc(node)) {
-            offset = domIndex(node);
-            node = node.parentNode;
-        }
-        else {
-            return null;
-        }
-    }
-}
-function textNodeAfter$1(node, offset) {
-    for (;;) {
-        if (node.nodeType == 3 && offset < node.nodeValue.length)
-            return node;
-        if (node.nodeType == 1 && offset < node.childNodes.length) {
-            if (node.contentEditable == "false")
-                return null;
-            node = node.childNodes[offset];
-            offset = 0;
-        }
-        else if (node.parentNode && !hasBlockDesc(node)) {
-            offset = domIndex(node) + 1;
-            node = node.parentNode;
-        }
-        else {
-            return null;
-        }
-    }
 }
 function isOnEdge(node, offset, parent) {
     for (let atStart = offset == 0, atEnd = offset == nodeSize(node); atStart || atEnd;) {
@@ -6818,12 +6741,6 @@ const webkit = !!doc && "webkitFontSmoothing" in doc.documentElement.style;
 const webkit_version = webkit ? +(/\bAppleWebKit\/(\d+)/.exec(navigator.userAgent) || [0, 0])[1] : 0;
 
 function windowRect(doc) {
-    let vp = doc.defaultView && doc.defaultView.visualViewport;
-    if (vp)
-        return {
-            left: 0, right: vp.width,
-            top: 0, bottom: vp.height
-        };
     return { left: 0, right: doc.documentElement.clientWidth,
         top: 0, bottom: doc.documentElement.clientHeight };
 }
@@ -7040,15 +6957,14 @@ function posFromCaret(view, node, offset, coords) {
         let desc = view.docView.nearestDesc(cur, true);
         if (!desc)
             return null;
-        if (desc.dom.nodeType == 1 && (desc.node.isBlock && desc.parent || !desc.contentDOM)) {
+        if (desc.dom.nodeType == 1 && (desc.node.isBlock && desc.parent && !sawBlock || !desc.contentDOM)) {
             let rect = desc.dom.getBoundingClientRect();
-            if (desc.node.isBlock && desc.parent) {
-                // Only apply the horizontal test to the innermost block. Vertical for any parent.
-                if (!sawBlock && rect.left > coords.left || rect.top > coords.top)
-                    outsideBlock = desc.posBefore;
-                else if (!sawBlock && rect.right < coords.left || rect.bottom < coords.top)
-                    outsideBlock = desc.posAfter;
+            if (desc.node.isBlock && desc.parent && !sawBlock) {
                 sawBlock = true;
+                if (rect.left > coords.left || rect.top > coords.top)
+                    outsideBlock = desc.posBefore;
+                else if (rect.right < coords.left || rect.bottom < coords.top)
+                    outsideBlock = desc.posAfter;
             }
             if (!desc.contentDOM && outsideBlock < 0 && !desc.node.isText) {
                 // If we are inside a leaf, return the side of the leaf closer to the coords
@@ -7760,7 +7676,6 @@ class ViewDesc {
     }
     get domAtom() { return false; }
     get ignoreForCoords() { return false; }
-    isText(text) { return false; }
 }
 // A widget desc represents a widget decoration, which is a DOM node
 // drawn between the document nodes.
@@ -8023,7 +7938,8 @@ class NodeViewDesc extends ViewDesc {
         let { from, to } = view.state.selection;
         if (!(view.state.selection instanceof TextSelection) || from < pos || to > pos + this.node.content.size)
             return null;
-        let textNode = view.input.compositionNode;
+        let sel = view.domSelectionRange();
+        let textNode = nearbyTextNode(sel.focusNode, sel.focusOffset);
         if (!textNode || !this.dom.contains(textNode.parentNode))
             return null;
         if (this.node.inlineContent) {
@@ -8097,11 +8013,10 @@ class NodeViewDesc extends ViewDesc {
     }
     // Remove selected node marking from this node.
     deselectNode() {
-        if (this.nodeDOM.nodeType == 1) {
+        if (this.nodeDOM.nodeType == 1)
             this.nodeDOM.classList.remove("ProseMirror-selectednode");
-            if (this.contentDOM || !this.node.type.spec.draggable)
-                this.dom.removeAttribute("draggable");
-        }
+        if (this.contentDOM || !this.node.type.spec.draggable)
+            this.dom.removeAttribute("draggable");
     }
     get domAtom() { return this.node.isAtom; }
 }
@@ -8166,7 +8081,6 @@ class TextViewDesc extends NodeViewDesc {
             this.dirty = NODE_DIRTY;
     }
     get domAtom() { return false; }
-    isText(text) { return this.node.text == text; }
 }
 // A dummy desc used to tag trailing BR or IMG nodes created to work
 // around contentEditable terribleness.
@@ -8717,10 +8631,6 @@ function iterDeco(parent, deco, onWidget, onNode) {
                 index = -1;
             }
         }
-        else {
-            while (decoIndex < locals.length && locals[decoIndex].to < end)
-                decoIndex++;
-        }
         let outerDeco = child.isInline && !child.isLeaf ? active.filter(d => !d.inline) : active.slice();
         onNode(child, outerDeco, deco.forChild(offset, child), index);
         offset = end;
@@ -8734,6 +8644,25 @@ function iosHacks(dom) {
         dom.style.cssText = oldCSS + "; list-style: square !important";
         window.getComputedStyle(dom).listStyle;
         dom.style.cssText = oldCSS;
+    }
+}
+function nearbyTextNode(node, offset) {
+    for (;;) {
+        if (node.nodeType == 3)
+            return node;
+        if (node.nodeType == 1 && offset > 0) {
+            if (node.childNodes.length > offset && node.childNodes[offset].nodeType == 3)
+                return node.childNodes[offset];
+            node = node.childNodes[offset - 1];
+            offset = nodeSize(node);
+        }
+        else if (node.nodeType == 1 && offset < node.childNodes.length) {
+            node = node.childNodes[offset];
+            offset = 0;
+        }
+        else {
+            return null;
+        }
     }
 }
 // Find a piece of text in an inline fragment, overlapping from-to
@@ -9399,7 +9328,7 @@ function serializeForClipboard(view, slice) {
         firstChild.setAttribute("data-pm-slice", `${openStart} ${openEnd}${wrappers ? ` -${wrappers}` : ""} ${JSON.stringify(context)}`);
     let text = view.someProp("clipboardTextSerializer", f => f(slice, view)) ||
         slice.content.textBetween(0, slice.content.size, "\n\n");
-    return { dom: wrap, text, slice };
+    return { dom: wrap, text };
 }
 // Read a slice of content from the clipboard (or drop data).
 function parseFromClipboard(view, text, html, plainText, $context) {
@@ -9640,7 +9569,6 @@ class InputState {
         this.lastTouch = 0;
         this.lastAndroidDelete = 0;
         this.composing = false;
-        this.compositionNode = null;
         this.composingTimeout = -1;
         this.compositionNodes = [];
         this.compositionEndedAt = -2e8;
@@ -9916,7 +9844,7 @@ class MouseDown {
         }
         const target = flushed ? null : event.target;
         const targetDesc = target ? view.docView.nearestDesc(target, true) : null;
-        this.target = targetDesc && targetDesc.dom.nodeType == 1 ? targetDesc.dom : null;
+        this.target = targetDesc ? targetDesc.dom : null;
         let { selection } = view.state;
         if (event.button == 0 &&
             targetNode.type.spec.draggable && targetNode.type.spec.selectable !== false ||
@@ -10077,7 +10005,6 @@ editHandlers.compositionend = (view, event) => {
         view.input.composing = false;
         view.input.compositionEndedAt = event.timeStamp;
         view.input.compositionPendingChanges = view.domObserver.pendingRecords().length ? view.input.compositionID : 0;
-        view.input.compositionNode = null;
         if (view.input.compositionPendingChanges)
             Promise.resolve().then(() => view.domObserver.flush());
         view.input.compositionID++;
@@ -10096,27 +10023,6 @@ function clearComposition(view) {
     }
     while (view.input.compositionNodes.length > 0)
         view.input.compositionNodes.pop().markParentsDirty();
-}
-function findCompositionNode(view) {
-    let sel = view.domSelectionRange();
-    if (!sel.focusNode)
-        return null;
-    let textBefore = textNodeBefore$1(sel.focusNode, sel.focusOffset);
-    let textAfter = textNodeAfter$1(sel.focusNode, sel.focusOffset);
-    if (textBefore && textAfter && textBefore != textAfter) {
-        let descAfter = textAfter.pmViewDesc, lastChanged = view.domObserver.lastChangedTextNode;
-        if (textBefore == lastChanged || textAfter == lastChanged)
-            return lastChanged;
-        if (!descAfter || !descAfter.isText(textAfter.nodeValue)) {
-            return textAfter;
-        }
-        else if (view.input.compositionNode == textAfter) {
-            let descBefore = textBefore.pmViewDesc;
-            if (!(!descBefore || !descBefore.isText(textBefore.nodeValue)))
-                return textAfter;
-        }
-    }
-    return textBefore || textAfter;
 }
 function timestampFromCustomEvent() {
     let event = document.createEvent("Event");
@@ -10273,8 +10179,7 @@ handlers.dragstart = (view, _event) => {
         if (desc && desc.node.type.spec.draggable && desc != view.docView)
             node = NodeSelection.create(view.state.doc, desc.posBefore);
     }
-    let draggedSlice = (node || view.state.selection).content();
-    let { dom, text, slice } = serializeForClipboard(view, draggedSlice);
+    let slice = (node || view.state.selection).content(), { dom, text } = serializeForClipboard(view, slice);
     event.dataTransfer.clearData();
     event.dataTransfer.setData(brokenClipboardAPI ? "Text" : "text/html", dom.innerHTML);
     // See https://github.com/ProseMirror/prosemirror/issues/1156
@@ -10721,6 +10626,9 @@ class DecorationSet {
             return this;
         return local.length || children.length ? new DecorationSet(local, children) : empty;
     }
+    /**
+    @internal
+    */
     forChild(offset, node) {
         if (this == empty)
             return this;
@@ -10881,7 +10789,7 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset, op
                 if (oldEnd >= start) {
                     children[i + 1] = oldStart <= start ? -2 : -1;
                 }
-                else if (oldStart >= baseOffset && dSize) {
+                else if (newStart >= offset && dSize) {
                     children[i] += dSize;
                     children[i + 1] += dSize;
                 }
@@ -11118,7 +11026,6 @@ class DOMObserver {
         this.currentSelection = new SelectionState;
         this.onCharData = null;
         this.suppressingSelectionUpdates = false;
-        this.lastChangedTextNode = null;
         this.observer = window.MutationObserver &&
             new window.MutationObserver(mutations => {
                 for (let i = 0; i < mutations.length; i++)
@@ -11251,22 +11158,14 @@ class DOMObserver {
                 }
             }
         }
-        if (gecko && added.length) {
+        if (gecko && added.length > 1) {
             let brs = added.filter(n => n.nodeName == "BR");
             if (brs.length == 2) {
-                let [a, b] = brs;
+                let a = brs[0], b = brs[1];
                 if (a.parentNode && a.parentNode.parentNode == b.parentNode)
                     b.remove();
                 else
                     a.remove();
-            }
-            else {
-                let { focusNode } = this.currentSelection;
-                for (let br of brs) {
-                    let parent = br.parentNode;
-                    if (parent && parent.nodeName == "LI" && (!focusNode || blockParent(view, focusNode) != parent))
-                        br.remove();
-                }
             }
         }
         let readSel = null;
@@ -11308,12 +11207,8 @@ class DOMObserver {
         if (!desc || desc.ignoreMutation(mut))
             return null;
         if (mut.type == "childList") {
-            for (let i = 0; i < mut.addedNodes.length; i++) {
-                let node = mut.addedNodes[i];
-                added.push(node);
-                if (node.nodeType == 3)
-                    this.lastChangedTextNode = node;
-            }
+            for (let i = 0; i < mut.addedNodes.length; i++)
+                added.push(mut.addedNodes[i]);
             if (desc.contentDOM && desc.contentDOM != desc.dom && !desc.contentDOM.contains(mut.target))
                 return { from: desc.posBefore, to: desc.posAfter };
             let prev = mut.previousSibling, next = mut.nextSibling;
@@ -11340,7 +11235,6 @@ class DOMObserver {
             return { from: desc.posAtStart - desc.border, to: desc.posAtEnd + desc.border };
         }
         else { // "characterData"
-            this.lastChangedTextNode = mut.target;
             return {
                 from: desc.posAtStart,
                 to: desc.posAtEnd,
@@ -11367,25 +11261,9 @@ function checkCSS(view) {
         cssCheckWarned = true;
     }
 }
-function rangeToSelectionRange(view, range) {
-    let anchorNode = range.startContainer, anchorOffset = range.startOffset;
-    let focusNode = range.endContainer, focusOffset = range.endOffset;
-    let currentAnchor = view.domAtPos(view.state.selection.anchor);
-    // Since such a range doesn't distinguish between anchor and head,
-    // use a heuristic that flips it around if its end matches the
-    // current anchor.
-    if (isEquivalentPosition(currentAnchor.node, currentAnchor.offset, focusNode, focusOffset))
-        [anchorNode, anchorOffset, focusNode, focusOffset] = [focusNode, focusOffset, anchorNode, anchorOffset];
-    return { anchorNode, anchorOffset, focusNode, focusOffset };
-}
 // Used to work around a Safari Selection/shadow DOM bug
 // Based on https://github.com/codemirror/dev/issues/414 fix
-function safariShadowSelectionRange(view, selection) {
-    if (selection.getComposedRanges) {
-        let range = selection.getComposedRanges(view.root)[0];
-        if (range)
-            return rangeToSelectionRange(view, range);
-    }
+function safariShadowSelectionRange(view) {
     let found;
     function read(event) {
         event.preventDefault();
@@ -11400,15 +11278,15 @@ function safariShadowSelectionRange(view, selection) {
     view.dom.addEventListener("beforeinput", read, true);
     document.execCommand("indent");
     view.dom.removeEventListener("beforeinput", read, true);
-    return found ? rangeToSelectionRange(view, found) : null;
-}
-function blockParent(view, node) {
-    for (let p = node.parentNode; p && p != view.dom; p = p.parentNode) {
-        let desc = view.docView.nearestDesc(p, true);
-        if (desc && desc.node.isBlock)
-            return p;
-    }
-    return null;
+    let anchorNode = found.startContainer, anchorOffset = found.startOffset;
+    let focusNode = found.endContainer, focusOffset = found.endOffset;
+    let currentAnchor = view.domAtPos(view.state.selection.anchor);
+    // Since such a range doesn't distinguish between anchor and head,
+    // use a heuristic that flips it around if its end matches the
+    // current anchor.
+    if (isEquivalentPosition(currentAnchor.node, currentAnchor.offset, focusNode, focusOffset))
+        [anchorNode, anchorOffset, focusNode, focusOffset] = [focusNode, focusOffset, anchorNode, anchorOffset];
+    return { anchorNode, anchorOffset, focusNode, focusOffset };
 }
 
 // Note that all referencing and parsing is done with the
@@ -11551,6 +11429,13 @@ function readDOMChange(view, from, to, typeOver, addedNodes) {
             return;
         }
     }
+    // Chrome sometimes leaves the cursor before the inserted text when
+    // composing after a cursor wrapper. This moves it forward.
+    if (chrome && view.cursorWrapper && parse.sel && parse.sel.anchor == view.cursorWrapper.deco.from &&
+        parse.sel.head == parse.sel.anchor) {
+        let size = change.endB - change.start;
+        parse.sel = { anchor: parse.sel.anchor + size, head: parse.sel.anchor + size };
+    }
     view.input.domChangeCount++;
     // Handle the case where overwriting a selection by typing matches
     // the start or end of the selected content, creating a change
@@ -11596,7 +11481,7 @@ function readDOMChange(view, from, to, typeOver, addedNodes) {
     }
     // Same for backspace
     if (view.state.selection.anchor > change.start &&
-        looksLikeBackspace(doc, change.start, change.endA, $from, $to) &&
+        looksLikeJoin(doc, change.start, change.endA, $from, $to) &&
         view.someProp("handleKeyDown", f => f(view, keyEvent(8, "Backspace")))) {
         if (android && chrome)
             view.domObserver.suppressSelectionUpdates(); // #820
@@ -11708,18 +11593,14 @@ function isMarkChange(cur, prev) {
     if (Fragment.from(updated).eq(cur))
         return { mark, type };
 }
-function looksLikeBackspace(old, start, end, $newStart, $newEnd) {
-    if ( // The content must have shrunk
-    end - start <= $newEnd.pos - $newStart.pos ||
+function looksLikeJoin(old, start, end, $newStart, $newEnd) {
+    if (!$newStart.parent.isTextblock ||
+        // The content must have shrunk
+        end - start <= $newEnd.pos - $newStart.pos ||
         // newEnd must point directly at or after the end of the block that newStart points into
         skipClosingAndOpening($newStart, true, false) < $newEnd.pos)
         return false;
     let $start = old.resolve(start);
-    // Handle the case where, rather than joining blocks, the change just removed an entire block
-    if (!$newStart.parent.isTextblock) {
-        let after = $start.nodeAfter;
-        return after != null && end == start + after.nodeSize;
-    }
     // Start must be at the end of a block
     if ($start.parentOffset < $start.parent.content.size || !$start.parent.isTextblock)
         return false;
@@ -11957,10 +11838,8 @@ class EditorView {
                 // tracks that and forces a selection reset when our update
                 // did write to the node.
                 let chromeKludge = chrome ? (this.trackWrites = this.domSelectionRange().focusNode) : null;
-                if (this.composing)
-                    this.input.compositionNode = findCompositionNode(this);
                 if (redraw || !this.docView.update(state.doc, outerDeco, innerDeco, this)) {
-                    this.docView.updateOuterDeco(outerDeco);
+                    this.docView.updateOuterDeco([]);
                     this.docView.destroy();
                     this.docView = docViewDesc(state.doc, outerDeco, innerDeco, this.dom, this);
                 }
@@ -12237,7 +12116,6 @@ class EditorView {
         }
         this.docView.destroy();
         this.docView = null;
-        clearReusedRange();
     }
     /**
     This is true when the view has been
@@ -12273,9 +12151,8 @@ class EditorView {
     @internal
     */
     domSelectionRange() {
-        let sel = this.domSelection();
-        return safari && this.root.nodeType === 11 &&
-            deepActiveElement(this.dom.ownerDocument) == this.dom && safariShadowSelectionRange(this, sel) || sel;
+        return safari && this.root.nodeType === 11 && deepActiveElement(this.dom.ownerDocument) == this.dom
+            ? safariShadowSelectionRange(this) : this.domSelection();
     }
     /**
     @internal
@@ -12659,60 +12536,6 @@ const joinBackward$1 = (state, dispatch, view) => {
     }
     return false;
 };
-/**
-A more limited form of [`joinBackward`]($commands.joinBackward)
-that only tries to join the current textblock to the one before
-it, if the cursor is at the start of a textblock.
-*/
-const joinTextblockBackward$1 = (state, dispatch, view) => {
-    let $cursor = atBlockStart(state, view);
-    if (!$cursor)
-        return false;
-    let $cut = findCutBefore($cursor);
-    return $cut ? joinTextblocksAround(state, $cut, dispatch) : false;
-};
-/**
-A more limited form of [`joinForward`]($commands.joinForward)
-that only tries to join the current textblock to the one after
-it, if the cursor is at the end of a textblock.
-*/
-const joinTextblockForward$1 = (state, dispatch, view) => {
-    let $cursor = atBlockEnd(state, view);
-    if (!$cursor)
-        return false;
-    let $cut = findCutAfter($cursor);
-    return $cut ? joinTextblocksAround(state, $cut, dispatch) : false;
-};
-function joinTextblocksAround(state, $cut, dispatch) {
-    let before = $cut.nodeBefore, beforeText = before, beforePos = $cut.pos - 1;
-    for (; !beforeText.isTextblock; beforePos--) {
-        if (beforeText.type.spec.isolating)
-            return false;
-        let child = beforeText.lastChild;
-        if (!child)
-            return false;
-        beforeText = child;
-    }
-    let after = $cut.nodeAfter, afterText = after, afterPos = $cut.pos + 1;
-    for (; !afterText.isTextblock; afterPos++) {
-        if (afterText.type.spec.isolating)
-            return false;
-        let child = afterText.firstChild;
-        if (!child)
-            return false;
-        afterText = child;
-    }
-    let step = replaceStep(state.doc, beforePos, afterPos, Slice.empty);
-    if (!step || step.from != beforePos ||
-        step instanceof ReplaceStep && step.slice.size >= afterPos - beforePos)
-        return false;
-    if (dispatch) {
-        let tr = state.tr.step(step);
-        tr.setSelection(TextSelection.create(tr.doc, beforePos));
-        dispatch(tr.scrollIntoView());
-    }
-    return true;
-}
 function textblockAt(node, side, only = false) {
     for (let scan = node; scan; scan = (side == "start" ? scan.firstChild : scan.lastChild)) {
         if (scan.isTextblock)
@@ -13284,11 +13107,6 @@ function sinkListItem$1(itemType) {
     };
 }
 
-/**
- * Takes a Transaction & Editor State and turns it into a chainable state object
- * @param config The transaction and state to create the chainable state from
- * @returns A chainable Editor state object
- */
 function createChainableState(config) {
     const { state, transaction } = config;
     let { selection } = transaction;
@@ -13298,6 +13116,7 @@ function createChainableState(config) {
         ...state,
         apply: state.apply.bind(state),
         applyTransaction: state.applyTransaction.bind(state),
+        filterTransaction: state.filterTransaction,
         plugins: state.plugins,
         schema: state.schema,
         reconfigure: state.reconfigure.bind(state),
@@ -13455,13 +13274,6 @@ class EventEmitter {
     }
 }
 
-/**
- * Returns a field from an extension
- * @param extension The Tiptap extension
- * @param field The field, for example `renderHTML` or `priority`
- * @param context The context object that should be passed as `this` into the function
- * @returns The field value
- */
 function getExtensionField(extension, field, context) {
     if (extension.config[field] === undefined && extension.parent) {
         return getExtensionField(extension.parent, field, context);
@@ -13706,12 +13518,6 @@ function cleanUpSchemaItem(data) {
         return value !== null && value !== undefined;
     }));
 }
-/**
- * Creates a new Prosemirror schema based on the given extensions.
- * @param extensions An array of Tiptap extensions
- * @param editor The editor instance
- * @returns A Prosemirror schema
- */
 function getSchemaByResolvedExtensions(extensions, editor) {
     var _a;
     const allAttributes = getAttributesFromExtensions(extensions);
@@ -13813,12 +13619,6 @@ function getSchemaByResolvedExtensions(extensions, editor) {
     });
 }
 
-/**
- * Tries to get a node or mark type by its name.
- * @param name The name of the node or mark type
- * @param schema The Prosemiror schema to search in
- * @returns The node or mark type, or null if it doesn't exist
- */
 function getSchemaTypeByName(name, schema) {
     return schema.nodes[name] || schema.marks[name] || null;
 }
@@ -13835,12 +13635,6 @@ function isExtensionRulesEnabled(extension, enabled) {
     return enabled;
 }
 
-/**
- * Returns the text content of a resolved prosemirror position
- * @param $from The resolved position to get the text content from
- * @param maxMatch The maximum number of characters to match
- * @returns The text content
- */
 const getTextContentFromNodes = ($from, maxMatch = 500) => {
     let textBefore = '';
     const sliceEndPos = $from.parentOffset;
@@ -13969,23 +13763,6 @@ function inputRulesPlugin(props) {
                 if (stored) {
                     return stored;
                 }
-                // if InputRule is triggered by insertContent()
-                const simulatedInputMeta = tr.getMeta('applyInputRules');
-                const isSimulatedInput = !!simulatedInputMeta;
-                if (isSimulatedInput) {
-                    setTimeout(() => {
-                        const { from, text } = simulatedInputMeta;
-                        const to = from + text.length;
-                        run$1$1({
-                            editor,
-                            from,
-                            to,
-                            text,
-                            rules,
-                            plugin,
-                        });
-                    });
-                }
                 return tr.selectionSet || tr.docChanged ? null : prev;
             },
         },
@@ -14048,21 +13825,17 @@ function isNumber(value) {
     return typeof value === 'number';
 }
 
-/**
- * Paste rules are used to react to pasted content.
- * @see https://tiptap.dev/guide/custom-extensions/#paste-rules
- */
 class PasteRule {
     constructor(config) {
         this.find = config.find;
         this.handler = config.handler;
     }
 }
-const pasteRuleMatcherHandler = (text, find, event) => {
+const pasteRuleMatcherHandler = (text, find) => {
     if (isRegExp(find)) {
         return [...text.matchAll(find)];
     }
-    const matches = find(text, event);
+    const matches = find(text);
     if (!matches) {
         return [];
     }
@@ -14094,7 +13867,7 @@ function run$2(config) {
         const resolvedFrom = Math.max(from, pos);
         const resolvedTo = Math.min(to, pos + node.content.size);
         const textToMatch = node.textBetween(resolvedFrom - pos, resolvedTo - pos, undefined, '\ufffc');
-        const matches = pasteRuleMatcherHandler(textToMatch, rule.find, pasteEvent);
+        const matches = pasteRuleMatcherHandler(textToMatch, rule.find);
         matches.forEach(match => {
             if (match.index === undefined) {
                 return;
@@ -14121,14 +13894,6 @@ function run$2(config) {
     const success = handlers.every(handler => handler !== null);
     return success;
 }
-const createClipboardPasteEvent = (text) => {
-    var _a;
-    const event = new ClipboardEvent('paste', {
-        clipboardData: new DataTransfer(),
-    });
-    (_a = event.clipboardData) === null || _a === void 0 ? void 0 : _a.setData('text/html', text);
-    return event;
-};
 /**
  * Create an paste rules plugin. When enabled, it will cause pasted
  * text that matches any of the given rules to trigger the rule’s
@@ -14139,30 +13904,8 @@ function pasteRulesPlugin(props) {
     let dragSourceElement = null;
     let isPastedFromProseMirror = false;
     let isDroppedFromProseMirror = false;
-    let pasteEvent = typeof ClipboardEvent !== 'undefined' ? new ClipboardEvent('paste') : null;
-    let dropEvent = typeof DragEvent !== 'undefined' ? new DragEvent('drop') : null;
-    const processEvent = ({ state, from, to, rule, pasteEvt, }) => {
-        const tr = state.tr;
-        const chainableState = createChainableState({
-            state,
-            transaction: tr,
-        });
-        const handler = run$2({
-            editor,
-            state: chainableState,
-            from: Math.max(from - 1, 0),
-            to: to.b - 1,
-            rule,
-            pasteEvent: pasteEvt,
-            dropEvent,
-        });
-        if (!handler || !tr.steps.length) {
-            return;
-        }
-        dropEvent = typeof DragEvent !== 'undefined' ? new DragEvent('drop') : null;
-        pasteEvent = typeof ClipboardEvent !== 'undefined' ? new ClipboardEvent('paste') : null;
-        return tr;
-    };
+    let pasteEvent = new ClipboardEvent('paste');
+    let dropEvent = new DragEvent('drop');
     const plugins = rules.map(rule => {
         return new Plugin({
             // we register a global drag handler to track the current drag source element
@@ -14200,39 +13943,38 @@ function pasteRulesPlugin(props) {
                 const transaction = transactions[0];
                 const isPaste = transaction.getMeta('uiEvent') === 'paste' && !isPastedFromProseMirror;
                 const isDrop = transaction.getMeta('uiEvent') === 'drop' && !isDroppedFromProseMirror;
-                // if PasteRule is triggered by insertContent()
-                const simulatedPasteMeta = transaction.getMeta('applyPasteRules');
-                const isSimulatedPaste = !!simulatedPasteMeta;
-                if (!isPaste && !isDrop && !isSimulatedPaste) {
+                if (!isPaste && !isDrop) {
                     return;
                 }
-                // Handle simulated paste
-                if (isSimulatedPaste) {
-                    const { from, text } = simulatedPasteMeta;
-                    const to = from + text.length;
-                    const pasteEvt = createClipboardPasteEvent(text);
-                    return processEvent({
-                        rule,
-                        state,
-                        from,
-                        to: { b: to },
-                        pasteEvt,
-                    });
-                }
-                // handle actual paste/drop
+                // stop if there is no changed range
                 const from = oldState.doc.content.findDiffStart(state.doc.content);
                 const to = oldState.doc.content.findDiffEnd(state.doc.content);
-                // stop if there is no changed range
                 if (!isNumber(from) || !to || from === to.b) {
                     return;
                 }
-                return processEvent({
-                    rule,
+                // build a chainable state
+                // so we can use a single transaction for all paste rules
+                const tr = state.tr;
+                const chainableState = createChainableState({
                     state,
-                    from,
-                    to,
-                    pasteEvt: pasteEvent,
+                    transaction: tr,
                 });
+                const handler = run$2({
+                    editor,
+                    state: chainableState,
+                    from: Math.max(from - 1, 0),
+                    to: to.b - 1,
+                    rule,
+                    pasteEvent,
+                    dropEvent,
+                });
+                // stop if there are no changes
+                if (!handler || !tr.steps.length) {
+                    return;
+                }
+                dropEvent = new DragEvent('drop');
+                pasteEvent = new ClipboardEvent('paste');
+                return tr;
             },
         });
     });
@@ -14250,14 +13992,57 @@ class ExtensionManager {
         this.editor = editor;
         this.extensions = ExtensionManager.resolve(extensions);
         this.schema = getSchemaByResolvedExtensions(this.extensions, editor);
-        this.setupExtensions();
+        this.extensions.forEach(extension => {
+            var _a;
+            // store extension storage in editor
+            this.editor.extensionStorage[extension.name] = extension.storage;
+            const context = {
+                name: extension.name,
+                options: extension.options,
+                storage: extension.storage,
+                editor: this.editor,
+                type: getSchemaTypeByName(extension.name, this.schema),
+            };
+            if (extension.type === 'mark') {
+                const keepOnSplit = (_a = callOrReturn(getExtensionField(extension, 'keepOnSplit', context))) !== null && _a !== void 0 ? _a : true;
+                if (keepOnSplit) {
+                    this.splittableMarks.push(extension.name);
+                }
+            }
+            const onBeforeCreate = getExtensionField(extension, 'onBeforeCreate', context);
+            if (onBeforeCreate) {
+                this.editor.on('beforeCreate', onBeforeCreate);
+            }
+            const onCreate = getExtensionField(extension, 'onCreate', context);
+            if (onCreate) {
+                this.editor.on('create', onCreate);
+            }
+            const onUpdate = getExtensionField(extension, 'onUpdate', context);
+            if (onUpdate) {
+                this.editor.on('update', onUpdate);
+            }
+            const onSelectionUpdate = getExtensionField(extension, 'onSelectionUpdate', context);
+            if (onSelectionUpdate) {
+                this.editor.on('selectionUpdate', onSelectionUpdate);
+            }
+            const onTransaction = getExtensionField(extension, 'onTransaction', context);
+            if (onTransaction) {
+                this.editor.on('transaction', onTransaction);
+            }
+            const onFocus = getExtensionField(extension, 'onFocus', context);
+            if (onFocus) {
+                this.editor.on('focus', onFocus);
+            }
+            const onBlur = getExtensionField(extension, 'onBlur', context);
+            if (onBlur) {
+                this.editor.on('blur', onBlur);
+            }
+            const onDestroy = getExtensionField(extension, 'onDestroy', context);
+            if (onDestroy) {
+                this.editor.on('destroy', onDestroy);
+            }
+        });
     }
-    /**
-     * Returns a flattened and sorted extension list while
-     * also checking for duplicated extensions and warns the user.
-     * @param extensions An array of Tiptap extensions
-     * @returns An flattened and sorted array of Tiptap extensions
-     */
     static resolve(extensions) {
         const resolvedExtensions = ExtensionManager.sort(ExtensionManager.flatten(extensions));
         const duplicatedNames = findDuplicates(resolvedExtensions.map(extension => extension.name));
@@ -14268,11 +14053,6 @@ class ExtensionManager {
         }
         return resolvedExtensions;
     }
-    /**
-     * Create a flattened array of extensions by traversing the `addExtensions` field.
-     * @param extensions An array of Tiptap extensions
-     * @returns A flattened array of Tiptap extensions
-     */
     static flatten(extensions) {
         return (extensions
             .map(extension => {
@@ -14290,11 +14070,6 @@ class ExtensionManager {
             // `Infinity` will break TypeScript so we set a number that is probably high enough
             .flat(10));
     }
-    /**
-     * Sort extensions by priority.
-     * @param extensions An array of Tiptap extensions
-     * @returns A sorted array of Tiptap extensions by priority
-     */
     static sort(extensions) {
         const defaultPriority = 100;
         return extensions.sort((a, b) => {
@@ -14309,10 +14084,6 @@ class ExtensionManager {
             return 0;
         });
     }
-    /**
-     * Get all commands from the extensions.
-     * @returns An object with all commands where the key is the command name and the value is the command function
-     */
     get commands() {
         return this.extensions.reduce((commands, extension) => {
             const context = {
@@ -14332,10 +14103,6 @@ class ExtensionManager {
             };
         }, {});
     }
-    /**
-     * Get all registered Prosemirror plugins from the extensions.
-     * @returns An array of Prosemirror plugins
-     */
     get plugins() {
         const { editor } = this;
         // With ProseMirror, first plugins within an array are executed first.
@@ -14398,17 +14165,9 @@ class ExtensionManager {
             ...allPlugins,
         ];
     }
-    /**
-     * Get all attributes from the extensions.
-     * @returns An array of attributes
-     */
     get attributes() {
         return getAttributesFromExtensions(this.extensions);
     }
-    /**
-     * Get all node views from the extensions.
-     * @returns An object with all node views where the key is the node name and the value is the node view function
-     */
     get nodeViews() {
         const { editor } = this;
         const { nodeExtensions } = splitExtensions(this.extensions);
@@ -14440,62 +14199,6 @@ class ExtensionManager {
             };
             return [extension.name, nodeview];
         }));
-    }
-    /**
-     * Go through all extensions, create extension storages & setup marks
-     * & bind editor event listener.
-     */
-    setupExtensions() {
-        this.extensions.forEach(extension => {
-            var _a;
-            // store extension storage in editor
-            this.editor.extensionStorage[extension.name] = extension.storage;
-            const context = {
-                name: extension.name,
-                options: extension.options,
-                storage: extension.storage,
-                editor: this.editor,
-                type: getSchemaTypeByName(extension.name, this.schema),
-            };
-            if (extension.type === 'mark') {
-                const keepOnSplit = (_a = callOrReturn(getExtensionField(extension, 'keepOnSplit', context))) !== null && _a !== void 0 ? _a : true;
-                if (keepOnSplit) {
-                    this.splittableMarks.push(extension.name);
-                }
-            }
-            const onBeforeCreate = getExtensionField(extension, 'onBeforeCreate', context);
-            const onCreate = getExtensionField(extension, 'onCreate', context);
-            const onUpdate = getExtensionField(extension, 'onUpdate', context);
-            const onSelectionUpdate = getExtensionField(extension, 'onSelectionUpdate', context);
-            const onTransaction = getExtensionField(extension, 'onTransaction', context);
-            const onFocus = getExtensionField(extension, 'onFocus', context);
-            const onBlur = getExtensionField(extension, 'onBlur', context);
-            const onDestroy = getExtensionField(extension, 'onDestroy', context);
-            if (onBeforeCreate) {
-                this.editor.on('beforeCreate', onBeforeCreate);
-            }
-            if (onCreate) {
-                this.editor.on('create', onCreate);
-            }
-            if (onUpdate) {
-                this.editor.on('update', onUpdate);
-            }
-            if (onSelectionUpdate) {
-                this.editor.on('selectionUpdate', onSelectionUpdate);
-            }
-            if (onTransaction) {
-                this.editor.on('transaction', onTransaction);
-            }
-            if (onFocus) {
-                this.editor.on('focus', onFocus);
-            }
-            if (onBlur) {
-                this.editor.on('blur', onBlur);
-            }
-            if (onDestroy) {
-                this.editor.on('destroy', onDestroy);
-            }
-        });
     }
 }
 
@@ -14530,10 +14233,6 @@ function mergeDeep(target, source) {
     return output;
 }
 
-/**
- * The Extension class is the base class for all extensions.
- * @see https://tiptap.dev/api/extensions#create-a-new-extension
- */
 class Extension {
     constructor(config = {}) {
         this.type = 'extension';
@@ -14549,7 +14248,7 @@ class Extension {
             ...config,
         };
         this.name = this.config.name;
-        if (config.defaultOptions && Object.keys(config.defaultOptions).length > 0) {
+        if (config.defaultOptions) {
             console.warn(`[tiptap warn]: BREAKING CHANGE: "defaultOptions" is deprecated. Please use "addOptions" instead. Found in extension: "${this.name}".`);
         }
         // TODO: remove `addOptions` fallback
@@ -14571,7 +14270,6 @@ class Extension {
         // return a new instance so we can use the same extension
         // with different calls of `configure`
         const extension = this.extend();
-        extension.parent = this.parent;
         extension.options = mergeDeep(this.options, options);
         extension.storage = callOrReturn(getExtensionField(extension, 'addStorage', {
             name: extension.name,
@@ -14580,7 +14278,7 @@ class Extension {
         return extension;
     }
     extend(extendedConfig = {}) {
-        const extension = new Extension({ ...this.config, ...extendedConfig });
+        const extension = new Extension(extendedConfig);
         extension.parent = this;
         this.child = extension;
         extension.name = extendedConfig.name ? extendedConfig.name : extension.parent.name;
@@ -14598,25 +14296,19 @@ class Extension {
     }
 }
 
-/**
- * Gets the text between two positions in a Prosemirror node
- * and serializes it using the given text serializers and block separator (see getText)
- * @param startNode The Prosemirror node to start from
- * @param range The range of the text to get
- * @param options Options for the text serializer & block separator
- * @returns The text between the two positions
- */
 function getTextBetween(startNode, range, options) {
     const { from, to } = range;
     const { blockSeparator = '\n\n', textSerializers = {} } = options || {};
     let text = '';
+    let separated = true;
     startNode.nodesBetween(from, to, (node, pos, parent, index) => {
         var _a;
-        if (node.isBlock && pos > from) {
-            text += blockSeparator;
-        }
         const textSerializer = textSerializers === null || textSerializers === void 0 ? void 0 : textSerializers[node.type.name];
         if (textSerializer) {
+            if (node.isBlock && !separated) {
+                text += blockSeparator;
+                separated = true;
+            }
             if (parent) {
                 text += textSerializer({
                     node,
@@ -14626,21 +14318,19 @@ function getTextBetween(startNode, range, options) {
                     range,
                 });
             }
-            // do not descend into child nodes when there exists a serializer
-            return false;
         }
-        if (node.isText) {
+        else if (node.isText) {
             text += (_a = node === null || node === void 0 ? void 0 : node.text) === null || _a === void 0 ? void 0 : _a.slice(Math.max(from, pos) - pos, to - pos); // eslint-disable-line
+            separated = false;
+        }
+        else if (node.isBlock && !separated) {
+            text += blockSeparator;
+            separated = true;
         }
     });
     return text;
 }
 
-/**
- * Find text serializers `toText` in a Prosemirror schema
- * @param schema The Prosemirror schema to search in
- * @returns A record of text serializers by node name
- */
 function getTextSerializersFromSchema(schema) {
     return Object.fromEntries(Object.entries(schema.nodes)
         .filter(([, node]) => node.spec.toText)
@@ -14649,11 +14339,6 @@ function getTextSerializersFromSchema(schema) {
 
 const ClipboardTextSerializer = Extension.create({
     name: 'clipboardTextSerializer',
-    addOptions() {
-        return {
-            blockSeparator: undefined,
-        };
-    },
     addProseMirrorPlugins() {
         return [
             new Plugin({
@@ -14669,9 +14354,6 @@ const ClipboardTextSerializer = Extension.create({
                         const textSerializers = getTextSerializersFromSchema(schema);
                         const range = { from, to };
                         return getTextBetween(doc, range, {
-                            ...(this.options.blockSeparator !== undefined
-                                ? { blockSeparator: this.options.blockSeparator }
-                                : {}),
                             textSerializers,
                         });
                     },
@@ -15003,46 +14685,21 @@ const insertContent = (value, options) => ({ tr, commands }) => {
     return commands.insertContentAt({ from: tr.selection.from, to: tr.selection.to }, value, options);
 };
 
-const removeWhitespaces = (node) => {
-    const children = node.childNodes;
-    for (let i = children.length - 1; i >= 0; i -= 1) {
-        const child = children[i];
-        if (child.nodeType === 3 && child.nodeValue && /^(\n\s\s|\n)$/.test(child.nodeValue)) {
-            node.removeChild(child);
-        }
-        else if (child.nodeType === 1) {
-            removeWhitespaces(child);
-        }
-    }
-    return node;
-};
 function elementFromString(value) {
     // add a wrapper to preserve leading and trailing whitespace
     const wrappedValue = `<body>${value}</body>`;
-    const html = new window.DOMParser().parseFromString(wrappedValue, 'text/html').body;
-    return removeWhitespaces(html);
+    return new window.DOMParser().parseFromString(wrappedValue, 'text/html').body;
 }
 
-/**
- * Takes a JSON or HTML content and creates a Prosemirror node or fragment from it.
- * @param content The JSON or HTML content to create the node from
- * @param schema The Prosemirror schema to use for the node
- * @param options Options for the parser
- * @returns The created Prosemirror node or fragment
- */
 function createNodeFromContent(content, schema, options) {
     options = {
         slice: true,
         parseOptions: {},
         ...options,
     };
-    const isJSONContent = typeof content === 'object' && content !== null;
-    const isTextContent = typeof content === 'string';
-    if (isJSONContent) {
+    if (typeof content === 'object' && content !== null) {
         try {
-            const isArrayContent = Array.isArray(content) && content.length > 0;
-            // if the JSON Content is an array of nodes, create a fragment for each node
-            if (isArrayContent) {
+            if (Array.isArray(content) && content.length > 0) {
                 return Fragment.fromArray(content.map(item => schema.nodeFromJSON(item)));
             }
             return schema.nodeFromJSON(content);
@@ -15052,7 +14709,7 @@ function createNodeFromContent(content, schema, options) {
             return createNodeFromContent('', schema, options);
         }
     }
-    if (isTextContent) {
+    if (typeof content === 'string') {
         const parser = DOMParser.fromSchema(schema);
         return options.slice
             ? parser.parseSlice(elementFromString(content), options.parseOptions).content
@@ -15089,8 +14746,6 @@ const insertContentAt = (position, value, options) => ({ tr, dispatch, editor })
         options = {
             parseOptions: {},
             updateSelection: true,
-            applyInputRules: false,
-            applyPasteRules: false,
             ...options,
         };
         const content = createNodeFromContent(value, editor.schema, {
@@ -15126,36 +14781,27 @@ const insertContentAt = (position, value, options) => ({ tr, dispatch, editor })
                 to += 1;
             }
         }
-        let newContent;
         // if there is only plain text we have to use `insertText`
         // because this will keep the current marks
         if (isOnlyTextContent) {
             // if value is string, we can use it directly
             // otherwise if it is an array, we have to join it
             if (Array.isArray(value)) {
-                newContent = value.map(v => v.text || '').join('');
+                tr.insertText(value.map(v => v.text || '').join(''), from, to);
             }
             else if (typeof value === 'object' && !!value && !!value.text) {
-                newContent = value.text;
+                tr.insertText(value.text, from, to);
             }
             else {
-                newContent = value;
+                tr.insertText(value, from, to);
             }
-            tr.insertText(newContent, from, to);
         }
         else {
-            newContent = content;
-            tr.replaceWith(from, to, newContent);
+            tr.replaceWith(from, to, content);
         }
         // set cursor at end of inserted content
         if (options.updateSelection) {
             selectionToInsertionEnd(tr, tr.steps.length - 1, -1);
-        }
-        if (options.applyInputRules) {
-            tr.setMeta('applyInputRules', { from, text: newContent });
-        }
-        if (options.applyPasteRules) {
-            tr.setMeta('applyPasteRules', { from, text: newContent });
         }
     }
     return true;
@@ -15206,14 +14852,6 @@ const joinItemForward = () => ({ state, dispatch, tr, }) => {
     catch (e) {
         return false;
     }
-};
-
-const joinTextblockBackward = () => ({ state, dispatch }) => {
-    return joinTextblockBackward$1(state, dispatch);
-};
-
-const joinTextblockForward = () => ({ state, dispatch }) => {
-    return joinTextblockForward$1(state, dispatch);
 };
 
 function isMacOS() {
@@ -15352,12 +14990,6 @@ const newlineInCode = () => ({ state, dispatch }) => {
     return newlineInCode$1(state, dispatch);
 };
 
-/**
- * Get the type of a schema item by its name.
- * @param name The name of the schema item
- * @param schema The Prosemiror schema to search in
- * @returns The type of the schema item (`node` or `mark`), or null if it doesn't exist
- */
 function getSchemaTypeNameByName(name, schema) {
     if (schema.nodes[name]) {
         return 'node';
@@ -15455,13 +15087,6 @@ const selectTextblockStart = () => ({ state, dispatch }) => {
     return selectTextblockStart$1(state, dispatch);
 };
 
-/**
- * Create a new Prosemirror document node from content.
- * @param content The JSON or HTML content to create the document from
- * @param schema The Prosemirror schema to use for the document
- * @param parseOptions Options for the parser
- * @returns The created Prosemirror document node
- */
 function createDocument(content, schema, parseOptions = {}) {
     return createNodeFromContent(content, schema, { slice: false, parseOptions });
 }
@@ -15499,9 +15124,6 @@ function getMarkAttributes(state, typeOrName) {
 
 /**
  * Returns a new `Transform` based on all steps of the passed transactions.
- * @param oldDoc The Prosemirror node to start from
- * @param transactions The transactions to combine
- * @returns A new `Transform` with all steps of the passed transactions
  */
 function combineTransactionSteps(oldDoc, transactions) {
     const transform = new Transform(oldDoc);
@@ -15513,11 +15135,6 @@ function combineTransactionSteps(oldDoc, transactions) {
     return transform;
 }
 
-/**
- * Gets the default block type at a given match
- * @param match The content match to get the default block type from
- * @returns The default block type or null
- */
 function defaultBlockAt(match) {
     for (let i = 0; i < match.edgeCount; i += 1) {
         const { type } = match.edge(i);
@@ -15530,10 +15147,6 @@ function defaultBlockAt(match) {
 
 /**
  * Same as `findChildren` but searches only within a `range`.
- * @param node The Prosemirror node to search in
- * @param range The range to search in
- * @param predicate The predicate to match
- * @returns An array of nodes with their positions
  */
 function findChildrenInRange(node, range, predicate) {
     const nodesWithPos = [];
@@ -15557,15 +15170,6 @@ function findChildrenInRange(node, range, predicate) {
     return nodesWithPos;
 }
 
-/**
- * Finds the closest parent node to a resolved position that matches a predicate.
- * @param $pos The resolved position to search from
- * @param predicate The predicate to match
- * @returns The closest parent node to the resolved position that matches the predicate
- * @example ```js
- * findParentNodeClosestToPos($from, node => node.type.name === 'paragraph')
- * ```
- */
 function findParentNodeClosestToPos($pos, predicate) {
     for (let i = $pos.depth; i > 0; i -= 1) {
         const node = $pos.node(i);
@@ -15580,14 +15184,6 @@ function findParentNodeClosestToPos($pos, predicate) {
     }
 }
 
-/**
- * Finds the closest parent node to the current selection that matches a predicate.
- * @param predicate The predicate to match
- * @returns A command that finds the closest parent node to the current selection that matches the predicate
- * @example ```js
- * findParentNode(node => node.type.name === 'paragraph')
- * ```
- */
 function findParentNode(predicate) {
     return (selection) => findParentNodeClosestToPos(selection.$from, predicate);
 }
@@ -15600,15 +15196,6 @@ function getHTMLFromFragment(fragment, schema) {
     return container.innerHTML;
 }
 
-/**
- * Gets the text of a Prosemirror node
- * @param node The Prosemirror node
- * @param options Options for the text serializer & block separator
- * @returns The text of the node
- * @example ```js
- * const text = getText(node, { blockSeparator: '\n' })
- * ```
- */
 function getText(node, options) {
     const range = {
         from: 0,
@@ -15631,12 +15218,6 @@ function getNodeAttributes(state, typeOrName) {
     return { ...node.attrs };
 }
 
-/**
- * Get node or mark attributes by type or name on the current editor state
- * @param state The current editor state
- * @param typeOrName The node or mark type or name
- * @returns The attributes of the node or mark or an empty object
- */
 function getAttributes(state, typeOrName) {
     const schemaType = getSchemaTypeNameByName(typeof typeOrName === 'string' ? typeOrName : typeOrName.name, state.schema);
     if (schemaType === 'node') {
@@ -15745,9 +15326,6 @@ function getMarksBetween(from, to, doc) {
     }
     else {
         doc.nodesBetween(from, to, (node, pos) => {
-            if (!node || (node === null || node === void 0 ? void 0 : node.nodeSize) === undefined) {
-                return;
-            }
             marks.push(...node.marks.map(mark => ({
                 from: pos,
                 to: pos + node.nodeSize,
@@ -15758,13 +15336,6 @@ function getMarksBetween(from, to, doc) {
     return marks;
 }
 
-/**
- * Return attributes of an extension that should be splitted by keepOnSplit flag
- * @param extensionAttributes Array of extension attributes
- * @param typeName The type of the extension
- * @param attributes The attributes of the extension
- * @returns The splitted attributes
- */
 function getSplittedAttributes(extensionAttributes, typeName, attributes) {
     return Object.fromEntries(Object
         .entries(attributes)
@@ -16481,8 +16052,6 @@ var commands = /*#__PURE__*/Object.freeze({
   joinForward: joinForward,
   joinItemBackward: joinItemBackward,
   joinItemForward: joinItemForward,
-  joinTextblockBackward: joinTextblockBackward,
-  joinTextblockForward: joinTextblockForward,
   keyboardShortcut: keyboardShortcut,
   lift: lift,
   liftEmptyBlock: liftEmptyBlock,
@@ -16582,18 +16151,13 @@ const Keymap = Extension.create({
                 const { selection, doc } = tr;
                 const { empty, $anchor } = selection;
                 const { pos, parent } = $anchor;
-                const $parentPos = $anchor.parent.isTextblock && pos > 0 ? tr.doc.resolve(pos - 1) : $anchor;
+                const $parentPos = $anchor.parent.isTextblock ? tr.doc.resolve(pos - 1) : $anchor;
                 const parentIsIsolating = $parentPos.parent.type.spec.isolating;
                 const parentPos = $anchor.pos - $anchor.parentOffset;
                 const isAtStart = (parentIsIsolating && $parentPos.parent.childCount === 1)
                     ? parentPos === $anchor.pos
                     : Selection.atStart(doc).from === pos;
-                if (!empty
-                    || !parent.type.isTextblock
-                    || parent.textContent.length
-                    || !isAtStart
-                    || (isAtStart && $anchor.parent.type.name === 'paragraph') // prevent clearNodes when no nodes to clear, otherwise history stack is appended
-                ) {
+                if (!empty || !isAtStart || !parent.type.isTextblock || parent.textContent.length) {
                     return false;
                 }
                 return commands.clearNodes();
@@ -16703,181 +16267,15 @@ const Tabindex = Extension.create({
     },
 });
 
-class NodePos {
-    constructor(pos, editor, isBlock = false, node = null) {
-        this.currentNode = null;
-        this.actualDepth = null;
-        this.isBlock = isBlock;
-        this.resolvedPos = pos;
-        this.editor = editor;
-        this.currentNode = node;
-    }
-    get name() {
-        return this.node.type.name;
-    }
-    get node() {
-        return this.currentNode || this.resolvedPos.node();
-    }
-    get element() {
-        return this.editor.view.domAtPos(this.pos).node;
-    }
-    get depth() {
-        var _a;
-        return (_a = this.actualDepth) !== null && _a !== void 0 ? _a : this.resolvedPos.depth;
-    }
-    get pos() {
-        return this.resolvedPos.pos;
-    }
-    get content() {
-        return this.node.content;
-    }
-    set content(content) {
-        let from = this.from;
-        let to = this.to;
-        if (this.isBlock) {
-            if (this.content.size === 0) {
-                console.error(`You can’t set content on a block node. Tried to set content on ${this.name} at ${this.pos}`);
-                return;
-            }
-            from = this.from + 1;
-            to = this.to - 1;
-        }
-        this.editor.commands.insertContentAt({ from, to }, content);
-    }
-    get attributes() {
-        return this.node.attrs;
-    }
-    get textContent() {
-        return this.node.textContent;
-    }
-    get size() {
-        return this.node.nodeSize;
-    }
-    get from() {
-        if (this.isBlock) {
-            return this.pos;
-        }
-        return this.resolvedPos.start(this.resolvedPos.depth);
-    }
-    get range() {
-        return {
-            from: this.from,
-            to: this.to,
-        };
-    }
-    get to() {
-        if (this.isBlock) {
-            return this.pos + this.size;
-        }
-        return this.resolvedPos.end(this.resolvedPos.depth) + (this.node.isText ? 0 : 1);
-    }
-    get parent() {
-        if (this.depth === 0) {
-            return null;
-        }
-        const parentPos = this.resolvedPos.start(this.resolvedPos.depth - 1);
-        const $pos = this.resolvedPos.doc.resolve(parentPos);
-        return new NodePos($pos, this.editor);
-    }
-    get before() {
-        let $pos = this.resolvedPos.doc.resolve(this.from - (this.isBlock ? 1 : 2));
-        if ($pos.depth !== this.depth) {
-            $pos = this.resolvedPos.doc.resolve(this.from - 3);
-        }
-        return new NodePos($pos, this.editor);
-    }
-    get after() {
-        let $pos = this.resolvedPos.doc.resolve(this.to + (this.isBlock ? 2 : 1));
-        if ($pos.depth !== this.depth) {
-            $pos = this.resolvedPos.doc.resolve(this.to + 3);
-        }
-        return new NodePos($pos, this.editor);
-    }
-    get children() {
-        const children = [];
-        this.node.content.forEach((node, offset) => {
-            const isBlock = node.isBlock && !node.isTextblock;
-            const targetPos = this.pos + offset + 1;
-            const $pos = this.resolvedPos.doc.resolve(targetPos);
-            if (!isBlock && $pos.depth <= this.depth) {
-                return;
-            }
-            const childNodePos = new NodePos($pos, this.editor, isBlock, isBlock ? node : null);
-            if (isBlock) {
-                childNodePos.actualDepth = this.depth + 1;
-            }
-            children.push(new NodePos($pos, this.editor, isBlock, isBlock ? node : null));
-        });
-        return children;
-    }
-    get firstChild() {
-        return this.children[0] || null;
-    }
-    get lastChild() {
-        const children = this.children;
-        return children[children.length - 1] || null;
-    }
-    closest(selector, attributes = {}) {
-        let node = null;
-        let currentNode = this.parent;
-        while (currentNode && !node) {
-            if (currentNode.node.type.name === selector) {
-                if (Object.keys(attributes).length > 0) {
-                    const nodeAttributes = currentNode.node.attrs;
-                    const attrKeys = Object.keys(attributes);
-                    for (let index = 0; index < attrKeys.length; index += 1) {
-                        const key = attrKeys[index];
-                        if (nodeAttributes[key] !== attributes[key]) {
-                            break;
-                        }
-                    }
-                }
-                else {
-                    node = currentNode;
-                }
-            }
-            currentNode = currentNode.parent;
-        }
-        return node;
-    }
-    querySelector(selector, attributes = {}) {
-        return this.querySelectorAll(selector, attributes, true)[0] || null;
-    }
-    querySelectorAll(selector, attributes = {}, firstItemOnly = false) {
-        let nodes = [];
-        if (!this.children || this.children.length === 0) {
-            return nodes;
-        }
-        const attrKeys = Object.keys(attributes);
-        /**
-         * Finds all children recursively that match the selector and attributes
-         * If firstItemOnly is true, it will return the first item found
-         */
-        this.children.forEach(childPos => {
-            // If we already found a node and we only want the first item, we dont need to keep going
-            if (firstItemOnly && nodes.length > 0) {
-                return;
-            }
-            if (childPos.node.type.name === selector) {
-                const doesAllAttributesMatch = attrKeys.every(key => attributes[key] === childPos.node.attrs[key]);
-                if (doesAllAttributesMatch) {
-                    nodes.push(childPos);
-                }
-            }
-            // If we already found a node and we only want the first item, we can stop here and skip the recursion
-            if (firstItemOnly && nodes.length > 0) {
-                return;
-            }
-            nodes = nodes.concat(childPos.querySelectorAll(selector, attributes, firstItemOnly));
-        });
-        return nodes;
-    }
-    setAttribute(attributes) {
-        const oldSelection = this.editor.state.selection;
-        this.editor.chain().setTextSelection(this.from).updateAttributes(this.node.type.name, attributes).setTextSelection(oldSelection.from)
-            .run();
-    }
-}
+var extensions = /*#__PURE__*/Object.freeze({
+  __proto__: null,
+  ClipboardTextSerializer: ClipboardTextSerializer,
+  Commands: Commands,
+  Editable: Editable,
+  FocusEvents: FocusEvents,
+  Keymap: Keymap,
+  Tabindex: Tabindex
+});
 
 const style = `.ProseMirror {
   position: relative;
@@ -16985,7 +16383,6 @@ let Editor$1 = class Editor extends EventEmitter {
             editable: true,
             editorProps: {},
             parseOptions: {},
-            coreExtensionOptions: {},
             enableInputRules: true,
             enablePasteRules: true,
             enableCoreExtensions: true,
@@ -17131,17 +16528,7 @@ let Editor$1 = class Editor extends EventEmitter {
      * Creates an extension manager.
      */
     createExtensionManager() {
-        var _a, _b;
-        const coreExtensions = this.options.enableCoreExtensions ? [
-            Editable,
-            ClipboardTextSerializer.configure({
-                blockSeparator: (_b = (_a = this.options.coreExtensionOptions) === null || _a === void 0 ? void 0 : _a.clipboardTextSerializer) === null || _b === void 0 ? void 0 : _b.blockSeparator,
-            }),
-            Commands,
-            FocusEvents,
-            Keymap,
-            Tabindex,
-        ] : [];
+        const coreExtensions = this.options.enableCoreExtensions ? Object.values(extensions) : [];
         const allExtensions = [...coreExtensions, ...this.options.extensions].filter(extension => {
             return ['extension', 'node', 'mark'].includes(extension === null || extension === void 0 ? void 0 : extension.type);
         });
@@ -17335,27 +16722,11 @@ let Editor$1 = class Editor extends EventEmitter {
         // @ts-ignore
         return !((_a = this.view) === null || _a === void 0 ? void 0 : _a.docView);
     }
-    $node(selector, attributes) {
-        var _a;
-        return ((_a = this.$doc) === null || _a === void 0 ? void 0 : _a.querySelector(selector, attributes)) || null;
-    }
-    $nodes(selector, attributes) {
-        var _a;
-        return ((_a = this.$doc) === null || _a === void 0 ? void 0 : _a.querySelectorAll(selector, attributes)) || null;
-    }
-    $pos(pos) {
-        const $pos = this.state.doc.resolve(pos);
-        return new NodePos($pos, this);
-    }
-    get $doc() {
-        return this.$pos(0);
-    }
 };
 
 /**
  * Build an input rule that adds a mark when the
  * matched text is typed into it.
- * @see https://tiptap.dev/guide/custom-extensions/#input-rules
  */
 function markInputRule(config) {
     return new InputRule({
@@ -17399,7 +16770,6 @@ function markInputRule(config) {
 /**
  * Build an input rule that adds a node when the
  * matched text is typed into it.
- * @see https://tiptap.dev/guide/custom-extensions/#input-rules
  */
 function nodeInputRule(config) {
     return new InputRule({
@@ -17438,7 +16808,6 @@ function nodeInputRule(config) {
  * matched text is typed into it. When using a regular expresion you’ll
  * probably want the regexp to start with `^`, so that the pattern can
  * only occur at the start of a textblock.
- * @see https://tiptap.dev/guide/custom-extensions/#input-rules
  */
 function textblockTypeInputRule(config) {
     return new InputRule({
@@ -17469,7 +16838,6 @@ function textblockTypeInputRule(config) {
  * two nodes. You can pass a join predicate, which takes a regular
  * expression match and the node before the wrapped node, and can
  * return a boolean to indicate whether a join should happen.
- * @see https://tiptap.dev/guide/custom-extensions/#input-rules
  */
 function wrappingInputRule(config) {
     return new InputRule({
@@ -17509,10 +16877,6 @@ function wrappingInputRule(config) {
     });
 }
 
-/**
- * The Mark class is used to create custom mark extensions.
- * @see https://tiptap.dev/api/extensions#create-a-new-extension
- */
 class Mark {
     constructor(config = {}) {
         this.type = 'mark';
@@ -17528,7 +16892,7 @@ class Mark {
             ...config,
         };
         this.name = this.config.name;
-        if (config.defaultOptions && Object.keys(config.defaultOptions).length > 0) {
+        if (config.defaultOptions) {
             console.warn(`[tiptap warn]: BREAKING CHANGE: "defaultOptions" is deprecated. Please use "addOptions" instead. Found in extension: "${this.name}".`);
         }
         // TODO: remove `addOptions` fallback
@@ -17558,7 +16922,7 @@ class Mark {
         return extension;
     }
     extend(extendedConfig = {}) {
-        const extension = new Mark({ ...this.config, ...extendedConfig });
+        const extension = new Mark(extendedConfig);
         extension.parent = this;
         this.child = extension;
         extension.name = extendedConfig.name ? extendedConfig.name : extension.parent.name;
@@ -17596,10 +16960,6 @@ class Mark {
     }
 }
 
-/**
- * The Node class is used to create custom node extensions.
- * @see https://tiptap.dev/api/extensions#create-a-new-extension
- */
 class Node {
     constructor(config = {}) {
         this.type = 'node';
@@ -17615,7 +16975,7 @@ class Node {
             ...config,
         };
         this.name = this.config.name;
-        if (config.defaultOptions && Object.keys(config.defaultOptions).length > 0) {
+        if (config.defaultOptions) {
             console.warn(`[tiptap warn]: BREAKING CHANGE: "defaultOptions" is deprecated. Please use "addOptions" instead. Found in extension: "${this.name}".`);
         }
         // TODO: remove `addOptions` fallback
@@ -17645,7 +17005,7 @@ class Node {
         return extension;
     }
     extend(extendedConfig = {}) {
-        const extension = new Node({ ...this.config, ...extendedConfig });
+        const extension = new Node(extendedConfig);
         extension.parent = this;
         this.child = extension;
         extension.name = extendedConfig.name ? extendedConfig.name : extension.parent.name;
@@ -17666,7 +17026,6 @@ class Node {
 /**
  * Build an paste rule that adds a mark when the
  * matched text is pasted into it.
- * @see https://tiptap.dev/guide/custom-extensions/#paste-rules
  */
 function markPasteRule(config) {
     return new PasteRule({
@@ -19921,7 +19280,7 @@ function getChildren(popper) {
     })
   };
 }
-function render(instance) {
+function render$m(instance) {
   var popper = div();
   var box = div();
   box.className = BOX_CLASS;
@@ -19990,7 +19349,7 @@ function render(instance) {
 } // Runtime check to identify if the render function is the default one; this
 // way we can apply default CSS transitions logic and it can be tree-shaken away
 
-render.$$tippy = true;
+render$m.$$tippy = true;
 
 var idCounter = 1;
 var mouseMoveListeners = []; // Used by `hideAll()`
@@ -21003,7 +20362,7 @@ Object.assign({}, applyStyles$1, {
 });
 
 tippy.setDefaultProps({
-  render: render
+  render: render$m
 });
 
 class BubbleMenuView {
@@ -21181,10 +20540,6 @@ const BubbleMenuPlugin = (options) => {
     });
 };
 
-/**
- * This extension allows you to create a bubble menu.
- * @see https://tiptap.dev/api/extensions/bubble-menu
- */
 Extension.create({
     name: 'bubbleMenu',
     addOptions() {
@@ -21337,10 +20692,6 @@ const FloatingMenuPlugin = (options) => {
     });
 };
 
-/**
- * This extension allows you to create a floating menu.
- * @see https://tiptap.dev/api/extensions/floating-menu
- */
 Extension.create({
     name: 'floatingMenu',
     addOptions() {
@@ -21635,14 +20986,7 @@ const useEditor = (options = {}) => {
     return editor;
 };
 
-/**
- * Matches a blockquote to a `>` as input.
- */
 const inputRegex$4 = /^\s*>\s$/;
-/**
- * This extension allows you to create blockquotes.
- * @see https://tiptap.dev/api/nodes/blockquote
- */
 const Blockquote = Node.create({
     name: 'blockquote',
     addOptions() {
@@ -21689,26 +21033,10 @@ const Blockquote = Node.create({
     },
 });
 
-/**
- * Matches bold text via `**` as input.
- */
-const starInputRegex$1 = /(?:^|\s)(\*\*(?!\s+\*\*)((?:[^*]+))\*\*(?!\s+\*\*))$/;
-/**
- * Matches bold text via `**` while pasting.
- */
-const starPasteRegex$1 = /(?:^|\s)(\*\*(?!\s+\*\*)((?:[^*]+))\*\*(?!\s+\*\*))/g;
-/**
- * Matches bold text via `__` as input.
- */
-const underscoreInputRegex$1 = /(?:^|\s)(__(?!\s+__)((?:[^_]+))__(?!\s+__))$/;
-/**
- * Matches bold text via `__` while pasting.
- */
-const underscorePasteRegex$1 = /(?:^|\s)(__(?!\s+__)((?:[^_]+))__(?!\s+__))/g;
-/**
- * This extension allows you to mark text as bold.
- * @see https://tiptap.dev/api/marks/bold
- */
+const starInputRegex$1 = /(?:^|\s)((?:\*\*)((?:[^*]+))(?:\*\*))$/;
+const starPasteRegex$1 = /(?:^|\s)((?:\*\*)((?:[^*]+))(?:\*\*))/g;
+const underscoreInputRegex$1 = /(?:^|\s)((?:__)((?:[^__]+))(?:__))$/;
+const underscorePasteRegex$1 = /(?:^|\s)((?:__)((?:[^__]+))(?:__))/g;
 const Bold = Mark.create({
     name: 'bold',
     addOptions() {
@@ -21779,10 +21107,6 @@ const Bold = Mark.create({
     },
 });
 
-/**
- * This extension allows you to create list items.
- * @see https://www.tiptap.dev/api/nodes/list-item
- */
 const ListItem$2 = Node.create({
     name: 'listItem',
     addOptions() {
@@ -21813,11 +21137,6 @@ const ListItem$2 = Node.create({
     },
 });
 
-/**
- * This extension allows you to create text styles. It is required by default
- * for the `textColor` and `backgroundColor` extensions.
- * @see https://www.tiptap.dev/api/marks/text-style
- */
 const TextStyle$2 = Mark.create({
     name: 'textStyle',
     addOptions() {
@@ -21856,16 +21175,7 @@ const TextStyle$2 = Mark.create({
     },
 });
 
-/**
- * Matches a bullet list to a dash or asterisk.
- */
 const inputRegex$3 = /^\s*([-+*])\s$/;
-/**
- * This extension allows you to create bullet lists.
- * This requires the ListItem extension
- * @see https://tiptap.dev/api/nodes/bullet-list
- * @see https://tiptap.dev/api/nodes/list-item.
- */
 const BulletList = Node.create({
     name: 'bulletList',
     addOptions() {
@@ -21924,18 +21234,8 @@ const BulletList = Node.create({
     },
 });
 
-/**
- * Matches inline code.
- */
-const inputRegex$2 = /(?:^|\s)(`(?!\s+`)((?:[^`]+))`(?!\s+`))$/;
-/**
- * Matches inline code while pasting.
- */
-const pasteRegex$1 = /(?:^|\s)(`(?!\s+`)((?:[^`]+))`(?!\s+`))/g;
-/**
- * This extension allows you to mark text as inline code.
- * @see https://tiptap.dev/api/marks/code
- */
+const inputRegex$2 = /(?:^|\s)((?:`)((?:[^`]+))(?:`))$/;
+const pasteRegex$1 = /(?:^|\s)((?:`)((?:[^`]+))(?:`))/g;
 const Code = Mark.create({
     name: 'code',
     addOptions() {
@@ -21990,18 +21290,8 @@ const Code = Mark.create({
     },
 });
 
-/**
- * Matches a code block with backticks.
- */
 const backtickInputRegex = /^```([a-z]+)?[\s\n]$/;
-/**
- * Matches a code block with tildes.
- */
 const tildeInputRegex = /^~~~([a-z]+)?[\s\n]$/;
-/**
- * This extension allows you to create code blocks.
- * @see https://tiptap.dev/api/nodes/code-block
- */
 const CodeBlock = Node.create({
     name: 'codeBlock',
     addOptions() {
@@ -22179,16 +21469,8 @@ const CodeBlock = Node.create({
                             return false;
                         }
                         const { tr } = view.state;
-                        // create an empty code block´
-                        // if the cursor is at the absolute end of the document, insert the code block before the cursor instead
-                        // of replacing the selection as the replaceSelectionWith function will cause the insertion to
-                        // happen at the previous node
-                        if (view.state.selection.from === view.state.doc.nodeSize - (1 + (view.state.selection.$to.depth * 2))) {
-                            tr.insert(view.state.selection.from - 1, this.type.create({ language }));
-                        }
-                        else {
-                            tr.replaceSelectionWith(this.type.create({ language }));
-                        }
+                        // create an empty code block
+                        tr.replaceSelectionWith(this.type.create({ language }));
                         // put cursor inside the newly created code block
                         tr.setSelection(TextSelection.near(tr.doc.resolve(Math.max(0, tr.selection.from - 2))));
                         // add text to code block
@@ -22208,10 +21490,6 @@ const CodeBlock = Node.create({
     },
 });
 
-/**
- * The default document node which represents the top level node of the editor.
- * @see https://tiptap.dev/api/nodes/document
- */
 const Document = Node.create({
     name: 'doc',
     topNode: true,
@@ -22353,12 +21631,6 @@ class DropCursorView {
     }
 }
 
-/**
- * This extension allows you to add a drop cursor to your editor.
- * A drop cursor is a line that appears when you drag and drop content
- * inbetween nodes.
- * @see https://tiptap.dev/api/extensions/dropcursor
- */
 const Dropcursor = Extension.create({
     name: 'dropCursor',
     addOptions() {
@@ -22605,12 +21877,6 @@ function drawGapCursor(state) {
     return DecorationSet.create(state.doc, [Decoration.widget(state.selection.head, node, { key: "gapcursor" })]);
 }
 
-/**
- * This extension allows you to add a gap cursor to your editor.
- * A gap cursor is a cursor that appears when you click on a place
- * where no content is present, for example inbetween nodes.
- * @see https://tiptap.dev/api/extensions/gapcursor
- */
 const Gapcursor = Extension.create({
     name: 'gapCursor',
     addProseMirrorPlugins() {
@@ -22631,10 +21897,6 @@ const Gapcursor = Extension.create({
     },
 });
 
-/**
- * This extension allows you to insert hard breaks.
- * @see https://www.tiptap.dev/api/nodes/hard-break
- */
 const HardBreak = Node.create({
     name: 'hardBreak',
     addOptions() {
@@ -22695,10 +21957,6 @@ const HardBreak = Node.create({
     },
 });
 
-/**
- * This extension allows you to create headings.
- * @see https://www.tiptap.dev/api/nodes/heading
- */
 const Heading = Node.create({
     name: 'heading',
     addOptions() {
@@ -23293,16 +22551,16 @@ function mapRanges(ranges, mapping) {
 }
 // Apply the latest event from one branch to the document and shift the event
 // onto the other branch.
-function histTransaction(history, state, redo) {
+function histTransaction(history, state, dispatch, redo) {
     let preserveItems = mustPreserveItems(state);
     let histOptions = historyKey.get(state).spec.config;
     let pop = (redo ? history.undone : history.done).popEvent(state, preserveItems);
     if (!pop)
-        return null;
+        return;
     let selection = pop.selection.resolve(pop.transform.doc);
     let added = (redo ? history.done : history.undone).addTransform(pop.transform, state.selection.getBookmark(), histOptions, preserveItems);
     let newHist = new HistoryState(redo ? added : pop.remaining, redo ? pop.remaining : added, null, 0, -1);
-    return pop.transform.setSelection(selection).setMeta(historyKey, { redo, historyState: newHist });
+    dispatch(pop.transform.setSelection(selection).setMeta(historyKey, { redo, historyState: newHist }).scrollIntoView());
 }
 let cachedPreserveItems = false, cachedPreserveItemsPlugins = null;
 // Check whether any plugin in the given state has a
@@ -23361,37 +22619,29 @@ function history(config = {}) {
         }
     });
 }
-function buildCommand(redo, scroll) {
-    return (state, dispatch) => {
-        let hist = historyKey.getState(state);
-        if (!hist || (redo ? hist.undone : hist.done).eventCount == 0)
-            return false;
-        if (dispatch) {
-            let tr = histTransaction(hist, state, redo);
-            if (tr)
-                dispatch(scroll ? tr.scrollIntoView() : tr);
-        }
-        return true;
-    };
-}
 /**
 A command function that undoes the last change, if any.
 */
-const undo = buildCommand(false, true);
+const undo = (state, dispatch) => {
+    let hist = historyKey.getState(state);
+    if (!hist || hist.done.eventCount == 0)
+        return false;
+    if (dispatch)
+        histTransaction(hist, state, dispatch, false);
+    return true;
+};
 /**
 A command function that redoes the last undone change, if any.
 */
-const redo = buildCommand(true, true);
+const redo = (state, dispatch) => {
+    let hist = historyKey.getState(state);
+    if (!hist || hist.undone.eventCount == 0)
+        return false;
+    if (dispatch)
+        histTransaction(hist, state, dispatch, true);
+    return true;
+};
 
-/**
- * This extension allows you to undo and redo recent changes.
- * @see https://www.tiptap.dev/api/extensions/history
- *
- * **Important**: If the `@tiptap/extension-collaboration` package is used, make sure to remove
- * the `history` extension, as it is not compatible with the `collaboration` extension.
- *
- * `@tiptap/extension-collaboration` uses its own history implementation.
- */
 const History = Extension.create({
     name: 'history',
     addOptions() {
@@ -23418,8 +22668,11 @@ const History = Extension.create({
     addKeyboardShortcuts() {
         return {
             'Mod-z': () => this.editor.commands.undo(),
-            'Shift-Mod-z': () => this.editor.commands.redo(),
+            'Mod-Z': () => this.editor.commands.undo(),
             'Mod-y': () => this.editor.commands.redo(),
+            'Mod-Y': () => this.editor.commands.redo(),
+            'Shift-Mod-z': () => this.editor.commands.redo(),
+            'Shift-Mod-Z': () => this.editor.commands.redo(),
             // Russian keyboard layouts
             'Mod-я': () => this.editor.commands.undo(),
             'Shift-Mod-я': () => this.editor.commands.redo(),
@@ -23427,10 +22680,6 @@ const History = Extension.create({
     },
 });
 
-/**
- * This extension allows you to insert horizontal rules.
- * @see https://www.tiptap.dev/api/nodes/horizontal-rule
- */
 const HorizontalRule = Node.create({
     name: 'horizontalRule',
     addOptions() {
@@ -23500,26 +22749,10 @@ const HorizontalRule = Node.create({
     },
 });
 
-/**
- * Matches an italic to a *italic* on input.
- */
-const starInputRegex = /(?:^|\s)(\*(?!\s+\*)((?:[^*]+))\*(?!\s+\*))$/;
-/**
- * Matches an italic to a *italic* on paste.
- */
-const starPasteRegex = /(?:^|\s)(\*(?!\s+\*)((?:[^*]+))\*(?!\s+\*))/g;
-/**
- * Matches an italic to a _italic_ on input.
- */
-const underscoreInputRegex = /(?:^|\s)(_(?!\s+_)((?:[^_]+))_(?!\s+_))$/;
-/**
- * Matches an italic to a _italic_ on paste.
- */
-const underscorePasteRegex = /(?:^|\s)(_(?!\s+_)((?:[^_]+))_(?!\s+_))/g;
-/**
- * This extension allows you to create italic text.
- * @see https://www.tiptap.dev/api/marks/italic
- */
+const starInputRegex = /(?:^|\s)((?:\*)((?:[^*]+))(?:\*))$/;
+const starPasteRegex = /(?:^|\s)((?:\*)((?:[^*]+))(?:\*))/g;
+const underscoreInputRegex = /(?:^|\s)((?:_)((?:[^_]+))(?:_))$/;
+const underscorePasteRegex = /(?:^|\s)((?:_)((?:[^_]+))(?:_))/g;
 const Italic = Mark.create({
     name: 'italic',
     addOptions() {
@@ -23589,10 +22822,6 @@ const Italic = Mark.create({
     },
 });
 
-/**
- * This extension allows you to create list items.
- * @see https://www.tiptap.dev/api/nodes/list-item
- */
 const ListItem$1 = Node.create({
     name: 'listItem',
     addOptions() {
@@ -23623,10 +22852,6 @@ const ListItem$1 = Node.create({
     },
 });
 
-/**
- * This extension allows you to create list items.
- * @see https://www.tiptap.dev/api/nodes/list-item
- */
 const ListItem = Node.create({
     name: 'listItem',
     addOptions() {
@@ -23657,11 +22882,6 @@ const ListItem = Node.create({
     },
 });
 
-/**
- * This extension allows you to create text styles. It is required by default
- * for the `textColor` and `backgroundColor` extensions.
- * @see https://www.tiptap.dev/api/marks/text-style
- */
 const TextStyle$1 = Mark.create({
     name: 'textStyle',
     addOptions() {
@@ -23700,16 +22920,7 @@ const TextStyle$1 = Mark.create({
     },
 });
 
-/**
- * Matches an ordered list to a 1. on input (or any number followed by a dot).
- */
 const inputRegex$1 = /^(\d+)\.\s$/;
-/**
- * This extension allows you to create ordered lists.
- * This requires the ListItem extension
- * @see https://www.tiptap.dev/api/nodes/ordered-list
- * @see https://www.tiptap.dev/api/nodes/list-item
- */
 const OrderedList = Node.create({
     name: 'orderedList',
     addOptions() {
@@ -23788,10 +22999,6 @@ const OrderedList = Node.create({
     },
 });
 
-/**
- * This extension allows you to create paragraphs.
- * @see https://www.tiptap.dev/api/nodes/paragraph
- */
 const Paragraph = Node.create({
     name: 'paragraph',
     priority: 1000,
@@ -23824,18 +23031,8 @@ const Paragraph = Node.create({
     },
 });
 
-/**
- * Matches a strike to a ~~strike~~ on input.
- */
-const inputRegex = /(?:^|\s)(~~(?!\s+~~)((?:[^~]+))~~(?!\s+~~))$/;
-/**
- * Matches a strike to a ~~strike~~ on paste.
- */
-const pasteRegex = /(?:^|\s)(~~(?!\s+~~)((?:[^~]+))~~(?!\s+~~))/g;
-/**
- * This extension allows you to create strike text.
- * @see https://www.tiptap.dev/api/marks/strike
- */
+const inputRegex = /(?:^|\s)((?:~~)((?:[^~]+))(?:~~))$/;
+const pasteRegex = /(?:^|\s)((?:~~)((?:[^~]+))(?:~~))/g;
 const Strike = Mark.create({
     name: 'strike',
     addOptions() {
@@ -23878,9 +23075,14 @@ const Strike = Mark.create({
         };
     },
     addKeyboardShortcuts() {
-        return {
-            'Mod-Shift-s': () => this.editor.commands.toggleStrike(),
-        };
+        const shortcuts = {};
+        if (isMacOS()) {
+            shortcuts['Mod-Shift-s'] = () => this.editor.commands.toggleStrike();
+        }
+        else {
+            shortcuts['Ctrl-Shift-s'] = () => this.editor.commands.toggleStrike();
+        }
+        return shortcuts;
     },
     addInputRules() {
         return [
@@ -23900,20 +23102,11 @@ const Strike = Mark.create({
     },
 });
 
-/**
- * This extension allows you to create text nodes.
- * @see https://www.tiptap.dev/api/nodes/text
- */
 const Text$1 = Node.create({
     name: 'text',
     group: 'inline',
 });
 
-/**
- * The starter kit is a collection of essential editor extensions.
- *
- * It’s a good starting point for building your own editor.
- */
 const StarterKit = Extension.create({
     name: 'starterKit',
     addExtensions() {
@@ -23977,11 +23170,6 @@ const StarterKit = Extension.create({
     },
 });
 
-/**
- * This extension allows you to create text styles. It is required by default
- * for the `textColor` and `backgroundColor` extensions.
- * @see https://www.tiptap.dev/api/marks/text-style
- */
 const TextStyle = Mark.create({
     name: 'textStyle',
     addOptions() {
@@ -24020,10 +23208,6 @@ const TextStyle = Mark.create({
     },
 });
 
-/**
- * This extension allows you to align text.
- * @see https://www.tiptap.dev/api/extensions/text-align
- */
 const TextAlign = Extension.create({
     name: 'textAlign',
     addOptions() {
@@ -24058,14 +23242,10 @@ const TextAlign = Extension.create({
                 if (!this.options.alignments.includes(alignment)) {
                     return false;
                 }
-                return this.options.types
-                    .map(type => commands.updateAttributes(type, { textAlign: alignment }))
-                    .every(response => response);
+                return this.options.types.every(type => commands.updateAttributes(type, { textAlign: alignment }));
             },
             unsetTextAlign: () => ({ commands }) => {
-                return this.options.types
-                    .map(type => commands.resetAttributes(type, 'textAlign'))
-                    .every(response => response);
+                return this.options.types.every(type => commands.resetAttributes(type, 'textAlign'));
             },
         };
     },
@@ -26057,46 +25237,12 @@ function find(str, type, opts) {
   return filtered;
 }
 
-/**
- * Check if the provided tokens form a valid link structure, which can either be a single link token
- * or a link token surrounded by parentheses or square brackets.
- *
- * This ensures that only complete and valid text is hyperlinked, preventing cases where a valid
- * top-level domain (TLD) is immediately followed by an invalid character, like a number. For
- * example, with the `find` method from Linkify, entering `example.com1` would result in
- * `example.com` being linked and the trailing `1` left as plain text. By using the `tokenize`
- * method, we can perform more comprehensive validation on the input text.
- */
-function isValidLinkStructure(tokens) {
-    if (tokens.length === 1) {
-        return tokens[0].isLink;
-    }
-    if (tokens.length === 3 && tokens[1].isLink) {
-        return ['()', '[]'].includes(tokens[0].value + tokens[2].value);
-    }
-    return false;
-}
-/**
- * This plugin allows you to automatically add links to your editor.
- * @param options The plugin options
- * @returns The plugin instance
- */
 function autolink(options) {
     return new Plugin({
         key: new PluginKey('autolink'),
         appendTransaction: (transactions, oldState, newState) => {
-            /**
-             * Does the transaction change the document?
-             */
             const docChanges = transactions.some(transaction => transaction.docChanged) && !oldState.doc.eq(newState.doc);
-            /**
-             * Prevent autolink if the transaction is not a document change or if the transaction has the meta `preventAutolink`.
-             */
             const preventAutolink = transactions.some(transaction => transaction.getMeta('preventAutolink'));
-            /**
-             * Prevent autolink if the transaction is not a document change
-             * or if the transaction has the meta `preventAutolink`.
-             */
             if (!docChanges || preventAutolink) {
                 return;
             }
@@ -26129,11 +25275,7 @@ function autolink(options) {
                     if (!lastWordBeforeSpace) {
                         return false;
                     }
-                    const linksBeforeSpace = tokenize(lastWordBeforeSpace).map(t => t.toObject());
-                    if (!isValidLinkStructure(linksBeforeSpace)) {
-                        return false;
-                    }
-                    linksBeforeSpace
+                    find(lastWordBeforeSpace)
                         .filter(link => link.isLink)
                         // Calculate link position.
                         .map(link => ({
@@ -26180,19 +25322,11 @@ function clickHandler(options) {
         props: {
             handleClick: (view, pos, event) => {
                 var _a, _b;
-                if (options.whenNotEditable && view.editable) {
-                    return false;
-                }
                 if (event.button !== 0) {
                     return false;
                 }
-                let a = event.target;
-                const els = [];
-                while (a.nodeName !== 'DIV') {
-                    els.push(a);
-                    a = a.parentNode;
-                }
-                if (!els.find(value => value.nodeName === 'A')) {
+                const eventTarget = event.target;
+                if (eventTarget.nodeName !== 'A') {
                     return false;
                 }
                 const attrs = getAttributes(view.state, options.type.name);
@@ -26200,7 +25334,9 @@ function clickHandler(options) {
                 const href = (_a = link === null || link === void 0 ? void 0 : link.href) !== null && _a !== void 0 ? _a : attrs.href;
                 const target = (_b = link === null || link === void 0 ? void 0 : link.target) !== null && _b !== void 0 ? _b : attrs.target;
                 if (link && href) {
-                    window.open(href, target);
+                    if (view.editable) {
+                        window.open(href, target);
+                    }
                     return true;
                 }
                 return false;
@@ -26214,6 +25350,7 @@ function pasteHandler(options) {
         key: new PluginKey('handlePasteLink'),
         props: {
             handlePaste: (view, event, slice) => {
+                var _a;
                 const { state } = view;
                 const { selection } = state;
                 const { empty } = selection;
@@ -26228,18 +25365,19 @@ function pasteHandler(options) {
                 if (!textContent || !link) {
                     return false;
                 }
+                const html = (_a = event.clipboardData) === null || _a === void 0 ? void 0 : _a.getData('text/html');
+                const hrefRegex = /href="([^"]*)"/;
+                const existingLink = html === null || html === void 0 ? void 0 : html.match(hrefRegex);
+                const url = existingLink ? existingLink[1] : link.href;
                 options.editor.commands.setMark(options.type, {
-                    href: link.href,
+                    href: url,
                 });
                 return true;
             },
         },
     });
 }
-/**
- * This extension allows you to create links.
- * @see https://www.tiptap.dev/api/marks/link
- */
+
 const Link = Mark.create({
     name: 'link',
     priority: 1000,
@@ -26293,13 +25431,6 @@ const Link = Mark.create({
         return [{ tag: 'a[href]:not([href *= "javascript:" i])' }];
     },
     renderHTML({ HTMLAttributes }) {
-        var _a;
-        // False positive; we're explicitly checking for javascript: links to ignore them
-        // eslint-disable-next-line no-script-url
-        if ((_a = HTMLAttributes.href) === null || _a === void 0 ? void 0 : _a.startsWith('javascript:')) {
-            // strip out the href
-            return ['a', mergeAttributes(this.options.HTMLAttributes, { ...HTMLAttributes, href: '' }), 0];
-        }
         return ['a', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0];
     },
     addCommands() {
@@ -26324,27 +25455,32 @@ const Link = Mark.create({
     addPasteRules() {
         return [
             markPasteRule({
-                find: text => {
-                    const foundLinks = [];
-                    if (text) {
-                        const links = find(text).filter(item => item.isLink);
-                        if (links.length) {
-                            links.forEach(link => (foundLinks.push({
-                                text: link.value,
-                                data: {
-                                    href: link.href,
-                                },
-                                index: link.start,
-                            })));
-                        }
+                find: text => find(text)
+                    .filter(link => {
+                    if (this.options.validate) {
+                        return this.options.validate(link.value);
                     }
-                    return foundLinks;
-                },
+                    return true;
+                })
+                    .filter(link => link.isLink)
+                    .map(link => ({
+                    text: link.value,
+                    index: link.start,
+                    data: link,
+                })),
                 type: this.type,
-                getAttributes: match => {
-                    var _a;
+                getAttributes: (match, pasteEvent) => {
+                    var _a, _b;
+                    const html = (_a = pasteEvent === null || pasteEvent === void 0 ? void 0 : pasteEvent.clipboardData) === null || _a === void 0 ? void 0 : _a.getData('text/html');
+                    const hrefRegex = /href="([^"]*)"/;
+                    const existingLink = html === null || html === void 0 ? void 0 : html.match(hrefRegex);
+                    if (existingLink) {
+                        return {
+                            href: existingLink[1],
+                        };
+                    }
                     return {
-                        href: (_a = match.data) === null || _a === void 0 ? void 0 : _a.href,
+                        href: (_b = match.data) === null || _b === void 0 ? void 0 : _b.href,
                     };
                 },
             }),
@@ -26361,7 +25497,6 @@ const Link = Mark.create({
         if (this.options.openOnClick) {
             plugins.push(clickHandler({
                 type: this.type,
-                whenNotEditable: this.options.openOnClick === 'whenNotEditable',
             }));
         }
         if (this.options.linkOnPaste) {
@@ -26756,7 +25891,7 @@ function columnIsHeader(map, table, col) {
 }
 
 // src/cellselection.ts
-var CellSelection = class _CellSelection extends Selection {
+var CellSelection = class extends Selection {
   // A table selection is identified by its anchor and head cells. The
   // positions given to this constructor should point _before_ two
   // cells in the same table. They may be the same, to select a single
@@ -26793,11 +25928,11 @@ var CellSelection = class _CellSelection extends Selection {
     if (pointsAtCell($anchorCell) && pointsAtCell($headCell) && inSameTable($anchorCell, $headCell)) {
       const tableChanged = this.$anchorCell.node(-1) != $anchorCell.node(-1);
       if (tableChanged && this.isRowSelection())
-        return _CellSelection.rowSelection($anchorCell, $headCell);
+        return CellSelection.rowSelection($anchorCell, $headCell);
       else if (tableChanged && this.isColSelection())
-        return _CellSelection.colSelection($anchorCell, $headCell);
+        return CellSelection.colSelection($anchorCell, $headCell);
       else
-        return new _CellSelection($anchorCell, $headCell);
+        return new CellSelection($anchorCell, $headCell);
     }
     return TextSelection.between($anchorCell, $headCell);
   }
@@ -26937,7 +26072,7 @@ var CellSelection = class _CellSelection extends Selection {
           tableStart + map.map[map.width * (map.height - 1) + anchorRect.right - 1]
         );
     }
-    return new _CellSelection($anchorCell, $headCell);
+    return new CellSelection($anchorCell, $headCell);
   }
   // True if this selection goes all the way from the left to the
   // right of the table.
@@ -26954,7 +26089,7 @@ var CellSelection = class _CellSelection extends Selection {
     return Math.max(anchorRight, headRight) == map.width;
   }
   eq(other) {
-    return other instanceof _CellSelection && other.$anchorCell.pos == this.$anchorCell.pos && other.$headCell.pos == this.$headCell.pos;
+    return other instanceof CellSelection && other.$anchorCell.pos == this.$anchorCell.pos && other.$headCell.pos == this.$headCell.pos;
   }
   // Returns the smallest row selection that covers the given anchor
   // and head cell.
@@ -26982,7 +26117,7 @@ var CellSelection = class _CellSelection extends Selection {
           tableStart + map.map[map.width * (anchorRect.top + 1) - 1]
         );
     }
-    return new _CellSelection($anchorCell, $headCell);
+    return new CellSelection($anchorCell, $headCell);
   }
   toJSON() {
     return {
@@ -26992,10 +26127,10 @@ var CellSelection = class _CellSelection extends Selection {
     };
   }
   static fromJSON(doc, json) {
-    return new _CellSelection(doc.resolve(json.anchor), doc.resolve(json.head));
+    return new CellSelection(doc.resolve(json.anchor), doc.resolve(json.head));
   }
   static create(doc, anchorCell, headCell = anchorCell) {
-    return new _CellSelection(doc.resolve(anchorCell), doc.resolve(headCell));
+    return new CellSelection(doc.resolve(anchorCell), doc.resolve(headCell));
   }
   getBookmark() {
     return new CellBookmark(this.$anchorCell.pos, this.$headCell.pos);
@@ -27003,13 +26138,13 @@ var CellSelection = class _CellSelection extends Selection {
 };
 CellSelection.prototype.visible = false;
 Selection.jsonID("cell", CellSelection);
-var CellBookmark = class _CellBookmark {
+var CellBookmark = class {
   constructor(anchor, head) {
     this.anchor = anchor;
     this.head = head;
   }
   map(mapping) {
-    return new _CellBookmark(mapping.map(this.anchor), mapping.map(this.head));
+    return new CellBookmark(mapping.map(this.anchor), mapping.map(this.head));
   }
   resolve(doc) {
     const $anchorCell = doc.resolve(this.anchor), $headCell = doc.resolve(this.head);
@@ -27807,7 +26942,7 @@ function columnResizing({
   });
   return plugin;
 }
-var ResizeState = class _ResizeState {
+var ResizeState = class {
   constructor(activeHandle, dragging) {
     this.activeHandle = activeHandle;
     this.dragging = dragging;
@@ -27816,15 +26951,15 @@ var ResizeState = class _ResizeState {
     const state = this;
     const action = tr.getMeta(columnResizingPluginKey);
     if (action && action.setHandle != null)
-      return new _ResizeState(action.setHandle, false);
+      return new ResizeState(action.setHandle, false);
     if (action && action.setDragging !== void 0)
-      return new _ResizeState(state.activeHandle, action.setDragging);
+      return new ResizeState(state.activeHandle, action.setDragging);
     if (state.activeHandle > -1 && tr.docChanged) {
       let handle = tr.mapping.map(state.activeHandle, -1);
       if (!pointsAtCell(tr.doc.resolve(handle))) {
         handle = -1;
       }
-      return new _ResizeState(handle, state.dragging);
+      return new ResizeState(handle, state.dragging);
     }
     return state;
   }
@@ -27864,8 +26999,6 @@ function handleMouseLeave(view) {
     updateHandle(view, -1);
 }
 function handleMouseDown2(view, event, cellMinWidth) {
-  var _a;
-  const win = (_a = view.dom.ownerDocument.defaultView) != null ? _a : window;
   const pluginState = columnResizingPluginKey.getState(view.state);
   if (!pluginState || pluginState.activeHandle == -1 || pluginState.dragging)
     return false;
@@ -27877,8 +27010,8 @@ function handleMouseDown2(view, event, cellMinWidth) {
     })
   );
   function finish(event2) {
-    win.removeEventListener("mouseup", finish);
-    win.removeEventListener("mousemove", move);
+    window.removeEventListener("mouseup", finish);
+    window.removeEventListener("mousemove", move);
     const pluginState2 = columnResizingPluginKey.getState(view.state);
     if (pluginState2 == null ? void 0 : pluginState2.dragging) {
       updateColumnWidth(
@@ -27902,8 +27035,8 @@ function handleMouseDown2(view, event, cellMinWidth) {
       displayColumnWidth(view, pluginState2.activeHandle, dragged, cellMinWidth);
     }
   }
-  win.addEventListener("mouseup", finish);
-  win.addEventListener("mousemove", move);
+  window.addEventListener("mouseup", finish);
+  window.addEventListener("mousemove", move);
   event.preventDefault();
   return true;
 }
@@ -28178,12 +27311,8 @@ function removeRow(tr, { map, table, tableStart }, row) {
   const nextRow = rowPos + table.child(row).nodeSize;
   const mapFrom = tr.mapping.maps.length;
   tr.delete(rowPos + tableStart, nextRow + tableStart);
-  const seen = /* @__PURE__ */ new Set();
   for (let col = 0, index = row * map.width; col < map.width; col++, index++) {
     const pos = map.map[index];
-    if (seen.has(pos))
-      continue;
-    seen.add(pos);
     if (row > 0 && pos == map.map[index - map.width]) {
       const attrs = table.nodeAt(pos).attrs;
       tr.setNodeMarkup(tr.mapping.slice(mapFrom).map(pos + tableStart), null, {
@@ -28191,7 +27320,7 @@ function removeRow(tr, { map, table, tableStart }, row) {
         rowspan: attrs.rowspan - 1
       });
       col += attrs.colspan - 1;
-    } else if (row < map.height && pos == map.map[index + map.width]) {
+    } else if (row < map.width && pos == map.map[index + map.width]) {
       const cell = table.nodeAt(pos);
       const attrs = cell.attrs;
       const copy = cell.type.create(
@@ -28677,41 +27806,6 @@ class TableView {
     }
 }
 
-/**
- * Creates a colgroup element for a table node in ProseMirror.
- *
- * @param node - The ProseMirror node representing the table.
- * @param cellMinWidth - The minimum width of a cell in the table.
- * @param overrideCol - (Optional) The index of the column to override the width of.
- * @param overrideValue - (Optional) The width value to use for the overridden column.
- * @returns An object containing the colgroup element, the total width of the table, and the minimum width of the table.
- */
-function createColGroup(node, cellMinWidth, overrideCol, overrideValue) {
-    let totalWidth = 0;
-    let fixedWidth = true;
-    const cols = [];
-    const row = node.firstChild;
-    if (!row) {
-        return {};
-    }
-    for (let i = 0, col = 0; i < row.childCount; i += 1) {
-        const { colspan, colwidth } = row.child(i).attrs;
-        for (let j = 0; j < colspan; j += 1, col += 1) {
-            const hasWidth = overrideCol === col ? overrideValue : colwidth && colwidth[j];
-            const cssWidth = hasWidth ? `${hasWidth}px` : '';
-            totalWidth += hasWidth || cellMinWidth;
-            if (!hasWidth) {
-                fixedWidth = false;
-            }
-            cols.push(['col', cssWidth ? { style: `width: ${cssWidth}` } : {}]);
-        }
-    }
-    const tableWidth = fixedWidth ? `${totalWidth}px` : '';
-    const tableMinWidth = fixedWidth ? '' : `${totalWidth}px`;
-    const colgroup = ['colgroup', {}, ...cols];
-    return { colgroup, tableWidth, tableMinWidth };
-}
-
 function createCell(cellType, cellContent) {
     if (cellContent) {
         return cellType.createChecked(null, cellContent);
@@ -28786,10 +27880,6 @@ const deleteTableWhenAllCellsSelected = ({ editor }) => {
     return true;
 };
 
-/**
- * This extension allows you to create tables.
- * @see https://www.tiptap.dev/api/nodes/table
- */
 const Table = Node.create({
     name: 'table',
     // @ts-ignore
@@ -28812,19 +27902,8 @@ const Table = Node.create({
     parseHTML() {
         return [{ tag: 'table' }];
     },
-    renderHTML({ node, HTMLAttributes }) {
-        const { colgroup, tableWidth, tableMinWidth } = createColGroup(node, this.options.cellMinWidth);
-        const table = [
-            'table',
-            mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-                style: tableWidth
-                    ? `width: ${tableWidth}`
-                    : `minWidth: ${tableMinWidth}`,
-            }),
-            colgroup,
-            ['tbody', 0],
-        ];
-        return table;
+    renderHTML({ HTMLAttributes }) {
+        return ['table', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), ['tbody', 0]];
     },
     addCommands() {
         return {
@@ -28956,10 +28035,6 @@ const Table = Node.create({
     },
 });
 
-/**
- * This extension allows you to create table rows.
- * @see https://www.tiptap.dev/api/nodes/table-row
- */
 const TableRow = Node.create({
     name: 'tableRow',
     addOptions() {
@@ -28979,10 +28054,6 @@ const TableRow = Node.create({
     },
 });
 
-/**
- * This extension allows you to create table cells.
- * @see https://www.tiptap.dev/api/nodes/table-cell
- */
 const TableCell = Node.create({
     name: 'tableCell',
     addOptions() {
@@ -29023,10 +28094,6 @@ const TableCell = Node.create({
     },
 });
 
-/**
- * This extension allows you to create table headers.
- * @see https://www.tiptap.dev/api/nodes/table-header
- */
 const TableHeader = Node.create({
     name: 'tableHeader',
     addOptions() {
@@ -29067,10 +28134,6 @@ const TableHeader = Node.create({
     },
 });
 
-/**
- * This extension allows you to create superscript text.
- * @see https://www.tiptap.dev/api/marks/superscript
- */
 const Superscript = Mark.create({
     name: 'superscript',
     addOptions() {
@@ -29157,18 +28220,8 @@ const DropCap = Mark.create({
 
 var e=[],t=[];function n(n,r){if(n&&"undefined"!=typeof document){var a,s=!0===r.prepend?"prepend":"append",d=!0===r.singleTag,i="string"==typeof r.container?document.querySelector(r.container):document.getElementsByTagName("head")[0];if(d){var u=e.indexOf(i);-1===u&&(u=e.push(i)-1,t[u]={}),a=t[u]&&t[u][s]?t[u][s]:t[u][s]=c();}else a=c();65279===n.charCodeAt(0)&&(n=n.substring(1)),a.styleSheet?a.styleSheet.cssText+=n:a.appendChild(document.createTextNode(n));}function c(){var e=document.createElement("style");if(e.setAttribute("type","text/css"),r.attributes)for(var t=Object.keys(r.attributes),n=0;n<t.length;n++)e.setAttribute(t[n],r.attributes[t[n]]);var a="prepend"===s?"afterbegin":"beforeend";return i.insertAdjacentElement(a,e),e}}
 
-var css$2 = "/*\n! tailwindcss v3.4.4 | MIT License | https://tailwindcss.com\n*//*\n1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)\n2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)\n*/\n\n*,\n::before,\n::after {\n  box-sizing: border-box; /* 1 */\n  border-width: 0; /* 2 */\n  border-style: solid; /* 2 */\n  border-color: #e5e7eb; /* 2 */\n}\n\n::before,\n::after {\n  --tw-content: '';\n}\n\n/*\n1. Use a consistent sensible line-height in all browsers.\n2. Prevent adjustments of font size after orientation changes in iOS.\n3. Use a more readable tab size.\n4. Use the user's configured `sans` font-family by default.\n5. Use the user's configured `sans` font-feature-settings by default.\n6. Use the user's configured `sans` font-variation-settings by default.\n7. Disable tap highlights on iOS\n*/\n\nhtml,\n:host {\n  line-height: 1.5; /* 1 */\n  -webkit-text-size-adjust: 100%; /* 2 */\n  -moz-tab-size: 4; /* 3 */\n  -o-tab-size: 4;\n     tab-size: 4; /* 3 */\n  font-family: ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"; /* 4 */\n  font-feature-settings: normal; /* 5 */\n  font-variation-settings: normal; /* 6 */\n  -webkit-tap-highlight-color: transparent; /* 7 */\n}\n\n/*\n1. Remove the margin in all browsers.\n2. Inherit line-height from `html` so users can set them as a class directly on the `html` element.\n*/\n\nbody {\n  margin: 0; /* 1 */\n  line-height: inherit; /* 2 */\n}\n\n/*\n1. Add the correct height in Firefox.\n2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)\n3. Ensure horizontal rules are visible by default.\n*/\n\nhr {\n  height: 0; /* 1 */\n  color: inherit; /* 2 */\n  border-top-width: 1px; /* 3 */\n}\n\n/*\nAdd the correct text decoration in Chrome, Edge, and Safari.\n*/\n\nabbr:where([title]) {\n  -webkit-text-decoration: underline dotted;\n          text-decoration: underline dotted;\n}\n\n/*\nRemove the default font size and weight for headings.\n*/\n\nh1,\nh2,\nh3,\nh4,\nh5,\nh6 {\n  font-size: inherit;\n  font-weight: inherit;\n}\n\n/*\nReset links to optimize for opt-in styling instead of opt-out.\n*/\n\na {\n  color: inherit;\n  text-decoration: inherit;\n}\n\n/*\nAdd the correct font weight in Edge and Safari.\n*/\n\nb,\nstrong {\n  font-weight: bolder;\n}\n\n/*\n1. Use the user's configured `mono` font-family by default.\n2. Use the user's configured `mono` font-feature-settings by default.\n3. Use the user's configured `mono` font-variation-settings by default.\n4. Correct the odd `em` font sizing in all browsers.\n*/\n\ncode,\nkbd,\nsamp,\npre {\n  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace; /* 1 */\n  font-feature-settings: normal; /* 2 */\n  font-variation-settings: normal; /* 3 */\n  font-size: 1em; /* 4 */\n}\n\n/*\nAdd the correct font size in all browsers.\n*/\n\nsmall {\n  font-size: 80%;\n}\n\n/*\nPrevent `sub` and `sup` elements from affecting the line height in all browsers.\n*/\n\nsub,\nsup {\n  font-size: 75%;\n  line-height: 0;\n  position: relative;\n  vertical-align: baseline;\n}\n\nsub {\n  bottom: -0.25em;\n}\n\nsup {\n  top: -0.5em;\n}\n\n/*\n1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)\n2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)\n3. Remove gaps between table borders by default.\n*/\n\ntable {\n  text-indent: 0; /* 1 */\n  border-color: inherit; /* 2 */\n  border-collapse: collapse; /* 3 */\n}\n\n/*\n1. Change the font styles in all browsers.\n2. Remove the margin in Firefox and Safari.\n3. Remove default padding in all browsers.\n*/\n\nbutton,\ninput,\noptgroup,\nselect,\ntextarea {\n  font-family: inherit; /* 1 */\n  font-feature-settings: inherit; /* 1 */\n  font-variation-settings: inherit; /* 1 */\n  font-size: 100%; /* 1 */\n  font-weight: inherit; /* 1 */\n  line-height: inherit; /* 1 */\n  letter-spacing: inherit; /* 1 */\n  color: inherit; /* 1 */\n  margin: 0; /* 2 */\n  padding: 0; /* 3 */\n}\n\n/*\nRemove the inheritance of text transform in Edge and Firefox.\n*/\n\nbutton,\nselect {\n  text-transform: none;\n}\n\n/*\n1. Correct the inability to style clickable types in iOS and Safari.\n2. Remove default button styles.\n*/\n\nbutton,\ninput:where([type='button']),\ninput:where([type='reset']),\ninput:where([type='submit']) {\n  -webkit-appearance: button; /* 1 */\n  background-color: transparent; /* 2 */\n  background-image: none; /* 2 */\n}\n\n/*\nUse the modern Firefox focus style for all focusable elements.\n*/\n\n:-moz-focusring {\n  outline: auto;\n}\n\n/*\nRemove the additional `:invalid` styles in Firefox. (https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737)\n*/\n\n:-moz-ui-invalid {\n  box-shadow: none;\n}\n\n/*\nAdd the correct vertical alignment in Chrome and Firefox.\n*/\n\nprogress {\n  vertical-align: baseline;\n}\n\n/*\nCorrect the cursor style of increment and decrement buttons in Safari.\n*/\n\n::-webkit-inner-spin-button,\n::-webkit-outer-spin-button {\n  height: auto;\n}\n\n/*\n1. Correct the odd appearance in Chrome and Safari.\n2. Correct the outline style in Safari.\n*/\n\n[type='search'] {\n  -webkit-appearance: textfield; /* 1 */\n  outline-offset: -2px; /* 2 */\n}\n\n/*\nRemove the inner padding in Chrome and Safari on macOS.\n*/\n\n::-webkit-search-decoration {\n  -webkit-appearance: none;\n}\n\n/*\n1. Correct the inability to style clickable types in iOS and Safari.\n2. Change font properties to `inherit` in Safari.\n*/\n\n::-webkit-file-upload-button {\n  -webkit-appearance: button; /* 1 */\n  font: inherit; /* 2 */\n}\n\n/*\nAdd the correct display in Chrome and Safari.\n*/\n\nsummary {\n  display: list-item;\n}\n\n/*\nRemoves the default spacing and border for appropriate elements.\n*/\n\nblockquote,\ndl,\ndd,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\nhr,\nfigure,\np,\npre {\n  margin: 0;\n}\n\nfieldset {\n  margin: 0;\n  padding: 0;\n}\n\nlegend {\n  padding: 0;\n}\n\nol,\nul,\nmenu {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n\n/*\nReset default styling for dialogs.\n*/\ndialog {\n  padding: 0;\n}\n\n/*\nPrevent resizing textareas horizontally by default.\n*/\n\ntextarea {\n  resize: vertical;\n}\n\n/*\n1. Reset the default placeholder opacity in Firefox. (https://github.com/tailwindlabs/tailwindcss/issues/3300)\n2. Set the default placeholder color to the user's configured gray 400 color.\n*/\n\ninput::-moz-placeholder, textarea::-moz-placeholder {\n  opacity: 1; /* 1 */\n  color: #9ca3af; /* 2 */\n}\n\ninput::placeholder,\ntextarea::placeholder {\n  opacity: 1; /* 1 */\n  color: #9ca3af; /* 2 */\n}\n\n/*\nSet the default cursor for buttons.\n*/\n\nbutton,\n[role=\"button\"] {\n  cursor: pointer;\n}\n\n/*\nMake sure disabled buttons don't get the pointer cursor.\n*/\n:disabled {\n  cursor: default;\n}\n\n/*\n1. Make replaced elements `display: block` by default. (https://github.com/mozdevs/cssremedy/issues/14)\n2. Add `vertical-align: middle` to align replaced elements more sensibly by default. (https://github.com/jensimmons/cssremedy/issues/14#issuecomment-634934210)\n   This can trigger a poorly considered lint error in some tools but is included by design.\n*/\n\nimg,\nsvg,\nvideo,\ncanvas,\naudio,\niframe,\nembed,\nobject {\n  display: block; /* 1 */\n  vertical-align: middle; /* 2 */\n}\n\n/*\nConstrain images and videos to the parent width and preserve their intrinsic aspect ratio. (https://github.com/mozdevs/cssremedy/issues/14)\n*/\n\nimg,\nvideo {\n  max-width: 100%;\n  height: auto;\n}\n\n/* Make elements with the HTML hidden attribute stay hidden by default */\n[hidden] {\n  display: none;\n}\n\n*, ::before, ::after {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x:  ;\n  --tw-pan-y:  ;\n  --tw-pinch-zoom:  ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position:  ;\n  --tw-gradient-via-position:  ;\n  --tw-gradient-to-position:  ;\n  --tw-ordinal:  ;\n  --tw-slashed-zero:  ;\n  --tw-numeric-figure:  ;\n  --tw-numeric-spacing:  ;\n  --tw-numeric-fraction:  ;\n  --tw-ring-inset:  ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur:  ;\n  --tw-brightness:  ;\n  --tw-contrast:  ;\n  --tw-grayscale:  ;\n  --tw-hue-rotate:  ;\n  --tw-invert:  ;\n  --tw-saturate:  ;\n  --tw-sepia:  ;\n  --tw-drop-shadow:  ;\n  --tw-backdrop-blur:  ;\n  --tw-backdrop-brightness:  ;\n  --tw-backdrop-contrast:  ;\n  --tw-backdrop-grayscale:  ;\n  --tw-backdrop-hue-rotate:  ;\n  --tw-backdrop-invert:  ;\n  --tw-backdrop-opacity:  ;\n  --tw-backdrop-saturate:  ;\n  --tw-backdrop-sepia:  ;\n  --tw-contain-size:  ;\n  --tw-contain-layout:  ;\n  --tw-contain-paint:  ;\n  --tw-contain-style:  ;\n}\n\n::backdrop {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x:  ;\n  --tw-pan-y:  ;\n  --tw-pinch-zoom:  ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position:  ;\n  --tw-gradient-via-position:  ;\n  --tw-gradient-to-position:  ;\n  --tw-ordinal:  ;\n  --tw-slashed-zero:  ;\n  --tw-numeric-figure:  ;\n  --tw-numeric-spacing:  ;\n  --tw-numeric-fraction:  ;\n  --tw-ring-inset:  ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur:  ;\n  --tw-brightness:  ;\n  --tw-contrast:  ;\n  --tw-grayscale:  ;\n  --tw-hue-rotate:  ;\n  --tw-invert:  ;\n  --tw-saturate:  ;\n  --tw-sepia:  ;\n  --tw-drop-shadow:  ;\n  --tw-backdrop-blur:  ;\n  --tw-backdrop-brightness:  ;\n  --tw-backdrop-contrast:  ;\n  --tw-backdrop-grayscale:  ;\n  --tw-backdrop-hue-rotate:  ;\n  --tw-backdrop-invert:  ;\n  --tw-backdrop-opacity:  ;\n  --tw-backdrop-saturate:  ;\n  --tw-backdrop-sepia:  ;\n  --tw-contain-size:  ;\n  --tw-contain-layout:  ;\n  --tw-contain-paint:  ;\n  --tw-contain-style:  ;\n}\n.collapse {\n  visibility: collapse;\n}\n.fixed {\n  position: fixed;\n}\n.absolute {\n  position: absolute;\n}\n.relative {\n  position: relative;\n}\n.ml-4 {\n  margin-left: 1rem;\n}\n.mr-2 {\n  margin-right: 0.5rem;\n}\n.mt-8 {\n  margin-top: 2rem;\n}\n.block {\n  display: block;\n}\n.flex {\n  display: flex;\n}\n.inline-flex {\n  display: inline-flex;\n}\n.table {\n  display: table;\n}\n.h-8 {\n  height: 2rem;\n}\n.w-8 {\n  width: 2rem;\n}\n.w-full {\n  width: 100%;\n}\n.shrink-0 {\n  flex-shrink: 0;\n}\n.border-collapse {\n  border-collapse: collapse;\n}\n.flex-row {\n  flex-direction: row;\n}\n.flex-col {\n  flex-direction: column;\n}\n.flex-wrap {\n  flex-wrap: wrap;\n}\n.items-center {\n  align-items: center;\n}\n.justify-center {\n  justify-content: center;\n}\n.space-x-2 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-x-reverse: 0;\n  margin-right: calc(0.5rem * var(--tw-space-x-reverse));\n  margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));\n}\n.rounded-lg {\n  border-radius: 0.5rem;\n}\n.rounded-md {\n  border-radius: 0.375rem;\n}\n.rounded-t-lg {\n  border-top-left-radius: 0.5rem;\n  border-top-right-radius: 0.5rem;\n}\n.border {\n  border-width: 1px;\n}\n.border-white {\n  --tw-border-opacity: 1;\n  border-color: rgb(255 255 255 / var(--tw-border-opacity));\n}\n.bg-blue-200 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(191 219 254 / var(--tw-bg-opacity));\n}\n.bg-white {\n  --tw-bg-opacity: 1;\n  background-color: rgb(255 255 255 / var(--tw-bg-opacity));\n}\n.px-2 {\n  padding-left: 0.5rem;\n  padding-right: 0.5rem;\n}\n.italic {\n  font-style: italic;\n}\n.text-blue-800 {\n  --tw-text-opacity: 1;\n  color: rgb(30 64 175 / var(--tw-text-opacity));\n}\n.text-gray-600 {\n  --tw-text-opacity: 1;\n  color: rgb(75 85 99 / var(--tw-text-opacity));\n}\n.underline {\n  text-decoration-line: underline;\n}\n.outline {\n  outline-style: solid;\n}\n.filter {\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.transition {\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-backdrop-filter;\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-backdrop-filter;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.hover\\:bg-blue-50:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(239 246 255 / var(--tw-bg-opacity));\n}\n.hover\\:bg-opacity-80:hover {\n  --tw-bg-opacity: 0.8;\n}\n.disabled\\:bg-transparent:disabled {\n  background-color: transparent;\n}\n.disabled\\:text-gray-300:disabled {\n  --tw-text-opacity: 1;\n  color: rgb(209 213 219 / var(--tw-text-opacity));\n}\n";
+var css$2 = "/*\n! tailwindcss v3.3.5 | MIT License | https://tailwindcss.com\n*//*\n1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)\n2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)\n*/\n\n*,\n::before,\n::after {\n  box-sizing: border-box; /* 1 */\n  border-width: 0; /* 2 */\n  border-style: solid; /* 2 */\n  border-color: #e5e7eb; /* 2 */\n}\n\n::before,\n::after {\n  --tw-content: '';\n}\n\n/*\n1. Use a consistent sensible line-height in all browsers.\n2. Prevent adjustments of font size after orientation changes in iOS.\n3. Use a more readable tab size.\n4. Use the user's configured `sans` font-family by default.\n5. Use the user's configured `sans` font-feature-settings by default.\n6. Use the user's configured `sans` font-variation-settings by default.\n*/\n\nhtml {\n  line-height: 1.5; /* 1 */\n  -webkit-text-size-adjust: 100%; /* 2 */\n  -moz-tab-size: 4; /* 3 */\n  -o-tab-size: 4;\n     tab-size: 4; /* 3 */\n  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"; /* 4 */\n  font-feature-settings: normal; /* 5 */\n  font-variation-settings: normal; /* 6 */\n}\n\n/*\n1. Remove the margin in all browsers.\n2. Inherit line-height from `html` so users can set them as a class directly on the `html` element.\n*/\n\nbody {\n  margin: 0; /* 1 */\n  line-height: inherit; /* 2 */\n}\n\n/*\n1. Add the correct height in Firefox.\n2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)\n3. Ensure horizontal rules are visible by default.\n*/\n\nhr {\n  height: 0; /* 1 */\n  color: inherit; /* 2 */\n  border-top-width: 1px; /* 3 */\n}\n\n/*\nAdd the correct text decoration in Chrome, Edge, and Safari.\n*/\n\nabbr:where([title]) {\n  -webkit-text-decoration: underline dotted;\n          text-decoration: underline dotted;\n}\n\n/*\nRemove the default font size and weight for headings.\n*/\n\nh1,\nh2,\nh3,\nh4,\nh5,\nh6 {\n  font-size: inherit;\n  font-weight: inherit;\n}\n\n/*\nReset links to optimize for opt-in styling instead of opt-out.\n*/\n\na {\n  color: inherit;\n  text-decoration: inherit;\n}\n\n/*\nAdd the correct font weight in Edge and Safari.\n*/\n\nb,\nstrong {\n  font-weight: bolder;\n}\n\n/*\n1. Use the user's configured `mono` font family by default.\n2. Correct the odd `em` font sizing in all browsers.\n*/\n\ncode,\nkbd,\nsamp,\npre {\n  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace; /* 1 */\n  font-size: 1em; /* 2 */\n}\n\n/*\nAdd the correct font size in all browsers.\n*/\n\nsmall {\n  font-size: 80%;\n}\n\n/*\nPrevent `sub` and `sup` elements from affecting the line height in all browsers.\n*/\n\nsub,\nsup {\n  font-size: 75%;\n  line-height: 0;\n  position: relative;\n  vertical-align: baseline;\n}\n\nsub {\n  bottom: -0.25em;\n}\n\nsup {\n  top: -0.5em;\n}\n\n/*\n1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)\n2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)\n3. Remove gaps between table borders by default.\n*/\n\ntable {\n  text-indent: 0; /* 1 */\n  border-color: inherit; /* 2 */\n  border-collapse: collapse; /* 3 */\n}\n\n/*\n1. Change the font styles in all browsers.\n2. Remove the margin in Firefox and Safari.\n3. Remove default padding in all browsers.\n*/\n\nbutton,\ninput,\noptgroup,\nselect,\ntextarea {\n  font-family: inherit; /* 1 */\n  font-feature-settings: inherit; /* 1 */\n  font-variation-settings: inherit; /* 1 */\n  font-size: 100%; /* 1 */\n  font-weight: inherit; /* 1 */\n  line-height: inherit; /* 1 */\n  color: inherit; /* 1 */\n  margin: 0; /* 2 */\n  padding: 0; /* 3 */\n}\n\n/*\nRemove the inheritance of text transform in Edge and Firefox.\n*/\n\nbutton,\nselect {\n  text-transform: none;\n}\n\n/*\n1. Correct the inability to style clickable types in iOS and Safari.\n2. Remove default button styles.\n*/\n\nbutton,\n[type='button'],\n[type='reset'],\n[type='submit'] {\n  -webkit-appearance: button; /* 1 */\n  background-color: transparent; /* 2 */\n  background-image: none; /* 2 */\n}\n\n/*\nUse the modern Firefox focus style for all focusable elements.\n*/\n\n:-moz-focusring {\n  outline: auto;\n}\n\n/*\nRemove the additional `:invalid` styles in Firefox. (https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737)\n*/\n\n:-moz-ui-invalid {\n  box-shadow: none;\n}\n\n/*\nAdd the correct vertical alignment in Chrome and Firefox.\n*/\n\nprogress {\n  vertical-align: baseline;\n}\n\n/*\nCorrect the cursor style of increment and decrement buttons in Safari.\n*/\n\n::-webkit-inner-spin-button,\n::-webkit-outer-spin-button {\n  height: auto;\n}\n\n/*\n1. Correct the odd appearance in Chrome and Safari.\n2. Correct the outline style in Safari.\n*/\n\n[type='search'] {\n  -webkit-appearance: textfield; /* 1 */\n  outline-offset: -2px; /* 2 */\n}\n\n/*\nRemove the inner padding in Chrome and Safari on macOS.\n*/\n\n::-webkit-search-decoration {\n  -webkit-appearance: none;\n}\n\n/*\n1. Correct the inability to style clickable types in iOS and Safari.\n2. Change font properties to `inherit` in Safari.\n*/\n\n::-webkit-file-upload-button {\n  -webkit-appearance: button; /* 1 */\n  font: inherit; /* 2 */\n}\n\n/*\nAdd the correct display in Chrome and Safari.\n*/\n\nsummary {\n  display: list-item;\n}\n\n/*\nRemoves the default spacing and border for appropriate elements.\n*/\n\nblockquote,\ndl,\ndd,\nh1,\nh2,\nh3,\nh4,\nh5,\nh6,\nhr,\nfigure,\np,\npre {\n  margin: 0;\n}\n\nfieldset {\n  margin: 0;\n  padding: 0;\n}\n\nlegend {\n  padding: 0;\n}\n\nol,\nul,\nmenu {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n\n/*\nReset default styling for dialogs.\n*/\ndialog {\n  padding: 0;\n}\n\n/*\nPrevent resizing textareas horizontally by default.\n*/\n\ntextarea {\n  resize: vertical;\n}\n\n/*\n1. Reset the default placeholder opacity in Firefox. (https://github.com/tailwindlabs/tailwindcss/issues/3300)\n2. Set the default placeholder color to the user's configured gray 400 color.\n*/\n\ninput::-moz-placeholder, textarea::-moz-placeholder {\n  opacity: 1; /* 1 */\n  color: #9ca3af; /* 2 */\n}\n\ninput::placeholder,\ntextarea::placeholder {\n  opacity: 1; /* 1 */\n  color: #9ca3af; /* 2 */\n}\n\n/*\nSet the default cursor for buttons.\n*/\n\nbutton,\n[role=\"button\"] {\n  cursor: pointer;\n}\n\n/*\nMake sure disabled buttons don't get the pointer cursor.\n*/\n:disabled {\n  cursor: default;\n}\n\n/*\n1. Make replaced elements `display: block` by default. (https://github.com/mozdevs/cssremedy/issues/14)\n2. Add `vertical-align: middle` to align replaced elements more sensibly by default. (https://github.com/jensimmons/cssremedy/issues/14#issuecomment-634934210)\n   This can trigger a poorly considered lint error in some tools but is included by design.\n*/\n\nimg,\nsvg,\nvideo,\ncanvas,\naudio,\niframe,\nembed,\nobject {\n  display: block; /* 1 */\n  vertical-align: middle; /* 2 */\n}\n\n/*\nConstrain images and videos to the parent width and preserve their intrinsic aspect ratio. (https://github.com/mozdevs/cssremedy/issues/14)\n*/\n\nimg,\nvideo {\n  max-width: 100%;\n  height: auto;\n}\n\n/* Make elements with the HTML hidden attribute stay hidden by default */\n[hidden] {\n  display: none;\n}\n\n*, ::before, ::after {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x:  ;\n  --tw-pan-y:  ;\n  --tw-pinch-zoom:  ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position:  ;\n  --tw-gradient-via-position:  ;\n  --tw-gradient-to-position:  ;\n  --tw-ordinal:  ;\n  --tw-slashed-zero:  ;\n  --tw-numeric-figure:  ;\n  --tw-numeric-spacing:  ;\n  --tw-numeric-fraction:  ;\n  --tw-ring-inset:  ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur:  ;\n  --tw-brightness:  ;\n  --tw-contrast:  ;\n  --tw-grayscale:  ;\n  --tw-hue-rotate:  ;\n  --tw-invert:  ;\n  --tw-saturate:  ;\n  --tw-sepia:  ;\n  --tw-drop-shadow:  ;\n  --tw-backdrop-blur:  ;\n  --tw-backdrop-brightness:  ;\n  --tw-backdrop-contrast:  ;\n  --tw-backdrop-grayscale:  ;\n  --tw-backdrop-hue-rotate:  ;\n  --tw-backdrop-invert:  ;\n  --tw-backdrop-opacity:  ;\n  --tw-backdrop-saturate:  ;\n  --tw-backdrop-sepia:  ;\n}\n\n::backdrop {\n  --tw-border-spacing-x: 0;\n  --tw-border-spacing-y: 0;\n  --tw-translate-x: 0;\n  --tw-translate-y: 0;\n  --tw-rotate: 0;\n  --tw-skew-x: 0;\n  --tw-skew-y: 0;\n  --tw-scale-x: 1;\n  --tw-scale-y: 1;\n  --tw-pan-x:  ;\n  --tw-pan-y:  ;\n  --tw-pinch-zoom:  ;\n  --tw-scroll-snap-strictness: proximity;\n  --tw-gradient-from-position:  ;\n  --tw-gradient-via-position:  ;\n  --tw-gradient-to-position:  ;\n  --tw-ordinal:  ;\n  --tw-slashed-zero:  ;\n  --tw-numeric-figure:  ;\n  --tw-numeric-spacing:  ;\n  --tw-numeric-fraction:  ;\n  --tw-ring-inset:  ;\n  --tw-ring-offset-width: 0px;\n  --tw-ring-offset-color: #fff;\n  --tw-ring-color: rgb(59 130 246 / 0.5);\n  --tw-ring-offset-shadow: 0 0 #0000;\n  --tw-ring-shadow: 0 0 #0000;\n  --tw-shadow: 0 0 #0000;\n  --tw-shadow-colored: 0 0 #0000;\n  --tw-blur:  ;\n  --tw-brightness:  ;\n  --tw-contrast:  ;\n  --tw-grayscale:  ;\n  --tw-hue-rotate:  ;\n  --tw-invert:  ;\n  --tw-saturate:  ;\n  --tw-sepia:  ;\n  --tw-drop-shadow:  ;\n  --tw-backdrop-blur:  ;\n  --tw-backdrop-brightness:  ;\n  --tw-backdrop-contrast:  ;\n  --tw-backdrop-grayscale:  ;\n  --tw-backdrop-hue-rotate:  ;\n  --tw-backdrop-invert:  ;\n  --tw-backdrop-opacity:  ;\n  --tw-backdrop-saturate:  ;\n  --tw-backdrop-sepia:  ;\n}\n.collapse {\n  visibility: collapse;\n}\n.fixed {\n  position: fixed;\n}\n.absolute {\n  position: absolute;\n}\n.relative {\n  position: relative;\n}\n.ml-4 {\n  margin-left: 1rem;\n}\n.mr-2 {\n  margin-right: 0.5rem;\n}\n.mt-8 {\n  margin-top: 2rem;\n}\n.block {\n  display: block;\n}\n.flex {\n  display: flex;\n}\n.inline-flex {\n  display: inline-flex;\n}\n.table {\n  display: table;\n}\n.h-8 {\n  height: 2rem;\n}\n.w-8 {\n  width: 2rem;\n}\n.w-full {\n  width: 100%;\n}\n.shrink-0 {\n  flex-shrink: 0;\n}\n.border-collapse {\n  border-collapse: collapse;\n}\n.flex-row {\n  flex-direction: row;\n}\n.flex-col {\n  flex-direction: column;\n}\n.flex-wrap {\n  flex-wrap: wrap;\n}\n.items-center {\n  align-items: center;\n}\n.justify-center {\n  justify-content: center;\n}\n.space-x-2 > :not([hidden]) ~ :not([hidden]) {\n  --tw-space-x-reverse: 0;\n  margin-right: calc(0.5rem * var(--tw-space-x-reverse));\n  margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));\n}\n.rounded-lg {\n  border-radius: 0.5rem;\n}\n.rounded-md {\n  border-radius: 0.375rem;\n}\n.rounded-t-lg {\n  border-top-left-radius: 0.5rem;\n  border-top-right-radius: 0.5rem;\n}\n.border {\n  border-width: 1px;\n}\n.border-white {\n  --tw-border-opacity: 1;\n  border-color: rgb(255 255 255 / var(--tw-border-opacity));\n}\n.bg-blue-200 {\n  --tw-bg-opacity: 1;\n  background-color: rgb(191 219 254 / var(--tw-bg-opacity));\n}\n.bg-white {\n  --tw-bg-opacity: 1;\n  background-color: rgb(255 255 255 / var(--tw-bg-opacity));\n}\n.px-2 {\n  padding-left: 0.5rem;\n  padding-right: 0.5rem;\n}\n.italic {\n  font-style: italic;\n}\n.text-blue-800 {\n  --tw-text-opacity: 1;\n  color: rgb(30 64 175 / var(--tw-text-opacity));\n}\n.text-gray-600 {\n  --tw-text-opacity: 1;\n  color: rgb(75 85 99 / var(--tw-text-opacity));\n}\n.underline {\n  text-decoration-line: underline;\n}\n.outline {\n  outline-style: solid;\n}\n.filter {\n  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);\n}\n.transition {\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-backdrop-filter;\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;\n  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-backdrop-filter;\n  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);\n  transition-duration: 150ms;\n}\n.hover\\:bg-blue-50:hover {\n  --tw-bg-opacity: 1;\n  background-color: rgb(239 246 255 / var(--tw-bg-opacity));\n}\n.hover\\:bg-opacity-80:hover {\n  --tw-bg-opacity: 0.8;\n}\n.disabled\\:bg-transparent:disabled {\n  background-color: transparent;\n}\n.disabled\\:text-gray-300:disabled {\n  --tw-text-opacity: 1;\n  color: rgb(209 213 219 / var(--tw-text-opacity));\n}\n";
 n(css$2,{});
-
-var _export_sfc = (sfc, props) => {
-  const target = sfc.__vccOpts || sfc;
-  for (const [key, val] of props) {
-    target[key] = val;
-  }
-  return target;
-};
-
-const _sfc_main$m = {};
 
 const _hoisted_1$m = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29181,12 +28234,15 @@ const _hoisted_3$j = [
   _hoisted_2$k
 ];
 
-function _sfc_render$l(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$m, _hoisted_3$j))
+function render$l(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$m, [..._hoisted_3$j]))
 }
-var BoldIcon = /*#__PURE__*/_export_sfc(_sfc_main$m, [['render',_sfc_render$l],['__file',"bold.vue"]]);
 
-const _sfc_main$l = {};
+const script$m = {};
+
+
+script$m.render = render$l;
+script$m.__file = "src/icons/bold.vue";
 
 const _hoisted_1$l = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29199,12 +28255,15 @@ const _hoisted_3$i = [
   _hoisted_2$j
 ];
 
-function _sfc_render$k(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$l, _hoisted_3$i))
+function render$k(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$l, [..._hoisted_3$i]))
 }
-var SuperscriptIcon = /*#__PURE__*/_export_sfc(_sfc_main$l, [['render',_sfc_render$k],['__file',"superscript.vue"]]);
 
-const _sfc_main$k = {};
+const script$l = {};
+
+
+script$l.render = render$k;
+script$l.__file = "src/icons/superscript.vue";
 
 const _hoisted_1$k = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29217,12 +28276,15 @@ const _hoisted_3$h = [
   _hoisted_2$i
 ];
 
-function _sfc_render$j(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$k, _hoisted_3$h))
+function render$j(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$k, [..._hoisted_3$h]))
 }
-var ItalicIcon = /*#__PURE__*/_export_sfc(_sfc_main$k, [['render',_sfc_render$j],['__file',"italic.vue"]]);
 
-const _sfc_main$j = {};
+const script$k = {};
+
+
+script$k.render = render$j;
+script$k.__file = "src/icons/italic.vue";
 
 const _hoisted_1$j = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29235,12 +28297,15 @@ const _hoisted_3$g = [
   _hoisted_2$h
 ];
 
-function _sfc_render$i(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$j, _hoisted_3$g))
+function render$i(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$j, [..._hoisted_3$g]))
 }
-var BlockquoteIcon = /*#__PURE__*/_export_sfc(_sfc_main$j, [['render',_sfc_render$i],['__file',"quote-text.vue"]]);
 
-const _sfc_main$i = {};
+const script$j = {};
+
+
+script$j.render = render$i;
+script$j.__file = "src/icons/quote-text.vue";
 
 const _hoisted_1$i = {
   width: "24",
@@ -29260,12 +28325,15 @@ const _hoisted_5 = [
   _hoisted_4$2
 ];
 
-function _sfc_render$h(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$i, _hoisted_5))
+function render$h(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$i, [..._hoisted_5]))
 }
-var FootnoteIcon = /*#__PURE__*/_export_sfc(_sfc_main$i, [['render',_sfc_render$h],['__file',"footnote.vue"]]);
 
-const _sfc_main$h = {};
+const script$i = {};
+
+
+script$i.render = render$h;
+script$i.__file = "src/icons/footnote.vue";
 
 const _hoisted_1$h = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29278,12 +28346,15 @@ const _hoisted_3$e = [
   _hoisted_2$f
 ];
 
-function _sfc_render$g(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$h, _hoisted_3$e))
+function render$g(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$h, [..._hoisted_3$e]))
 }
-var ClearFormattingIcon = /*#__PURE__*/_export_sfc(_sfc_main$h, [['render',_sfc_render$g],['__file',"format-clear.vue"]]);
 
-const _sfc_main$g = {};
+const script$h = {};
+
+
+script$h.render = render$g;
+script$h.__file = "src/icons/format-clear.vue";
 
 const _hoisted_1$g = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29296,12 +28367,15 @@ const _hoisted_3$d = [
   _hoisted_2$e
 ];
 
-function _sfc_render$f(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$g, _hoisted_3$d))
+function render$f(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$g, [..._hoisted_3$d]))
 }
-var LinkIcon = /*#__PURE__*/_export_sfc(_sfc_main$g, [['render',_sfc_render$f],['__file',"link.vue"]]);
 
-const _sfc_main$f = {};
+const script$g = {};
+
+
+script$g.render = render$f;
+script$g.__file = "src/icons/link.vue";
 
 const _hoisted_1$f = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29314,12 +28388,15 @@ const _hoisted_3$c = [
   _hoisted_2$d
 ];
 
-function _sfc_render$e(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$f, _hoisted_3$c))
+function render$e(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$f, [..._hoisted_3$c]))
 }
-var ParagraphIcon = /*#__PURE__*/_export_sfc(_sfc_main$f, [['render',_sfc_render$e],['__file',"paragraph.vue"]]);
 
-const _sfc_main$e = {};
+const script$f = {};
+
+
+script$f.render = render$e;
+script$f.__file = "src/icons/paragraph.vue";
 
 const _hoisted_1$e = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29337,12 +28414,15 @@ const _hoisted_4$1 = [
   _hoisted_3$b
 ];
 
-function _sfc_render$d(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$e, _hoisted_4$1))
+function render$d(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$e, [..._hoisted_4$1]))
 }
-var UndoIcon = /*#__PURE__*/_export_sfc(_sfc_main$e, [['render',_sfc_render$d],['__file',"arrow-go-back-line.vue"]]);
 
-const _sfc_main$d = {};
+const script$e = {};
+
+
+script$e.render = render$d;
+script$e.__file = "src/icons/arrow-go-back-line.vue";
 
 const _hoisted_1$d = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29360,12 +28440,15 @@ const _hoisted_4 = [
   _hoisted_3$a
 ];
 
-function _sfc_render$c(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$d, _hoisted_4))
+function render$c(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$d, [..._hoisted_4]))
 }
-var RedoIcon = /*#__PURE__*/_export_sfc(_sfc_main$d, [['render',_sfc_render$c],['__file',"arrow-go-forward-line.vue"]]);
 
-const _sfc_main$c = {};
+const script$d = {};
+
+
+script$d.render = render$c;
+script$d.__file = "src/icons/arrow-go-forward-line.vue";
 
 const _hoisted_1$c = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29378,12 +28461,15 @@ const _hoisted_3$9 = [
   _hoisted_2$a
 ];
 
-function _sfc_render$b(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$c, _hoisted_3$9))
+function render$b(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$c, [..._hoisted_3$9]))
 }
-var H3Icon = /*#__PURE__*/_export_sfc(_sfc_main$c, [['render',_sfc_render$b],['__file',"h3.vue"]]);
 
-const _sfc_main$b = {};
+const script$c = {};
+
+
+script$c.render = render$b;
+script$c.__file = "src/icons/h3.vue";
 
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29396,12 +28482,15 @@ const _hoisted_3$8 = [
   _hoisted_2$9
 ];
 
-function _sfc_render$a(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$b, _hoisted_3$8))
+function render$a(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$b, [..._hoisted_3$8]))
 }
-var H4Icon = /*#__PURE__*/_export_sfc(_sfc_main$b, [['render',_sfc_render$a],['__file',"h4.vue"]]);
 
-const _sfc_main$a = {};
+const script$b = {};
+
+
+script$b.render = render$a;
+script$b.__file = "src/icons/h4.vue";
 
 const _hoisted_1$a = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29414,12 +28503,15 @@ const _hoisted_3$7 = [
   _hoisted_2$8
 ];
 
-function _sfc_render$9(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$a, _hoisted_3$7))
+function render$9(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$a, [..._hoisted_3$7]))
 }
-var H5Icon = /*#__PURE__*/_export_sfc(_sfc_main$a, [['render',_sfc_render$9],['__file',"h5.vue"]]);
 
-const _sfc_main$9 = {};
+const script$a = {};
+
+
+script$a.render = render$9;
+script$a.__file = "src/icons/h5.vue";
 
 const _hoisted_1$9 = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29432,12 +28524,15 @@ const _hoisted_3$6 = [
   _hoisted_2$7
 ];
 
-function _sfc_render$8(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$9, _hoisted_3$6))
+function render$8(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$9, [..._hoisted_3$6]))
 }
-var H6Icon = /*#__PURE__*/_export_sfc(_sfc_main$9, [['render',_sfc_render$8],['__file',"h6.vue"]]);
 
-const _sfc_main$8 = {};
+const script$9 = {};
+
+
+script$9.render = render$8;
+script$9.__file = "src/icons/h6.vue";
 
 const _hoisted_1$8 = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29450,12 +28545,15 @@ const _hoisted_3$5 = [
   _hoisted_2$6
 ];
 
-function _sfc_render$7(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$8, _hoisted_3$5))
+function render$7(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$8, [..._hoisted_3$5]))
 }
-var AlignLeftIcon = /*#__PURE__*/_export_sfc(_sfc_main$8, [['render',_sfc_render$7],['__file',"align-left.vue"]]);
 
-const _sfc_main$7 = {};
+const script$8 = {};
+
+
+script$8.render = render$7;
+script$8.__file = "src/icons/align-left.vue";
 
 const _hoisted_1$7 = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29468,12 +28566,15 @@ const _hoisted_3$4 = [
   _hoisted_2$5
 ];
 
-function _sfc_render$6(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$7, _hoisted_3$4))
+function render$6(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$7, [..._hoisted_3$4]))
 }
-var AlignCenterIcon = /*#__PURE__*/_export_sfc(_sfc_main$7, [['render',_sfc_render$6],['__file',"align-center.vue"]]);
 
-const _sfc_main$6 = {};
+const script$7 = {};
+
+
+script$7.render = render$6;
+script$7.__file = "src/icons/align-center.vue";
 
 const _hoisted_1$6 = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29486,12 +28587,15 @@ const _hoisted_3$3 = [
   _hoisted_2$4
 ];
 
-function _sfc_render$5(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$6, _hoisted_3$3))
+function render$5(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$6, [..._hoisted_3$3]))
 }
-var AlignJustifyIcon = /*#__PURE__*/_export_sfc(_sfc_main$6, [['render',_sfc_render$5],['__file',"align-justify.vue"]]);
 
-const _sfc_main$5 = {};
+const script$6 = {};
+
+
+script$6.render = render$5;
+script$6.__file = "src/icons/align-justify.vue";
 
 const _hoisted_1$5 = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29515,12 +28619,15 @@ const _hoisted_3$2 = [
   _hoisted_2$3
 ];
 
-function _sfc_render$4(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$5, _hoisted_3$2))
+function render$4(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$5, [..._hoisted_3$2]))
 }
-var SmallCapsIcon = /*#__PURE__*/_export_sfc(_sfc_main$5, [['render',_sfc_render$4],['__file',"small-caps.vue"]]);
 
-const _sfc_main$4 = {};
+const script$5 = {};
+
+
+script$5.render = render$4;
+script$5.__file = "src/icons/small-caps.vue";
 
 const _hoisted_1$4 = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -29533,28 +28640,36 @@ const _hoisted_3$1 = [
   _hoisted_2$2
 ];
 
-function _sfc_render$3(_ctx, _cache) {
-  return (openBlock(), createElementBlock("svg", _hoisted_1$4, _hoisted_3$1))
+function render$3(_ctx, _cache) {
+  return (openBlock(), createElementBlock("svg", _hoisted_1$4, [..._hoisted_3$1]))
 }
-var BulletListIcon = /*#__PURE__*/_export_sfc(_sfc_main$4, [['render',_sfc_render$3],['__file',"list-unordered.vue"]]);
 
-const _sfc_main$3 = {};
+const script$4 = {};
+
+
+script$4.render = render$3;
+script$4.__file = "src/icons/list-unordered.vue";
 
 const _hoisted_1$3 = { class: "w-full rounded-t-lg bg-white inline-flex flex-row flex-wrap items-center space-x-2 px-2 toolbar" };
 
-function _sfc_render$2(_ctx, _cache) {
+function render$2(_ctx, _cache) {
   return (openBlock(), createElementBlock("div", _hoisted_1$3, [
     renderSlot(_ctx.$slots, "default")
   ]))
 }
-var Toolbar = /*#__PURE__*/_export_sfc(_sfc_main$3, [['render',_sfc_render$2],['__file',"ToolbarGroup.vue"]]);
+
+const script$3 = {};
+
+
+script$3.render = render$2;
+script$3.__file = "src/editor/components/ToolbarGroup.vue";
 
 const _hoisted_1$2 = ["aria-label"];
-var _sfc_main$2 = /* @__PURE__ */ defineComponent({
+var script$2 = /* @__PURE__ */ defineComponent({
   __name: "ToolbarButton",
   props: {
-    label: {},
-    isActive: { type: Boolean }
+    label: { type: String, required: true },
+    isActive: { type: Boolean, required: false }
   },
   setup(__props) {
     return (_ctx, _cache) => {
@@ -29572,12 +28687,9 @@ var _sfc_main$2 = /* @__PURE__ */ defineComponent({
   }
 });
 
-var ToolbarButton = /* @__PURE__ */ _export_sfc(_sfc_main$2, [["__file", "ToolbarButton.vue"]]);
+script$2.__file = "src/editor/components/ToolbarButton.vue";
 
-var css$1 = "\n.import_button {\n  width: 200px;\n  background-color: #6644ff;\n  border-radius: 3px;\n  border: none;\n  color: white;\n  padding: 10px 22px;\n  text-align: center;\n  text-decoration: none;\n  display: inline-block;\n  font-size: 16px;\n  margin: 4px 2px;\n  cursor: pointer;\n}\n";
-n(css$1,{});
-
-const _sfc_main$1 = {
+var script$1 = {
   props: {
     setContent: {
       type: Function,
@@ -29624,12 +28736,12 @@ const _sfc_main$1 = {
 const _hoisted_1$1 = { class: "flex flex-col mt-8" };
 const _hoisted_2$1 = { key: 0 };
 
-function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
+function render$1(_ctx, _cache, $props, $setup, $data, $options) {
   return (openBlock(), createElementBlock("div", _hoisted_1$1, [
     createElementVNode("input", {
       type: "file",
       onChange: _cache[0] || (_cache[0] = (...args) => ($setup.handleFileChange && $setup.handleFileChange(...args)))
-    }, null, 32 /* NEED_HYDRATION */),
+    }, null, 32 /* HYDRATE_EVENTS */),
     createElementVNode("button", {
       class: "import_button",
       onClick: _cache[1] || (_cache[1] = (...args) => ($setup.submitFile && $setup.submitFile(...args)))
@@ -29639,36 +28751,38 @@ function _sfc_render$1(_ctx, _cache, $props, $setup, $data, $options) {
       : createCommentVNode("v-if", true)
   ]))
 }
-var ImportDocument = /*#__PURE__*/_export_sfc(_sfc_main$1, [['render',_sfc_render$1],['__file',"ImportDocument.vue"]]);
 
-var css = "\n.ProseMirror {\n  font-size: large;\n  counter-reset: footnote;\n  padding: 10px;\n}\n.ProseMirror footnote {\n  display: inline-block;\n  position: relative;\n  cursor: pointer;\n}\n.ProseMirror footnote::after {\n  content: counter(footnote);\n  vertical-align: super;\n  font-size: 75%;\n  counter-increment: footnote;\n}\n.ProseMirror-hideselection .footnote-tooltip *::-moz-selection {\n  background-color: transparent;\n}\n.ProseMirror-hideselection .footnote-tooltip *::selection {\n  background-color: transparent;\n}\n.ProseMirror-hideselection .footnote-tooltip *::-moz-selection {\n  background-color: transparent;\n}\n\n/* Make prosemirror fixed size and content scrollable */\n.ProseMirror {\n  max-height: 400px;\n  overflow: auto;\n}\n.drop-cap {\n  font-size: 3em;\n  line-height: 0.8;\n  float: left;\n  margin-right: 0.1em;\n}\n.toolbar .drop-cap {\n  font-size: 1.5em;\n}\n.footnote-tooltip {\n  color: #333;\n  cursor: auto;\n  position: absolute;\n  left: -30px;\n  top: calc(100% + 10px);\n  background: silver;\n  padding: 3px;\n  border-radius: 2px;\n  width: 500px;\n}\n.footnote-tooltip::before {\n  border: 5px solid silver;\n  border-top-width: 0px;\n  border-left-color: transparent;\n  border-right-color: transparent;\n  position: absolute;\n  top: -5px;\n  left: 27px;\n  content: \" \";\n  height: 0;\n  width: 0;\n}\n.ProseMirror button {\n  border: none;\n  background: none;\n  cursor: pointer;\n  outline: none;\n  padding: 0;\n  margin: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  border-radius: 4px;\n  transition: background-color 0.2s;\n}\n.ProseMirror button.active {\n  background-color: #aaa;\n}\n.ProseMirror blockquote {\n  border-left: 2px solid #aaa;\n  margin-left: 0;\n  margin-right: 0;\n  padding-left: 10px;\n  color: #aaa;\n  font-style: italic;\n}\n.ProseMirror h1 {\n  font-size: 1.5em;\n  font-weight: bold;\n  color: red;\n}\n.ProseMirror h3 {\n  font-size: 1.5em;\n  font-weight: bold;\n}\n.ProseMirror h4 {\n  font-size: 1.25em;\n  font-weight: bold;\n}\n.ProseMirror p {\n  margin: 15px 0;\n}\n.ProseMirror h3 {\n  margin: 30px 0;\n  font-size: 1.1em;\n  font-weight: bold;\n}\n.ProseMirror h4 {\n  margin: 20px 0;\n  font-size: 1em;\n  font-weight: bold;\n}\n.ProseMirror h5 {\n  margin: 15px 0;\n  font-size: 0.9em;\n  font-weight: bold;\n}\n.ProseMirror h6 {\n  margin: 10px 0;\n  font-size: 0.8em;\n  font-weight: bold;\n}\n.ProseMirror a {\n  color: #007aff;\n  text-decoration: none;\n}\n.footnote-toolbar {\n  margin-left: 1rem;\n  margin-top: 2rem;\n}\n.footnote-toolbar .button {\n  margin-right: 0.5rem;\n  border-width: 1px;\n}\n.content .ProseMirror ul {\n  list-style-type: disc;\n  margin: 0;\n  padding-left: 1em;\n}\n.ProseMirror table {\n  border-collapse: collapse;\n  width: 100%;\n}\n.ProseMirror tr {\n  display: flex;\n  flex-direction: row;\n  border: 1px solid white;\n}\n.ProseMirror th,\n.ProseMirror td {\n  border: 1px solid white;\n  padding: 8px;\n  text-align: left;\n}\n.ProseMirror h1::after,\n.ProseMirror h2::after {\n  content: \"Titre non conforme\";\n  padding: 2px;\n  display: none;\n  position: relative;\n  top: -20px;\n  right: -30px;\n  width: 150px;\n  text-align: center;\n  background-color: #fef4c5;\n  border: 1px solid #d4b943;\n  border-radius: 2px;\n}\n.ProseMirror h1:hover::after,\n.ProseMirror h2:hover::after {\n  display: block;\n}\n";
-n(css,{});
+var css$1 = "\n.import_button {\n  width: 200px;\n  background-color: #6644ff;\n  border-radius: 3px;\n  border: none;\n  color: white;\n  padding: 10px 22px;\n  text-align: center;\n  text-decoration: none;\n  display: inline-block;\n  font-size: 16px;\n  margin: 4px 2px;\n  cursor: pointer;\n}\n";
+n(css$1,{});
 
-const _sfc_main = {
+script$1.render = render$1;
+script$1.__file = "src/editor/components/ImportDocument.vue";
+
+var script = {
   components: {
     EditorContent,
-    BoldIcon,
-    ItalicIcon,
-    SuperscriptIcon,
-    BlockquoteIcon,
-    FootnoteIcon,
-    H3Icon,
-    H4Icon,
-    H5Icon,
-    H6Icon,
-    ClearFormattingIcon,
-    LinkIcon,
-    ParagraphIcon,
-    UndoIcon,
-    RedoIcon,
-    AlignLeftIcon,
-    AlignCenterIcon,
-    AlignJustifyIcon,
-    SmallCapsIcon,
-    BulletListIcon,
-    Toolbar,
-    ToolbarButton,
-    ImportDocument,
+    BoldIcon: script$m,
+    ItalicIcon: script$k,
+    SuperscriptIcon: script$l,
+    BlockquoteIcon: script$j,
+    FootnoteIcon: script$i,
+    H3Icon: script$c,
+    H4Icon: script$b,
+    H5Icon: script$a,
+    H6Icon: script$9,
+    ClearFormattingIcon: script$h,
+    LinkIcon: script$g,
+    ParagraphIcon: script$f,
+    UndoIcon: script$e,
+    RedoIcon: script$d,
+    AlignLeftIcon: script$8,
+    AlignCenterIcon: script$7,
+    AlignJustifyIcon: script$6,
+    SmallCapsIcon: script$5,
+    BulletListIcon: script$4,
+    Toolbar: script$3,
+    ToolbarButton: script$2,
+    ImportDocument: script$1,
   },
 
   props: {
@@ -29759,7 +28873,7 @@ const _hoisted_1 = { class: "rounded-lg border border-white" };
 const _hoisted_2 = /*#__PURE__*/createElementVNode("span", { class: "small-caps bold" }, "A", -1 /* HOISTED */);
 const _hoisted_3 = /*#__PURE__*/createElementVNode("span", { class: "drop-cap bold" }, "L", -1 /* HOISTED */);
 
-function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
+function render(_ctx, _cache, $props, $setup, $data, $options) {
   const _component_BoldIcon = resolveComponent("BoldIcon");
   const _component_ToolbarButton = resolveComponent("ToolbarButton");
   const _component_ItalicIcon = resolveComponent("ItalicIcon");
@@ -29984,18 +29098,23 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     createVNode(_component_ImportDocument, { setContent: $setup.setContent }, null, 8 /* PROPS */, ["setContent"])
   ], 64 /* STABLE_FRAGMENT */))
 }
-var InterfaceComponent = /*#__PURE__*/_export_sfc(_sfc_main, [['render',_sfc_render],['__file',"interface.vue"]]);
+
+var css = "\n.ProseMirror {\n  font-size: large;\n  counter-reset: footnote;\n  padding: 10px;\n}\n.ProseMirror footnote {\n  display: inline-block;\n  position: relative;\n  cursor: pointer;\n}\n.ProseMirror footnote::after {\n  content: counter(footnote);\n  vertical-align: super;\n  font-size: 75%;\n  counter-increment: footnote;\n}\n.ProseMirror-hideselection .footnote-tooltip *::-moz-selection {\n  background-color: transparent;\n}\n.ProseMirror-hideselection .footnote-tooltip *::selection {\n  background-color: transparent;\n}\n.ProseMirror-hideselection .footnote-tooltip *::-moz-selection {\n  background-color: transparent;\n}\n\n/* Make prosemirror fixed size and content scrollable */\n.ProseMirror {\n  max-height: 400px;\n  overflow: auto;\n}\n.drop-cap {\n  font-size: 3em;\n  line-height: 0.8;\n  float: left;\n  margin-right: 0.1em;\n}\n.toolbar .drop-cap {\n  font-size: 1.5em;\n}\n.footnote-tooltip {\n  color: #333;\n  cursor: auto;\n  position: absolute;\n  left: -30px;\n  top: calc(100% + 10px);\n  background: silver;\n  padding: 3px;\n  border-radius: 2px;\n  width: 500px;\n}\n.footnote-tooltip::before {\n  border: 5px solid silver;\n  border-top-width: 0px;\n  border-left-color: transparent;\n  border-right-color: transparent;\n  position: absolute;\n  top: -5px;\n  left: 27px;\n  content: \" \";\n  height: 0;\n  width: 0;\n}\n.ProseMirror button {\n  border: none;\n  background: none;\n  cursor: pointer;\n  outline: none;\n  padding: 0;\n  margin: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  border-radius: 4px;\n  transition: background-color 0.2s;\n}\n.ProseMirror button.active {\n  background-color: #aaa;\n}\n.ProseMirror blockquote {\n  border-left: 2px solid #aaa;\n  margin-left: 0;\n  margin-right: 0;\n  padding-left: 10px;\n  color: #aaa;\n  font-style: italic;\n}\n.ProseMirror h1 {\n  font-size: 1.5em;\n  font-weight: bold;\n  color: red;\n}\n.ProseMirror h3 {\n  font-size: 1.5em;\n  font-weight: bold;\n}\n.ProseMirror h4 {\n  font-size: 1.25em;\n  font-weight: bold;\n}\n.ProseMirror p {\n  margin: 15px 0;\n}\n.ProseMirror h3 {\n  margin: 30px 0;\n  font-size: 1.1em;\n  font-weight: bold;\n}\n.ProseMirror h4 {\n  margin: 20px 0;\n  font-size: 1em;\n  font-weight: bold;\n}\n.ProseMirror h5 {\n  margin: 15px 0;\n  font-size: 0.9em;\n  font-weight: bold;\n}\n.ProseMirror h6 {\n  margin: 10px 0;\n  font-size: 0.8em;\n  font-weight: bold;\n}\n.ProseMirror a {\n  color: #007aff;\n  text-decoration: none;\n}\n.footnote-toolbar {\n  margin-left: 1rem;\n  margin-top: 2rem;\n}\n.footnote-toolbar .button {\n  margin-right: 0.5rem;\n  border-width: 1px;\n}\n.content .ProseMirror ul {\n  list-style-type: disc;\n  margin: 0;\n  padding-left: 1em;\n}\n.ProseMirror table {\n  border-collapse: collapse;\n  width: 100%;\n}\n.ProseMirror tr {\n  display: flex;\n  flex-direction: row;\n  border: 1px solid white;\n}\n.ProseMirror th,\n.ProseMirror td {\n  border: 1px solid white;\n  padding: 8px;\n  text-align: left;\n}\n.ProseMirror h1::after,\n.ProseMirror h2::after {\n  content: \"Titre non conforme\";\n  padding: 2px;\n  display: none;\n  position: relative;\n  top: -20px;\n  right: -30px;\n  width: 150px;\n  text-align: center;\n  background-color: #fef4c5;\n  border: 1px solid #d4b943;\n  border-radius: 2px;\n}\n.ProseMirror h1:hover::after,\n.ProseMirror h2:hover::after {\n  display: block;\n}\n";
+n(css,{});
+
+script.render = render;
+script.__file = "src/editor/interface.vue";
 
 var e0 = {
 	id: 'tiptap',
 	name: 'Tiptap',
 	icon: 'box',
 	description: 'WYSIWYG editor for Directus',
-	component: InterfaceComponent,
+	component: script,
 	options: null,
 	types: ['json'],
 };
 
-const interfaces = [e0];const displays = [];const layouts = [];const modules = [];const panels = [];const themes = [];const operations = [];
+const interfaces = [e0];const displays = [];const layouts = [];const modules = [];const panels = [];const operations = [];
 
-export { displays, interfaces, layouts, modules, operations, panels, themes };
+export { displays, interfaces, layouts, modules, operations, panels };

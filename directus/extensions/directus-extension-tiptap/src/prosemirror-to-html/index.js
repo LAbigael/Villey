@@ -90,8 +90,6 @@ export default ({ filter }) => {
     "content"
   );
   transformItemsFieldFromToHTML(filter, "Abstract.items.read", "content");
-
-  transformItemsFieldFromToHTML(filter, "Pages.items.read", "content");
 };
 
 function setLatestContentFromContentVersions(item) {

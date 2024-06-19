@@ -1,26 +1,203 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { getDirectusClient } from "../utils/get-directus-client.js";
-import { readItems, readItem } from "@directus/sdk";
-
-const directus = await getDirectusClient();
-const home = await directus.request(
-  readItems("Pages", {
-  fields: ["id","key", "content"],
-    filter: {
-      key: {
-        _eq: "jp_presentation",
-      },
-    },
-  }),
-);
-
-const content = home[0].content;
 ---
 
 <Layout title="Présentation">
   <div class="max-w-screen-lg m-2 lg:m-auto">
     <h2 class="page_title">Présentation</h2>
-    <div set:html={content} />
+
+    <p>
+      <span
+        >Le droit constitue un objet important de la réflexion philosophique. La
+        revue&nbsp;</span
+      ><em>Droit &amp; Philosophie</em><span
+        >&nbsp;entend tout d’abord aider à mieux faire connaître les différents
+        aspects de ce domaine de recherches en plein essor avec les
+        développements contemporains de la théorie du droit. À cet égard, l’état
+        des connaissances en théorie du droit n’est pas encore, en France, ce
+        qu’il devrait être. Un certain nombre de thèmes majeurs de la discussion
+        internationale y sont presque ignorés. Prenons les exemples du problème
+        de l’indétermination en droit, de la théorie des raisons, des
+        néo-jusnaturalismes, ou encore des relations entre théorie du droit et
+        philosophie moderne de l’action. Il en est de même des auteurs qui ont
+        porté ces idées à l’étranger et qui sont singulièrement absents des
+        débats français.&nbsp;</span
+      ><em>Droit &amp; Philosophie</em><span
+        >&nbsp;se propose d’affronter ces grands problèmes de philosophie et de
+        théorie générale du droit, ainsi que les questions philosophiques
+        spécifiques soulevées par les différentes branches du droit, dans une
+        perspective tant historique que contemporaine.</span
+      >
+    </p>
+
+    <p>
+      À côté de la théorie&nbsp;<em>du droit</em>, il apparaît en second lieu
+      nécessaire de consacrer une attention renouvelée à la philosophie
+      produite&nbsp;<em>par le&nbsp;</em>droit. Tel sera notre second champ
+      d’investigation. Là où la tendance dominante en philosophie juridique,
+      tant au niveau national qu’international, consiste à se concentrer sur la
+      théorie du droit, et en particulier sur l’analyse normativiste, la
+      revue&nbsp;<em>Droit &amp; Philosophie</em>&nbsp;entend maintenir un lien
+      vivant entre la culture des juristes, comprise au sens large, et la pensée
+      théorique sur le droit. En deçà de tout effort de
+      «&nbsp;purification&nbsp;» du phénomène juridique, en deçà de tout
+      rétrécissement de la philosophie du droit à l’état de simple
+      «&nbsp;théorie&nbsp;», il s’agit là d’être attentif aux présupposés
+      philosophiques de la pratique et de la pensée des juristes, en un mot de
+      ce qu’on peut appeler la culture juridique. C’est un fait difficilement
+      contestable que les juristes théorisent en permanence leurs pratiques à
+      travers des catégories de pensée opératoires. Il n’est guère moins
+      manifeste que cette théorisation repose sur des postulats et s’articule
+      autour de concepts qui sont lestés philosophiquement. La revue&nbsp;<em
+        >Droit &amp; Philosophie</em
+      >&nbsp;se propose d’expliciter et de soumettre à la critique les motifs et
+      les formes de cette structuration philosophique souterraine de la culture
+      juridique.
+    </p>
+
+    <p>
+      Enfin, au carrefour de cette philosophie sur le droit et de cette
+      philosophie produite par le droit, se dessine une nouvelle manière de
+      concevoir l’histoire de la pensée juridique&nbsp;: non plus une histoire
+      des «&nbsp;influences&nbsp;», mais ce qu’on pourrait appeler une histoire
+      des transferts conceptuels croisés entre philosophie et droit. Le savoir
+      des juristes partage avec la philosophie moderne, spécialement dans sa
+      composante pratique, nombre de concepts, de thèmes et de problèmes
+      communs, ou du moins similaires. Ainsi, pour n’en donner qu’un exemple,
+      l’idée d’un sujet autonome, créant à sa propre intention les règles et les
+      catégories gouvernant son action, est commune à la philosophie et au droit
+      modernes. Cela ne signifie pas que le même contenu lui soit pour autant
+      assigné, ni que les grilles de lecture se rejoignent. Mais les concepts
+      sont souvent les mêmes. Les catégories sont souvent empruntées, même si
+      c’est pour être retravaillées, voire dénaturées. Dans le prolongement des
+      précédents volumes consacrés aux notions d’équité (vol.&nbsp;2, 2010),
+      d’autonomie de la volonté (vol. &nbsp;4, 2012) et de liberté (vol.&nbsp;4,
+      2012), la revue&nbsp;<em>Droit &amp; Philosophie</em>&nbsp;se proposera à
+      l’avenir de continuer à étudier, historiquement et théoriquement, ces
+      migrations conceptuelles qui tissent les histoires parallèles de la
+      philosophie et de la culture juridique. Ce qui ne va pas sans appeler un
+      effort d’imagination théorique et méthodologique pour sortir du
+      vocabulaire de «&nbsp;l’influence&nbsp;» ou de la réplication pure et
+      simple. Dans cette histoire parallèle du droit et de la philosophie (où
+      les parallèles, contre toute logique, se rejoignent et s’entrecroisent),
+      les isomorphismes semblent en effet plus fréquents que les pures copies,
+      les décalages plus courants que les synchronismes. Aussi le vocabulaire de
+      cette nouvelle méthode historique reste-t-il en grande partie à inventer.
+    </p>
+
+    <p class="chapter_title text-center">
+      <span class="text-accent dark:text-accent-light"
+        >Présentation de la revue</span
+      >
+    </p>
+
+    <p>
+      La relation entre droit et philosophie a depuis longtemps été pensée en
+      termes de conflit, et en particulier d’un «&nbsp;conflit des
+      facultés&nbsp;» dans lequel l’une et l’autre disciplines s’affrontaient
+      dans leurs prétentions respectives à l’hégémonie sur le domaine de la
+      pensée pratique. On y voyait s’opposer l’ambition de la philosophie
+      moderne à être&nbsp;<em>jurisprudence universelle</em>&nbsp;et
+      l’aspiration du droit classique à être&nbsp;<em>vera philosophia</em>. Si
+      ce conflit est aujourd’hui en grande partie neutralisé, la paix qui s’est
+      installée n’a été obtenue qu’au prix d’une répartition des rôles aux
+      conséquences stérilisantes&nbsp;: au droit, les normes positives&nbsp;; à
+      la philosophie, malgré son tournant pratique et «&nbsp;normatif&nbsp;» des
+      dernières décennies, une vision parfois lointaine des constructions
+      sociales concrètes et de ces productions positives qui sont le pain
+      quotidien des juristes universitaires et praticiens. Se fait aujourd’hui
+      sentir un désir de dialogue. Et même si ce dialogue commencera peut-être
+      par prendre la forme d’une confrontation, il est permis de penser qu’une
+      authentique confrontation peut être parfois préférable au silence qui suit
+      les batailles.
+    </p>
+
+    <p>
+      Notre revue se veut l’un des lieux privilégiés de ce dialogue. Elle se
+      donne pour objectif de publier des contributions de haut niveau dans le
+      domaine de la philosophie du droit comprise en un sens large. De ce point
+      de vue, le titre de notre revue, loin de délimiter un territoire fermé,
+      traduit au contraire le souci de s’ouvrir à la variété des intersections
+      possibles entre droit et philosophie. Sans prétendre à l’exhaustivité, on
+      voit ainsi se dessiner trois grandes perspectives.
+    </p>
+
+
+    <p class="chapter_title text-center">
+      <span class="text-accent dark:text-accent-light">Comité de lecture</span>
+    </p>
+
+    <p>
+      <span class="text-accent dark:text-accent-light"
+        ><strong>Directeurs</strong></span
+      >
+       :&nbsp;&nbsp;Denis Baranger ;&nbsp; Olivier Beaud ; Olivier Jouanjan ;
+      Mélanie Plouviez
+    </p>
+
+    <p>
+      <span class="text-accent dark:text-accent-light"
+        ><strong>Directrice-adjointe</strong></span
+      >
+       :&nbsp;&nbsp;Élodie Djordjevic
+    </p>
+
+    <p>
+      <span class="text-accent dark:text-accent-light"
+        ><strong>Conseil scientifique</strong></span
+      >
+       :&nbsp;Jean-Pierre Coriat&nbsp;; Quentin Epron&nbsp;; Jean-François
+      Kervégan&nbsp;; Philippe de Lara&nbsp;; Charles Leben&nbsp;†&nbsp;;
+      Pierre-Yves Quiviger ; Philippe Raynaud&nbsp;; Marie France Renoux-Zagamé;
+      François Saint-Bonnet ; Philippe Théry ; Mikhaïl Xifaras
+    </p>
+
+    <p>
+      <span class="text-accent dark:text-accent-light"
+        ><strong>Comité de rédaction</strong></span
+      >
+       :&nbsp;Manon Altwegg-Boussac ; Gregory Bligh&nbsp;; Jérôme
+      Couillerot&nbsp;; Thibault Desmoulins ; Élodie Djordjevic&nbsp;; Marc
+      Goetzmann ; Gilles Marmasse ; Mélanie Plouviez&nbsp;; Tristan
+      Pouthier&nbsp;; Themistoklis Raptopoulos&nbsp;; Pierre-Marie Raynal&nbsp;;
+      Céline Roynier&nbsp;; Patrick Savidan ; Sabina Tortorella&nbsp;; Mathilde
+      Unger
+    </p>
+
+    <p>
+      <strong
+        ><span class="text-accent dark:text-accent-light"
+          >Rubrique "Recensions"</span
+        ></strong
+      >:&nbsp;Gregory Bligh&nbsp;; Thibault Desmoulins
+    </p>
+
+    <p>
+      <span class="text-accent dark:text-accent-light"
+        ><strong>Secrétaire de rédaction</strong></span
+      >
+       :&nbsp;Thibault Desmoulins
+    </p>
+
+    <p>
+      <span class="text-accent dark:text-accent-light"
+        ><strong>Secrétaire d'édition</strong></span
+      >
+       : Romane Lerenard
+    </p>
+
+    <p
+      class="Notes-Corpsdetexte"
+      style="text-indent: 0cm; margin: 0cm 0cm 0.0001pt;"
+    >
+      &nbsp;
+    </p>
+
+    <p
+      class="Notes-Corpsdetexte"
+      style="text-indent: 0cm; margin: 0cm 0cm 0.0001pt;"
+    >
+      &nbsp;
+    </p>
   </div>
 </Layout>
