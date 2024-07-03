@@ -34,8 +34,15 @@ import Download from "./Download.astro";
         <Footnotes />
       </div>
     </div>
-    <div class="relative w-full lg:w-2/4 article_column" title="Agrandir">
+    <div class="relative w-full lg:w-2/4 article_column">
       <div class="article_content" set:html={article.content} />
+      <div>
+        {
+          article.title.toLowerCase().includes("book") && (
+            <Download article={article} />
+          )
+        }
+      </div>
     </div>
     <div id="sidebar" class="w-1/4 sidebar-1 ml-3 flex flex-col">
       <div class="sidebar__inner sidebar__inner-1">
@@ -93,7 +100,7 @@ import Download from "./Download.astro";
     .is-affixed .sidebar__inner-2 {
       background-color: rgba(var(--background));
       color: rgba(var(--accent));
-      }
+    }
     .sidebar__inner {
       height: 100vh;
       z-index: 100;
@@ -109,10 +116,8 @@ import Download from "./Download.astro";
     transform: translate(0, 0); /* For browsers don't support translate3d. */
     transform: translate3d(0, 0, 0);
     will-change: position, transform;
-    @apply overflow-hidden lg:overflow-y-scroll h-auto ;
+    @apply overflow-hidden lg:overflow-y-scroll h-auto;
   }
-
-  
 
   blockquote {
     @apply italic pl-6 my-4;
