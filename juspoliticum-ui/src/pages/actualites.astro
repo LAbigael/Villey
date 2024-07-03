@@ -3,32 +3,12 @@ import Layout from "../layouts/Layout.astro";
 import PageLayout from "../layouts/PageLayout.astro";
 import ArticleTitle from "../components/ArticleTitle.astro";
 
-import { getNews } from "../utils/requests";
-
-const news = await getNews();
-const articles = news.reduce((articles, volume) => {
-  for (const section of volume.sections) {
-    for (const article of section.articles) {
-      articles.push(article);
-    }
-  }
-  return articles;
-}, []);
 ---
 
 <Layout title="Actualités">
-  <PageLayout title="Vient de paraître" className="max-w-screen-2xl lg:px-24 px-10">
+  <PageLayout title="Blog Juspoliticum" className="max-w-screen-2xl lg:px-24 px-10">
     <div class="flex flex-row">
-      <ul>
-        {
-          articles.map((article) => (
-            <li>
-              <ArticleTitle article={article} />
-            </li>
-          ))
-        }
-      </ul>
+      <a href="https://blog.juspoliticum.com" target="_blank" class="text-blue-500">Visiter le blog</a>
     </div>
-    <script src="/js/dynamic-article-list.js" type="text/javascript"></script>
   </PageLayout>
 </Layout>
