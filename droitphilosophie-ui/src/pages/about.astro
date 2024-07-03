@@ -1,5 +1,19 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { getDirectusClient } from "../utils/get-directus-client.js";
+import { readItems } from "@directus/sdk";
+
+const directus = await getDirectusClient();
+let page = await directus.request(
+  readItems("Pages", {
+    fields: ["key", "content"],
+    filter: {
+          key: {
+            _eq: "dp_presentation",
+          },
+        },
+  }),
+);
 ---
 
 <Layout title="Présentation">
@@ -122,83 +136,10 @@ import Layout from "../layouts/Layout.astro";
       voit ainsi se dessiner trois grandes perspectives.
     </p>
 
-
     <p class="chapter_title text-center">
       <span class="text-accent dark:text-accent-light">Comité de lecture</span>
     </p>
-
-    <p>
-      <span class="text-accent dark:text-accent-light"
-        ><strong>Directeurs</strong></span
-      >
-       :&nbsp;&nbsp;Denis Baranger ;&nbsp; Olivier Beaud ; Olivier Jouanjan ;
-      Mélanie Plouviez
-    </p>
-
-    <p>
-      <span class="text-accent dark:text-accent-light"
-        ><strong>Directrice-adjointe</strong></span
-      >
-       :&nbsp;&nbsp;Élodie Djordjevic
-    </p>
-
-    <p>
-      <span class="text-accent dark:text-accent-light"
-        ><strong>Conseil scientifique</strong></span
-      >
-       :&nbsp;Jean-Pierre Coriat&nbsp;; Quentin Epron&nbsp;; Jean-François
-      Kervégan&nbsp;; Philippe de Lara&nbsp;; Charles Leben&nbsp;†&nbsp;;
-      Pierre-Yves Quiviger ; Philippe Raynaud&nbsp;; Marie France Renoux-Zagamé;
-      François Saint-Bonnet ; Philippe Théry ; Mikhaïl Xifaras
-    </p>
-
-    <p>
-      <span class="text-accent dark:text-accent-light"
-        ><strong>Comité de rédaction</strong></span
-      >
-       :&nbsp;Manon Altwegg-Boussac ; Gregory Bligh&nbsp;; Jérôme
-      Couillerot&nbsp;; Thibault Desmoulins ; Élodie Djordjevic&nbsp;; Marc
-      Goetzmann ; Gilles Marmasse ; Mélanie Plouviez&nbsp;; Tristan
-      Pouthier&nbsp;; Themistoklis Raptopoulos&nbsp;; Pierre-Marie Raynal&nbsp;;
-      Céline Roynier&nbsp;; Patrick Savidan ; Sabina Tortorella&nbsp;; Mathilde
-      Unger
-    </p>
-
-    <p>
-      <strong
-        ><span class="text-accent dark:text-accent-light"
-          >Rubrique "Recensions"</span
-        ></strong
-      >:&nbsp;Gregory Bligh&nbsp;; Thibault Desmoulins
-    </p>
-
-    <p>
-      <span class="text-accent dark:text-accent-light"
-        ><strong>Secrétaire de rédaction</strong></span
-      >
-       :&nbsp;Thibault Desmoulins
-    </p>
-
-    <p>
-      <span class="text-accent dark:text-accent-light"
-        ><strong>Secrétaire d'édition</strong></span
-      >
-       : Romane Lerenard
-    </p>
-
-    <p
-      class="Notes-Corpsdetexte"
-      style="text-indent: 0cm; margin: 0cm 0cm 0.0001pt;"
-    >
-      &nbsp;
-    </p>
-
-    <p
-      class="Notes-Corpsdetexte"
-      style="text-indent: 0cm; margin: 0cm 0cm 0.0001pt;"
-    >
-      &nbsp;
-    </p>
+    <div set:html={page[0].content} />
   </div>
 </Layout>
 <style>

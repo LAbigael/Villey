@@ -1,6 +1,21 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import PageLayout from "../layouts/PageLayout.astro";
+
+import { getDirectusClient } from "../utils/get-directus-client.js";
+import { readItems } from "@directus/sdk";
+
+const directus = await getDirectusClient();
+let page = await directus.request(
+  readItems("Pages", {
+    fields: ["key", "content"],
+    filter: {
+          key: {
+            _eq: "jp_presentation",
+          },
+        },
+  }),
+);
 ---
 
 <Layout title="Présentation">
@@ -67,58 +82,7 @@ import PageLayout from "../layouts/PageLayout.astro";
       répertoriées par l’AERES dans le domaine du droit.
     </p>
     <p>&nbsp;</p>
-    <p style="text-align: center;"><strong>Directeurs</strong></p>
-    <p style="text-align: center;">
-      Professeurs&nbsp;<a
-        href="http://www.institutvilley.com/Denis-Baranger,21"
-        target="_blank">Denis Baranger</a
-      >&nbsp;(Paris II) et <a
-        href="http://www.institutvilley.com/Olivier-Beaud"
-        target="_blank">Olivier Beaud</a
-      >&nbsp;(Paris II, Institut Universitaire de France)
-    </p>
-    <p>&nbsp;</p>
-    <p style="text-align: center;"><strong>Fondateurs</strong></p>
-    <p style="text-align: center;">
-      Professeurs Denis Baranger (Paris II), Armel Le Divellec (Paris II),
-      Carlos-Miguel Pimentel (Versailles-St. Quentin-en-Yvelines)
-    </p>
-    <p>&nbsp;</p>
-    <p style="text-align: center;"><strong>Conseil scientifique</strong></p>
-    <p style="text-align: center;">
-      Klaus von Beyme (Heidelberg), Dominique Chagnollaud (Paris II),
-      Jean-Claude Colliard (Paris I), Vlad Constantinesco (Strasbourg III),
-      Jean-Marie Denquin (Paris X), Christoph Gusy (Bielefeld), Ran Halévi
-      (CNRS), Josef Isensee (Bonn), Lucien Jaume (Cevipof / Paris), Olivier
-      Jouanjan (Paris II), Claude Klein (Jérusalem), Franck Lessay (Paris III),
-      Corinne Leveleux-Teixeira (Orléans), Martin Loughlin (Londres), Ulrich K.
-      Preuss (Berlin), Philippe Raynaud (Paris II, Institut Universitaire de
-      France), Pierre Rosanvallon (Collège de France / Paris), François
-      Saint-Bonnet (Paris II), Cheryl Saunders (Melbourne), Michel Troper (Paris
-      X), Neil Walker (Edimbourg / Florence).
-    </p>
-    <p>&nbsp;</p>
-    <p style="text-align: center;"><strong>Conseil de rédaction</strong></p>
-    <p style="text-align: center;">
-      Manon Altwegg-Boussac (<span data-offset-key="5j48d-0-0"
-        ><span data-text="true">Paris-Est Créteil</span></span
-      >), Denis Baranger (Paris II), Renaud Baumert (Cergy-Pontoise), Olivier
-      Beaud (Paris II, Institut Universitaire de France), Bruno Daugeron (Paris
-      V), Quentin Epron (Paris II), Cécile Guérin-Bargues (Paris II), Thibault
-      Guilluy (Nancy), Jacky Hummel (Rennes I&nbsp;; responsable de la rubrique
-      Notes de lecture), Philippe Lauvaux (Paris II), Elina Lemaire (Bourgogne),
-      Carlos-Miguel Pimentel (Versailles-St. Quentin-en-Yvelines), Céline
-      Roynier (Cergy-Pontoise), Christoph Schönberger (Konstanz), Adam Tomkins
-      (Glasgow)
-    </p>
-    <p>&nbsp;</p>
-    <p style="text-align: center;">
-      <strong>Secrétaire de rédaction</strong>
-    </p>
-    <p style="text-align: center;">Thibault Desmoulins (Paris II)</p>
-    <p style="text-align: center;">&nbsp;</p>
-    <p style="text-align: center;"><strong>Assistant d'édition</strong></p>
-    <p style="text-align: center;">&nbsp;Romane Lerenard&nbsp;(Rennes)</p>
+    <div set:html={page[0].content} />
   </PageLayout>
 </Layout>
 <style>

@@ -1,139 +1,26 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import PageLayout from "../layouts/PageLayout.astro";
+
+import { getDirectusClient } from "../utils/get-directus-client.js";
+import { readItems } from "@directus/sdk";
+
+const directus = await getDirectusClient();
+let page = await directus.request(
+  readItems("Pages", {
+    fields: ["key", "content"],
+    filter: {
+          key: {
+          _eq: "jp_propose_article",
+          },
+        },
+  }),
+);
 ---
 
 <Layout title="Proposer un article" >
   <PageLayout title="Proposer un article" className="max-w-screen-2xl lg:px-24 px-10">
-    <h2 style="text-align: center;">
-      <strong>Procédure de sélection des articles</strong>
-    </h2>
-    <p>
-      <em>Jus Politicum</em> est une revue internationale dotée d'un comité de
-      lecture.
-    </p>
-    <p>
-      Les propositions d'articles sont examinées par le conseil de rédaction
-      avant d'être relues par deux rapporteurs au moins, selon le principe du
-      double anonymat: mis à&nbsp; part le secrétaire de rédaction, qui
-      réceptionne la proposition d'article, ni les membres du conseil de
-      rédaction, ni les rapporteurs extérieurs ne connaissent le nom de
-      l'auteur. En sens inverse, l'auteur ne connaît pas les noms des
-      rapporteurs qui sont chargés d'examiner son texte.
-    </p>
-    <p>
-      Dans un délai maximal de trois mois à&nbsp; compter de la réception du
-      texte, une réponse est adressée à&nbsp; l'auteur par le secrétaire de
-      rédaction. Trois cas sont alors possibles:
-    </p>
-    <p>
-      - l'acceptation pure et simple du texte en l'état, assortie, le cas
-      échéant, de précisions quant à&nbsp; la rubrique dans laquelle il sera
-      publié (articles, papiers, etc.), quant au numéro de la revue en ligne
-      dans lequel la publication est envisagée et quant à&nbsp; une éventuelle
-      publication dans <a
-        href="http://www.editions-dalloz.fr/ouvrages-universitaires/connaitre-l-etat-de-la-recherche/les-fondements-du-droit.html"
-        target="_blank">le volume qui paraît annuellement chez Dalloz</a
-      >.
-    </p>
-    <p>
-      - l'acceptation sous réserve de modifications: les réserves émises par les
-      rapporteurs et, le cas échéant, par les membres du conseil de rédaction
-      sont communiquées à&nbsp; l'auteur, qui décide s'il souhaite proposer une
-      version remaniée dans le sens qui lui est suggéré;
-    </p>
-    <p>
-      - le refus pur et simple du texte proposé. Dans ce cas, les motifs du
-      refus sont communiqués à&nbsp; l'auteur à&nbsp; partir de l'avis donné par
-      les rapporteurs.
-    </p>
-    <p>&nbsp;</p>
-    <h2 style="text-align: center;">Plagiat</h2>
-    <p style="text-align: justify;">
-      De manière préoccupante, la revue a été récemment confrontée à plusieurs
-      propositions d’articles dont le contenu relevait au moins pour partie d’un
-      plagiat caractérisé. La vigilance de nos rapporteurs en a fort
-      heureusement permis la détection préalable.
-    </p>
-    <p style="text-align: justify;">
-      Ce phénomène, par son ampleur porte atteinte, au-delà de la revue, à la
-      qualité et à la fiabilité de la recherche dans son ensemble.
-    </p>
-    <p style="text-align: justify;">
-      La revue <em>Jus Politicum</em> rappelle ainsi à ses auteurs potentiels
-      que les sources d’information ou d’inspiration doivent être
-      systématiquement citées et ce quand bien même l’emprunt fait à autrui
-      semblerait minime. Faute de guillemets appropriés, de notes de bas de
-      pages systématiques et de bibliographie exhaustive, l’article fera l’objet
-      d’un refus de publication.
-    </p>
-    <p style="text-align: justify;">La revue se réserve le droit&nbsp;:</p>
-    <ol style="text-align: justify;">
-      <li>
-        De soumettre systématiquement les articles proposés à un logiciel
-        anti-plagiat.
-      </li>
-      <li>
-        D’avertir non seulement l’auteur du caractère déontologiquement
-        problématique non seulement de son article, mais aussi ses victimes
-        (auteur(s) et éditeur(s)) et toute autre autorité universitaire
-        pertinente (directeur de thèse, centre de recherches, CNU, etc.). Le
-        rapport d’évaluation de l’article litigieux sera alors communiqué aux
-        autorités sus mentionnées.
-      </li>
-      <li>
-        De sanctionner ce comportement par l’impossibilité pour l’auteur de
-        publier à l'avenir au sein de la revue.
-      </li>
-      <li>
-        Dans l’hypothèse où, en dépit de notre vigilance, la contribution aurait
-        déjà été publiée au moment de la découverte du plagiat, la Revue se
-        réserve le droit de retirer immédiatement du site l’article contesté, en
-        précisant les raisons de ce retrait.
-      </li>
-    </ol>
-    <p>&nbsp;</p>
-    <p>
-      Directeurs : Professeurs Denis Baranger (Université Panthéon-Assas) et
-      Olivier Beaud (Université Panthéon-Assas, Institut Universitaire de
-      France)
-    </p>
-    <p>
-      Secrétaire de rédaction: Thibault Desmoulins (Université Panthéon-Assas)
-    </p>
-    <p>
-      <a href="http://www.juspoliticum.com/Qui-sommes-nous.html" target="_blank"
-        >Conseil de rédaction et conseil scientifique</a>
-    </p>
-    <p>&nbsp;</p>
-    <h2 style="text-align: center;">Instructions aux auteurs</h2>
-    <p>
-      <em>Jus Politicum</em> ne publie que des <strong>textes originaux</strong
-      >. Nous vous prions ainsi de joindre à&nbsp; votre proposition de
-      contribution le <strong>formulaire d'exclusivité</strong> téléchargeable <a
-        href="../../../uploads/pdf/jp_formulaire-exclusivite.pdf"
-        target="_blank">ICI</a
-      >, dûment renseigné, daté et signé.
-    </p>
-    <p>
-      Il est demandé aux auteurs de bien vouloir respecter un certain nombre de
-      conventions notamment pour la présenattion des références
-      bibliographiques, énoncées dans le fichier téléchargeable <a
-        href="../../../uploads/jp_normes-typographiques-et-conventions_.pdf"
-        target="_blank">ICI</a
-      >.
-    </p>
-    <p>&nbsp;</p>
-    <h2 style="text-align: center;">Soumettre votre article</h2>
-    <p>
-      Nous vous prions d'adresser vos propositions d'articles à l'adresse
-      indiquée dans le lien suivant : <a
-        href="mailto:droitpolitique@gmail.com"
-        target="_blank">adresse de message de la revue</a
-      >,&nbsp; en indiquant <span style="font-size: 0.95em; line-height: 1.4em;"
-        >dans le corps ou l'objet de votre message la mention suivante&nbsp;:
-        «&nbsp;Soumission d'un article pour <em>Jus Politicum</em> »</span>
-    </p>
+    <div set:html={page[0].content} />
   </PageLayout>
 </Layout>
 <style>
