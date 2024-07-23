@@ -1,6 +1,20 @@
 ---
 import { Debug } from "astro:components";
-const { abstracts } = Astro.props;
+let { abstracts } = Astro.props;
+
+abstracts = abstracts
+  .map((abstract) => {
+    // if abstract lang contains 'en', make language en, if it contains 'de', make language de, else make it fr
+    const language = abstract.language.includes("en")
+      ? "en"
+      : abstract.language.includes("de")
+        ? "de"
+        : "fr";
+    return {
+      language,
+      content: abstract.content,
+    };
+  });
 ---
 
 <div class="tabs mt-4">
@@ -25,7 +39,7 @@ const { abstracts } = Astro.props;
   </div>
 </div>
 <script>
-  // if content of abstract is empty, hide the radio button label
+  // if content of abstract is empty or if no abstract for a language, hide the radio button label
   const abstracts = document.querySelectorAll(".abstract");
   let hasAbstract = false;
   abstracts.forEach((abstract) => {
@@ -41,6 +55,14 @@ const { abstracts } = Astro.props;
     const tabs = document.querySelector(".tabs");
     tabs.style.display = "none";
   }
+  ["en","de","fr"].forEach((lang) => {
+    const label = document.querySelector(`label[for="lang_${lang}"]`);
+    // if no abstract for a language, hide the radio button label
+    // abstracts is a node list
+    if (!Array.prototype.some.call(abstracts, (abstract) => abstract.id === `abs_${lang}`)) {
+      label.style.display = "none";
+    }
+  });
 </script>
 
 <style is:global>
