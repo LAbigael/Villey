@@ -1,0 +1,76 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { getDirectusClient } from "../../utils/get-directus-client.js";
+import { readItems, readItem } from "@directus/sdk";
+import VolumeRelease from "../../components/VolumeRelease.astro";
+
+const directus = await getDirectusClient();
+const volumes = await directus.request(
+  readItems("VolumeReleases", {
+  fields: ["id","title", "number"],
+    sort: ["-number"],
+    filter: {
+      site_id: {
+        _eq: "2",
+      },
+    },
+  }),
+);
+let latestVolume = null;
+
+if (volumes && volumes.length > 0) {
+latestVolume = await directus.request(
+  readItem("VolumeReleases", volumes[0].id, {
+    fields: [
+      "title",
+      "cover",
+      "number",
+      "released_on",
+      "publisher",
+      "link",
+      "abstract",
+      "cover",
+      "price",
+      "subtitle",
+      "table_of_content",
+    ],
+    filter: {
+      site_id: {
+        _eq: "2",
+      },
+    },
+  }),
+);
+}
+---
+
+<Layout title="Droit & Philosophie.">
+  <div class="max-w-screen-lg m-auto mb-20">
+    {latestVolume ? (
+    <h3 class="page_title">Dernier volume paru</h3>
+    <div>
+      <VolumeRelease volume={latestVolume} />
+    </div>
+    ) : (
+    <h3 class="page_title">Aucun volume disponible</h3>
+    )
+    }
+    {volumes && volumes.length > 1 && (
+    <h3 class="page_title">Les publications plus anciennes</h3>
+    <ul>
+      {
+        volumes.map((volume) => (
+          <li>
+            <a href=`/publications/${volume.number}` >{volume.title}</a>
+          </li>
+        ))
+      }
+    </ul>
+    )}
+    <style>
+      main {
+        margin: auto;
+      }
+    </style>
+  </div>
+</Layout>

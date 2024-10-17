@@ -1,38 +1,27 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 
-import { getDirectusClient } from "../../utils/get-directus-client";
+import { getDirectusClient } from "../../utils/get-directus-client.js";
 import { readItems } from "@directus/sdk";
 
 const directus = await getDirectusClient();
-const contributionCalls = await directus.request(
-  readItems("ContributionCalls", {
-    fields: ["title", "slug", "content", "created_at"],
-    sort: ["-created_at"],
+let page = await directus.request(
+  readItems("Pages", {
+    fields: ["key", "content"],
+    filter: {
+      key: {
+        _eq: "dp_contribution",
+      },
+    },
   }),
 );
-const lastContributionCall = contributionCalls[0];
 ---
 
 <Layout title="Droit & Philosophie.">
   <div class="flex flex-row">
     <div class="max-w-screen-lg m-2 lg:m-auto">
-      <h2 class="page_title">Dernier appels à contribution</h2>
-
-      <h3 class="mt-10 chapter_title">{lastContributionCall.title}</h3>
-      <div class="mb-10" set:html={lastContributionCall.content} />
-      <h2 class="page_title">Les anciens appels à contributions</h2>
-      <ul class="">
-        {
-        contributionCalls.slice(1).map((contributionCall) => (
-            <li class="m-4">
-              <a href={`/appels-contributions/${contributionCall.slug}`}>
-                {contributionCall.title}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
+    <h2 class="page_title">Appels à contribution</h2>
+      <div set:html={page[0].content} />
     </div>
   </div>
 </Layout>

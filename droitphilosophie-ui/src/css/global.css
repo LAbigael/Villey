@@ -84,7 +84,11 @@ h5 {
 
 ul {
   list-style: disc;
-  list-style-position: inside;
+  list-style-position: outside;
+}
+
+p {
+  min-height: 1.5rem;
 }
 
 .text-gradient {

@@ -1,39 +1,18 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 
-import { getDirectusClient } from "../../utils/get-directus-client";
+import { getDirectusClient } from "../../utils/get-directus-client.js";
 import { readItems } from "@directus/sdk";
-import { Debug } from "astro:components";
 
 const directus = await getDirectusClient();
-const memoires = await directus.request(
-  readItems("Articles", {
-    fields: [
-      "slug",
-      "title",
-      "number",
-      "published_at",
-      "authors.author_id.fullname",
-    ],
-    sort: ["-id"],
+let page = await directus.request(
+  readItems("Pages", {
+    fields: ["key", "content"],
     filter: {
-      _and: [
-        {
-          section_id: {
-            slug: {
-              _contains: "memoires",
-            },
+          key: {
+            _eq: "dp_memoires",
           },
         },
-        {
-          site_id: {
-            _eq: "1",
-          },
-        },
-
-        { active: { _eq: true } },
-      ],
-    },
   }),
 );
 ---
@@ -41,36 +20,6 @@ const memoires = await directus.request(
 <Layout title="Droit & Philosophie.">
   <div class="max-w-screen-lg m-2 lg:m-auto">
     <h2 class="page_title">Mémoires en ligne</h2>
-    <div>
-      A partir de septembre 2021, la revue <em>Droit & Philosophie</em> entend
-      publier en ligne des mémoires de recherche.
-    </div>
-    <h3 class="mt-10 chapter_title">Mémoires de recherches</h3>
-    {
-      memoires.map((memoire) => (
-        <li class="m-4">
-          <span class="font-semibold">
-            {memoire.authors
-              .map((author) => author.author_id.fullname)
-              .join(", ")}
-          </span>
-          ,{" "}
-          <a
-            class="underline italic underline-offset-2"
-            href={`/articles/${memoire.slug}`}
-          >
-            «{memoire.title}»
-          </a>
-          , (mis en ligne le{" "}
-          {new Date(memoire.published_at).toLocaleString("fr-FR", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-          )
-        </li>
-      ))
-    }
-    <!-- <Volume volume={memoire} /> -->
+    <div set:html={page[0].content} />
   </div>
 </Layout>

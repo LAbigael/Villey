@@ -1,82 +1,27 @@
 ---
 import Layout from "../layouts/Layout.astro";
+
+import { getDirectusClient } from "../utils/get-directus-client.js";
+import { readItems } from "@directus/sdk";
+
+const directus = await getDirectusClient();
+let page = await directus.request(
+  readItems("Pages", {
+    fields: ["key", "content"],
+    filter: {
+      key: {
+        _eq: "dp_equipe",
+      },
+    },
+  }),
+);
 ---
 
-<Layout title="L'équipe">
-  <div class="max-w-screen-lg m-2 lg:m-auto">
+<Layout title="Droit & Philosophie.">
+  <div class="flex flex-row">
+    <div class="max-w-screen-lg m-2 lg:m-auto">
     <h2 class="page_title">L'équipe</h2>
-    <p>
-      <span style="color: rgb(44, 67, 89);"
-        ><strong>Directeurs :&nbsp;&nbsp;</strong></span
-      >Olivier Beaud ; Denis Baranger ; Olivier Jouanjan ; Mélanie Plouviez
-    </p>
-
-    <p>
-      <span style="color: rgb(44, 67, 89);"
-        ><strong>Directrice adjointe :&nbsp;&nbsp;</strong></span
-      >Élodie Djordjevic
-    </p>
-
-    <p>
-      <span style="color: rgb(44, 67, 89);"
-        ><strong>Comité scientifique :&nbsp;</strong></span
-      >Jean-Pierre Coriat&nbsp;; Quentin Epron&nbsp;; Jean-François
-      Kervégan&nbsp;; Philippe de Lara&nbsp;; Charles Leben&nbsp;<span
-        style="font-size:120%;">†</span
-      > ; Pierre-Yves Quiviger ; Philippe Raynaud&nbsp;; Marie France
-      Renoux-Zagamé; François Saint-Bonnet ; Philippe Théry ; Mikhaïl Xifaras
-    </p>
-
-    <p
-      class="Notes-Corpsdetexte"
-      style="text-indent: 0cm; margin: 0cm 0cm 0.0001pt;"
-    >
-      <span style="color: rgb(44, 67, 89);"
-        ><strong>Comité de rédaction :</strong></span
-      >Manon Altwegg-Boussac ; Gregory Bligh&nbsp;; Mathieu Carpentier&nbsp;;
-      Jérôme Couillerot&nbsp;; Thibault Desmoulins ; Élodie Djordjevic&nbsp;;
-      Gilles Marmasse ; Mélanie Plouviez&nbsp;; Tristan Pouthier&nbsp;;
-      Pierre-Marie Raynal&nbsp;; Céline Roynier&nbsp;; Patrick Savidan ; Sabina
-      Tortorella&nbsp;; Mathilde Unger
-    </p>
-
-    <p
-      class="Notes-Corpsdetexte"
-      style="text-indent: 0cm; margin: 0cm 0cm 0.0001pt;"
-    >
-      &nbsp;
-    </p>
-
-    <p
-      class="Notes-Corpsdetexte"
-      style="text-indent: 0cm; margin: 0cm 0cm 0.0001pt;"
-    >
-      <span style="color: rgb(44, 67, 89);"
-        ><strong>Secrétaire de rédaction :</strong></span
-      >Thibault Desmoulins
-    </p>
-
-    <p
-      class="Notes-Corpsdetexte"
-      style="text-indent: 0cm; margin: 0cm 0cm 0.0001pt;"
-    >
-      &nbsp;
-    </p>
-
-    <p
-      class="Notes-Corpsdetexte"
-      style="text-indent: 0cm; margin: 0cm 0cm 0.0001pt;"
-    >
-      <span style="color: rgb(44, 67, 89);"
-        ><strong>Secrétaire d'édition :</strong></span
-      >Romane Lerenard
-    </p>
-
-    <p
-      class="Notes-Corpsdetexte"
-      style="text-indent: 0cm; margin: 0cm 0cm 0.0001pt;"
-    >
-      &nbsp;
-    </p>
+      <div set:html={page[0].content} />
+    </div>
   </div>
 </Layout>

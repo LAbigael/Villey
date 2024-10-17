@@ -91,6 +91,9 @@ ul {
   list-style-position: inside;
 }
 
+p {
+  min-height: 1.5rem;
+}
 .text-gradient {
   background-image: var(--accent-gradient);
   -webkit-background-clip: text;
