@@ -16,12 +16,14 @@ import { getImagePath } from "../utils/get-directus-client.js";
       <span>Éditeur : {volume.publisher}</span>
       <span>Date de publication : {volume.released_on}</span>
       <span>Prix : {volume.price} €</span>
-      <a href={volume.link} class="mt-2 btn btn-primary">Acheter</a>
+      <a href={volume.link} class="mt-2 btn tn-primary">Acheter</a>
     </div>
   </div>
   <div set:html={volume.abstract} class="my-16 text-justify" />
+  {volume.table_of_content && (
   <h2 class="page_title">Sommaire</h2>
   <div set:html={volume.table_of_content} />
+  )}
 </div>
 
 <style is:global>
