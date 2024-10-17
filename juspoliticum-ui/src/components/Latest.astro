@@ -6,7 +6,7 @@ import { getDirectusClient } from "../utils/get-directus-client.js";
 
 const directus = await getDirectusClient();
 const volumes = await directus.request(
-  readItems("Volumes", {
+  readItems("VolumeReleases", {
     fields: ["title", "number", "published_at", "slug", "publisher", "cover"],
     sort: ["-id"],
     limit: 1,
