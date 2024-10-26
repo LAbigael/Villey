@@ -8,7 +8,7 @@ const directus = await getDirectusClient();
 
 const volumes = await directus.request(
   readItems("Volumes", {
-  fields: ["id", "slug", "title", "coordinators", "number", "published_at"],
+  fields: ["id", "slug", "title", "coordinators", "number", "published_on", "published"],
     sort: ["-id"],
     limit: 6,
     filter: {
@@ -18,6 +18,7 @@ const volumes = await directus.request(
     },
   }),
 );
+import { Debug } from "astro/components";
 ---
 
 <div class="py-4 lg:py-6">
