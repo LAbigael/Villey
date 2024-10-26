@@ -18,23 +18,7 @@ const contributionCall = contributionCalls.find((contributionCall) => contributi
 ---
 
 <Layout title="Droit & Philosophie.">
-  <div class="flex flex-row">
-    <div class="sidebar">
-      <h1 class="sidebar_title">Tous les appels à contribution</h1>
-      <ul class="sibebar_list">
-        {
-          contributionCalls.map((contributionCall) => (
-            <li class="mb-4">
-              <a href={`/appels-contributions/${contributionCall.slug}`}>
-                {contributionCall.title}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
-    </div>
-  </div>
-  <div>
+  <div class="max-w-screen-lg mx-auto">
     <h3 class="mt-10 chapter_title">{contributionCall.title}</h3>
     <div class="mb-10" set:html={contributionCall.content} />
   </div>

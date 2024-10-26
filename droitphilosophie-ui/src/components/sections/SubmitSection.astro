@@ -1,12 +1,33 @@
 ---
 import villey from "../../images/villey.jpg";
+import { getDirectusClient } from "../../utils/get-directus-client";
+import { readItems } from "@directus/sdk";
+
+const directus = await getDirectusClient();
+
+const contributionCalls = await directus.request(
+  readItems("ContributionCalls", {
+    fields: ["id", "title", "content", "slug"],
+    sort: ["-id"],
+    limit: 1,
+    filter: {
+      ongoing: {
+        _eq: "1",
+      },
+    },
+  }),
+);
+
+let lastContributionCall;
+
+if (contributionCalls.length > 0) {
+  lastContributionCall = contributionCalls[0];
+}
 ---
 
 <div class="py-6 sm:py-8 lg:py-12">
   <div class="sm:mx-12 p-5">
-    <div
-      class="grid gap-2 sm:grid-cols-1 md:gap-4 md:grid-cols-2 "
-    >
+    <div class="grid gap-2 sm:grid-cols-1 md:gap-4 md:grid-cols-3">
       <div class="borderR pl-2 lg:px-8 col-span-1 mb-10 lg:mb-0">
         <h3 class="text-2xl font-semibold pb-2 text-secondary">
           Soumettez vos contributions
@@ -16,12 +37,11 @@ import villey from "../../images/villey.jpg";
           puis imprimé aux éditions Dalloz, ainsi que des contenus inédits tout
           au long de l'année (articles, traductions, recensions, mémoires,
           etc.). <br />
-           Pour plus d'informations sur notre revue, veuillez consulter la page
-          "À propos". Pour toute proposition de publication ou demande
-          d'information, vous pouvez utiliser la rubrique "Contact" prévue à cet
-          effet.
+          Pour plus d'informations sur notre revue, veuillez consulter la page "À
+          propos". Pour toute proposition de publication ou demande d'information,
+          vous pouvez utiliser la rubrique "Contact" prévue à cet effet.
         </div>
-        <button  class=""><a href="/contact/">Contact</a></button>
+        <button class=""><a href="/contact/">Contact</a></button>
       </div>
       <div
         class="col-span-2 sm:col-span-1 flex justify-between md:inline-block max-sm:pr-10 max-sm:pl-2 mb-10 lg:mb-0"
@@ -38,20 +58,54 @@ import villey from "../../images/villey.jpg";
         </div>
 
         <div class="flex lg:block lg:m-0 ml-2 max-md:w-40 h-full">
-            <img
-              src={villey.src}
-              alt="Institut Villey"
-              width="200"
-              height="200"
-              class="mt-auto lg:mt-0"
-            />
+          <img
+            src={villey.src}
+            alt="Institut Villey"
+            width="200"
+            height="200"
+            class="mt-auto lg:mt-0"
+          />
         </div>
+      </div>
+      <div class="borderR pl-2 lg:px-8 col-span-1 mb-10 lg:mb-0">
+        <h3 class="text-2xl font-semibold pb-2 text-secondary">
+          Appel à contribution en cours
+        </h3>
+        {
+          lastContributionCall === undefined ? (
+            <div class="text-md text-justify mb-2">
+              Aucun appel à contribution en cours.
+            </div>
+          ) : (
+            <>
+              <h4 class="text-lg font-semibold pb-2 text-secondary">
+                {lastContributionCall.title}
+              </h4>
+              <div
+                class="text-md text-justify mb-2 contribution-call-content"
+                set:html={lastContributionCall.content}
+              />
+              <button class="">
+                <a href={`/appels-contributions/${lastContributionCall.slug}`}>
+                  Voir plus
+                </a>
+              </button>
+            </>
+          )
+        }
       </div>
     </div>
   </div>
 </div>
 
 <style>
+  .contribution-call-content {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 7;
+    -webkit-box-orient: vertical;
+  }
   @media (min-width: 640px) {
     .max-sm:min-w-fit {
       min-width: 200px;
