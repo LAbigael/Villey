@@ -1,27 +1,72 @@
 ---
-import Layout from "../../layouts/Layout.astro";
-
-import { getDirectusClient } from "../../utils/get-directus-client.js";
 import { readItems } from "@directus/sdk";
+import Layout from "../../layouts/Layout.astro";
+import { getDirectusClient } from "../../utils/get-directus-client.js";
 
 const directus = await getDirectusClient();
-let page = await directus.request(
-  readItems("Pages", {
-    fields: ["key", "content"],
+
+const recensions = await directus.request(
+  readItems("Articles", {
+    fields: [
+      "slug",
+      "title",
+      "type",
+      "position",
+      { authors: ["author_id.fullname"] },
+    ],
+    sort: ["-position"],
     filter: {
-      key: {
-        _eq: "dp_recensions",
-      },
+      _and: [
+        {
+          site_id: {
+            _eq: "1",
+          },
+        },
+        {
+          recension: {
+            _eq: "1",
+          },
+        },
+        {
+          active: {
+            _eq: true,
+          },
+        },
+      ],
     },
   }),
 );
+const lastRecension = recensions.shift();
 ---
 
 <Layout title="Droit & Philosophie.">
-  <div class="flex flex-row">
-    <div class="max-w-screen-lg m-2 lg:m-auto">
-    <h2 class="page_title">Recensions</h2>
-      <div set:html={page[0].content} />
-    </div>
-  </div>
+  {
+    recensions && lastRecension ? (
+      <div class="max-w-screen-lg m-2 lg:m-auto">
+        <h3 class="page_title">Dernière recension parue</h3>
+        <span class="article_author">
+          {lastRecension.authors.map((a) => a.author_id.fullname).join(", ")} :
+        </span>
+        <span class="article_title">
+          <a href={`articles/${lastRecension.slug}`}>{lastRecension.title}</a>
+        </span>
+        <h3 class="page_title">Les anciennes recensions</h3>
+        <ul>
+          {recensions.map((article) => (
+            <li class="">
+              <span class="mr-1 article_author">
+                {article.authors.map((a) => a.author_id.fullname).join(", ")} :
+              </span>
+              <span class="article_title">
+                <a href={`articles/${article.slug}`}>{article.title}</a>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : (
+      <div class="max-w-screen-lg m-2 lg:m-auto">
+        <h3 class="page_title">Aucune recension n'est actuellement disponible.</h3>
+      </div>)
+  }
 </Layout>

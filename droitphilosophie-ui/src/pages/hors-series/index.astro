@@ -1,27 +1,125 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 
-import { getDirectusClient } from "../../utils/get-directus-client.js";
+import { getDirectusClient } from "../../utils/get-directus-client";
 import { readItems } from "@directus/sdk";
+import { Debug } from "astro:components";
 
 const directus = await getDirectusClient();
-let page = await directus.request(
-  readItems("Pages", {
-    fields: ["key", "content"],
+const articles = await directus.request(
+  readItems("Articles", {
+    fields: [
+      "slug",
+      "title",
+      "number",
+      "published_at",
+      "authors.author_id.fullname",
+    ],
+    sort: ["-id"],
     filter: {
-      key: {
-        _eq: "dp_hors_series",
-      },
+      _and: [
+        {
+          special_issue: {
+            _eq: "1",
+            },
+        },
+        {
+          site_id: {
+            _eq: "1",
+          },
+        },
+        { active: { _eq: true } },
+      ],
+    },
+  }),
+);
+const volumes = await directus.request(
+  readItems("Volumes", {
+    fields: [
+      "slug",
+      "title",
+      "published_at",
+      "sections.articles.authors.author_id.fullname",
+      "sections.articles.position",
+    ],
+    sort: ["-id"],
+    filter: {
+      _and: [
+      {special_issue: { _eq: "1" } },
+        {
+          slug: {
+            _neq: "hors-serie",
+          },
+        },
+        {
+          site_id: {
+            _eq: "1",
+          },
+        },
+        { active: { _eq: true } },
+      ],
     },
   }),
 );
 ---
 
 <Layout title="Droit & Philosophie.">
-  <div class="flex flex-row">
-    <div class="max-w-screen-lg m-2 lg:m-auto">
-    <h2 class="page_title">Hors séries</h2>
-      <div set:html={page[0].content} />
-    </div>
+  <div class="max-w-screen-lg m-2 lg:m-auto">
+    <h2 class="page_title">Droit & Philosophie « Hors-série »</h2>
+    <h3 class="mt-10 chapter_title">Numéros</h3>
+    {
+      volumes.map((volume) => (
+        <li class="m-4">
+          <a
+            class="underline italic underline-offset-2"
+            href={`/volumes/${volume.slug}`}
+          >
+            {volume.title}
+          </a>
+          , coordonné par{" "}
+          <span class="font-semibold">{volume.coordinator}</span>, avec les
+          contributions de <span>{volume.authors.join(", ")}. </span>
+          (mis en ligne le{" "}
+          {new Date(volume.published_at).toLocaleString("fr-FR", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
+          )
+        </li>
+      ))
+    }
+
+    <h3 class="mt-10 chapter_title">Articles</h3>
+    {
+      articles.map((article) => (
+        <li class="m-4">
+          <span class="font-semibold">
+            {article.authors
+              .map((author) => author.author_id.fullname)
+              .join(", ")}
+          </span>
+          ,{" "}
+          <a
+            class="underline italic underline-offset-2"
+            href={`/articles/${article.slug}`}
+          >
+            «{article.title}»
+          </a>
+          , (mis en ligne le{" "}
+          {new Date(article.published_at).toLocaleString("fr-FR", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
+          )
+        </li>
+      ))
+    }
   </div>
+  <style>
+    main {
+      margin: auto;
+    }
+  </style>
 </Layout>
