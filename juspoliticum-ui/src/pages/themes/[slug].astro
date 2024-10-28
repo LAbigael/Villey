@@ -18,7 +18,7 @@ const theme = await getThemeWithArticlesBySlug(slug);
     <ul>
       {
         theme.articles.map((article) => (
-          <li>
+          <li class="text-base">
             <ArticleTitle article={article.article_id} />
           </li>
         ))
