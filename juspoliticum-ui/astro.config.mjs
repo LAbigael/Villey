@@ -7,7 +7,7 @@ import vercel from "@astrojs/vercel/serverless";
 // https://astro.build/config
 export default defineConfig({
   integrations: [vue(), tailwind()],
-  server: { port: 4322, host: true },
+  // server: { port: 4322, host: true },
   output: 'server',
   vite: {
     ssr: {
