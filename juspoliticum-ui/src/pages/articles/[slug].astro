@@ -17,21 +17,21 @@ let article = await getArticleBySlug(slug);
 
 let sections = [];
 let volume = null;
-// if (article.section_id) {
-//   sections = await directus.request(
-//     readItems("VolumeSections", {
-//       fields: ["title", "slug", "id", { articles: ["slug", "title"] }],
-//       filter: {
-//         volume_id: {
-//           _eq: article.section_id.volume_id,
-//         },
-//       },
-//     }),
-//   );
-//   volume = await directus.request(
-//     readItem("Volumes", article.section_id.volume_id),
-//   );
-// }
+if (article.section_id) {
+  sections = await directus.request(
+    readItems("VolumeSections", {
+      fields: ["title", "slug", "id", { articles: ["slug", "title"] }],
+      filter: {
+        volume_id: {
+          _eq: article.section_id.volume_id,
+        },
+      },
+    }),
+  );
+  volume = await directus.request(
+    readItem("Volumes", article.section_id.volume_id),
+  );
+}
 
 article = {
   ...article,
