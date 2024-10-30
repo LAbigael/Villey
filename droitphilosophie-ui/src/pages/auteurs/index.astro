@@ -1,94 +1,40 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import AlphabetList from "../../components/AlphabetList.astro";
+
 import { getDirectusClient } from "../../utils/get-directus-client.js";
 import { readItems } from "@directus/sdk";
 
 const directus = await getDirectusClient();
-let authors = await directus.request(
-  readItems("Authors", {
-    fields: [
-      "id",
-      "fullname",
-      "firstname",
-      "lastname",
-      "bio",
-      "articles.article_id.title",
-      "articles.article_id.slug",
-      "articles.article_id.section_id.volume_id.title",
-      "articles.article_id.section_id.volume_id.slug",
-    ],
-    sort: ["fullname"],
-    filter: {
-      site_id: {
-        _eq: "1",
+
+const getAuthors = async () => {
+  return directus.request(
+    readItems("Authors", {
+      fields: ["id", "fullname", "slug", "firstname", "lastname"],
+      sort: ["fullname"],
+      limit: 1000,
+      filter: {
+        site_id: {
+          _eq: "1",
+        },
       },
-    },
-  }),
-);
-authors = authors.filter((author) => author.articles.length > 0);
+    }),
+  );
+};
+
+let authors = await getAuthors();
+
+authors = authors.map((author) => {
+  return {
+  link: `/auteurs/${author.slug}`,
+  content: `${author.lastname} ${author.firstname}`,
+  };
+});
 ---
 
-<Layout title="Droit & Philosophie.">
-  <div class="flex flex-row max-w-screen-xl mx-auto">
-    <div class="sidebar">
-      <span class="sidebar_title sidebar_authors">Tous les auteurs</span>
-      <ul class="sidebar_list">
-        {
-          authors.map((author) => (
-            <li>
-              <a href={`#${author.id}`}>{author.fullname}</a>
-            </li>
-          ))
-        }
-      </ul>
-    </div>
-
-    <div class="m-2">
-      <h3 class="page_title">Auteurs de la revue</h3>
-      {
-        authors.map((author) => (
-          <div id={author.id} class="mb-8 author_section">
-            <h4 class="text-2xl italic font-bold">{author.fullname}</h4>
-            <div class="text-lg my-6" set:html={author.bio} />
-            <span class="my-4 font-semibold text-xl">
-              Ses articles pour Droit & Philosophie :{" "}
-            </span>
-            <ul class="ml-6 list-disc list-inside">
-              {author.articles.map((article) => (
-                <li>
-                  {article.article_id?.section_id?.volume_id?.title && (
-                    <a
-                      class="volume_title"
-                      href={`/volumes/${article.article_id.section_id.volume_id.slug}`}
-                    >
-                      {article.article_id.section_id.volume_id?.title}
-                    </a>
-                  )}{" "}
-                  :{" "}
-                  <a href={`/articles/${article.article_id?.slug}`}>
-                    {article.article_id?.title}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))
-      }
-    </div>
+<Layout title="Auteurs">
+  <div class="max-w-screen-2xl lg:px-24 px-10 mx-auto" >
+    <h2 class="page_title">Auteurs</h2>
+    <AlphabetList items={authors} />
   </div>
 </Layout>
-
-<style>
-  .author_section {
-    @apply my-8 pb-4 border-b;
-    border-bottom-width: 1px;
-    border-color: rgba(var(--secondary));
-  }
-  .volume_title {
-    @apply text-lg;
-    color: rgba(var(--secondary));
-  }
-  ul {
-    border-color: rgba(var(--accent-light));
-  }
-</style>
