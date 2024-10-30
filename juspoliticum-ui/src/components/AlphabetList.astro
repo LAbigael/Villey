@@ -70,7 +70,7 @@ const { items } = Astro.props;
     @apply mb-4 text-color dark:text-color-light text-lg;
   }
   #search-container {
-    @apply mb-4 flex justify-start
+    @apply mb-4 flex justify-start;
   }
   #search-input {
     @apply border px-2 py-2  rounded-sm shadow-inner w-1/2 text-lg bg-background-alt focus:outline-none focus:border-slate-400 focus:ring-0  dark:text-color-light  dark:bg-background-alt-dark;
@@ -88,11 +88,15 @@ const { items } = Astro.props;
   });
 
   const filterItems = (letter) => {
+    // Reset all items to be visible before applying a new filter
     const items = document.querySelectorAll(".filtered_item");
     items.forEach((item) => {
-      if (item.innerText[0].toUpperCase() === letter) {
-        item.style.display = "block";
-      } else {
+      item.style.display = "block"; // Reset display to default
+    });
+
+    // Apply the filter based on the selected letter
+    items.forEach((item) => {
+      if (item.innerText[0].toUpperCase() !== letter) {
         item.style.display = "none";
       }
     });
