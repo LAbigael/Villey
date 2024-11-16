@@ -8,7 +8,7 @@ import { readItems } from "@directus/sdk";
 const directus = await getDirectusClient();
 let volumes = await directus.request(
   readItems("Volumes", {
-    fields: ["slug", "title", "number", "published_at"],
+    fields: ["slug", "title", "number", "published_on"],
     sort: ["-id"],
     filter: {
       _and: [

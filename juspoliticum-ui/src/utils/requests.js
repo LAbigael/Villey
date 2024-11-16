@@ -6,7 +6,7 @@ const directus = await getDirectusClient();
 export const getVolumes = async () => {
   const volumes = await directus.request(
     readItems("Volumes", {
-      fields: ["id", "slug", "title", "coordinators", "number", "published_at"],
+      fields: ["id", "slug", "title", "coordinators", "number", "published_on"],
       sort: ["-id"],
       filter: {
         site_id: {
@@ -25,7 +25,7 @@ const volumeFields = [
   "title",
   "subtitle",
   "number",
-  "published_at",
+  "published_on",
   {
     sections: [
       "title",

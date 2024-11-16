@@ -11,7 +11,7 @@ const { className, volume } = Astro.props;
 
   <span class="date">
     ({
-      new Date(volume.published_at).toLocaleString("fr-FR", {
+      new Date(volume.published_on).toLocaleString("fr-FR", {
         year: "numeric",
         month: "long",
       })

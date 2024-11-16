@@ -13,9 +13,13 @@ const volumes = await directus.request(
     fields: ["id", "slug", "title", "coordinators", "number", "published_on"],
     sort: ["-id"],
     filter: {
-      site_id: {
-        _eq: "2",
-      },
+      _and: [
+      {active: { _eq: "1" }},
+      {  site_id: {
+          _eq: "2",
+        },
+        },
+      ],
     },
   }),
 );
@@ -29,7 +33,7 @@ latestVolume = await directus.request(
       "title",
       "subtitle",
       "number",
-      "published_at",
+      "published_on",
       {
         sections: [
           "title",
@@ -49,45 +53,45 @@ latestVolume = await directus.request(
   }),
 );
 ---
-<div class=" pt-5">
-<!-- Sommaire -->
-<div class="lg:px-24 px-10">
-  <div class="flex flex-row items-center">
-    <h1 class="page_title">Sommaire du dernier numéro</h1>
-    <hr class="line" />
-  </div>
-</div>
 
-<div class="pt-2 lg:pt-4 lg:px-24 px-10">
-  <div class=" py-5 pb-0 max-sm:pt-7 max-sm:pr-6">
-    <div class="">
-      <div class="">
-        <Volume volume={latestVolume} />
-      </div>
-    </div>
-  </div>
-</div>
-</div>
-<div class="bg-secondary-light dark:bg-dark-light py-5">
-<!-- Anciens  -->
-<div class="mb-10 md:mb-16">
+<div class="pt-5">
+  <!-- Sommaire -->
   <div class="lg:px-24 px-10">
     <div class="flex flex-row items-center">
-      <h1 class="page_title dark:!text-accent-dark">Les anciens numéros</h1>
+      <h1 class="page_title">Sommaire du dernier numéro</h1>
       <hr class="line" />
     </div>
   </div>
 
-  <div class="flex flex-wrap mx-auto justify-start lg:px-20 px-6">
-    {
-      volumes.map((volume) => (
-        <div class="w-full lg:w-1/3 sm:w-1/2 p-2">
-          {" "}
-          <Actu volume={volume} />{" "}
+  <div class="pt-2 lg:pt-4 lg:px-24 px-10">
+    <div class="py-5 pb-0 max-sm:pt-7 max-sm:pr-6">
+      <div class="">
+        <div class="">
+          <Volume volume={latestVolume} />
         </div>
-      ))
-    }
+      </div>
+    </div>
   </div>
 </div>
+<div class="bg-secondary-light dark:bg-dark-light py-5">
+  <!-- Anciens  -->
+  <div class="mb-10 md:mb-16">
+    <div class="lg:px-24 px-10">
+      <div class="flex flex-row items-center">
+        <h1 class="page_title dark:!text-accent-dark">Les anciens numéros</h1>
+        <hr class="line" />
+      </div>
+    </div>
 
+    <div class="flex flex-wrap mx-auto justify-start lg:px-20 px-6">
+      {
+        volumes.map((volume) => (
+          <div class="w-full lg:w-1/3 sm:w-1/2 p-2">
+            {" "}
+            <Actu volume={volume} />{" "}
+          </div>
+        ))
+      }
+    </div>
+  </div>
 </div>

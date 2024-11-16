@@ -3,7 +3,6 @@ import Layout from "../../layouts/Layout.astro";
 
 import { getDirectusClient } from "../../utils/get-directus-client";
 import { readItems } from "@directus/sdk";
-import { Debug } from "astro:components";
 
 const directus = await getDirectusClient();
 const articles = await directus.request(
