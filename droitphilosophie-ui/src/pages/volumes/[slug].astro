@@ -36,7 +36,7 @@ const volumes = await directus.request(
             ],
           },
           {
-            articles: ["title", "slug", { authors: ["author_id.fullname"] }],
+          articles: ["position", "title", "slug", { authors: ["author_id.fullname"] }],
           },
         ],
       },
