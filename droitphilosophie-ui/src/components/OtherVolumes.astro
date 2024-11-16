@@ -9,7 +9,7 @@ const directus = await getDirectusClient();
 let volumes = await directus.request(
   readItems("Volumes", {
     fields: ["slug", "title", "number", "published_on"],
-    sort: ["-id"],
+    sort: ["-number"],
     filter: {
       _and: [
         {

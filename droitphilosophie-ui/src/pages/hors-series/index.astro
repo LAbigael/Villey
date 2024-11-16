@@ -20,7 +20,7 @@ const articles = await directus.request(
         {
           special_issue: {
             _eq: "1",
-            },
+          },
         },
         {
           site_id: {
@@ -37,14 +37,14 @@ const volumes = await directus.request(
     fields: [
       "slug",
       "title",
-      "published_at",
+      "published_on",
       "sections.articles.authors.author_id.fullname",
       "sections.articles.position",
     ],
     sort: ["-id"],
     filter: {
       _and: [
-      {special_issue: { _eq: "1" } },
+        { special_issue: { _eq: "1" } },
         {
           slug: {
             _neq: "hors-serie",
@@ -64,27 +64,15 @@ const volumes = await directus.request(
 
 <Layout title="Droit & Philosophie.">
   <div class="max-w-screen-lg m-2 lg:m-auto">
-    <h2 class="page_title">Droit & Philosophie « Hors-série »</h2>
+    <h2 class="page_title">Droit & Philosophie « Hors-Série »</h2>
     <h3 class="mt-10 chapter_title">Numéros</h3>
     {
       volumes.map((volume) => (
         <li class="m-4">
-          <a
-            class="underline italic underline-offset-2"
-            href={`/volumes/${volume.slug}`}
-          >
+          <a class="font-bold" href={`/volumes/${volume.slug}`}>
             {volume.title}
           </a>
-          , coordonné par{" "}
-          <span class="font-semibold">{volume.coordinator}</span>, avec les
-          contributions de <span>{volume.authors.join(", ")}. </span>
-          (mis en ligne le{" "}
-          {new Date(volume.published_at).toLocaleString("fr-FR", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-          )
+          <span>[</span><span class="italic">publié le {new Date(volume.published_on).toLocaleString("fr-FR", { year: "numeric", month: "long", day: "numeric"})}</span><span>]</span>
         </li>
       ))
     }
@@ -98,20 +86,10 @@ const volumes = await directus.request(
               .map((author) => author.author_id.fullname)
               .join(", ")}
           </span>
-          ,{" "}
-          <a
-            class="underline italic underline-offset-2"
-            href={`/articles/${article.slug}`}
-          >
-            «{article.title}»
+          <a class="font-bold italic" href={`/articles/${article.slug}`}>
+            {article.title}
           </a>
-          , (mis en ligne le{" "}
-          {new Date(article.published_at).toLocaleString("fr-FR", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-          )
+          <span>[</span><span class="italic">publié le {new Date(article.published_at).toLocaleString("fr-FR", { year: "numeric", month: "long", day: "numeric"})}</span><span>]</span>
         </li>
       ))
     }
