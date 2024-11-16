@@ -8,7 +8,7 @@ const directus = await getDirectusClient();
 const volumes = await directus.request(
   readItems("VolumeReleases", {
     fields: ["title", "number", "published_at", "slug", "publisher", "cover"],
-    sort: ["-id"],
+    sort: ["-number"],
     limit: 1,
     filter: {
       site_id: {
