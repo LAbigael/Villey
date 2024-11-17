@@ -1,25 +1,47 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 
-import { getDirectusClient } from "../../utils/get-directus-client";
+import {
+  getImagePath,
+  getDirectusClient,
+} from "../../utils/get-directus-client";
 import { readItems } from "@directus/sdk";
 
 const directus = await getDirectusClient();
 const contributionCalls = await directus.request(
   readItems("ContributionCalls", {
-    fields: ["title", "slug", "content", "created_at"],
+    fields: ["title", "slug", "content", "created_at", "file"],
     sort: ["-created_at"],
+    filter: {
+      slug: { _eq: Astro.params.slug },
+    },
   }),
 );
 
-const { slug } = Astro.params;
+const contributionCall = contributionCalls[0];
 
-const contributionCall = contributionCalls.find((contributionCall) => contributionCall.slug === slug);
+const file = contributionCall.file
+
+console.log(contributionCall);
 ---
 
 <Layout title="Droit & Philosophie.">
   <div class="max-w-screen-lg mx-auto">
     <h3 class="mt-10 chapter_title">{contributionCall.title}</h3>
     <div class="mb-10" set:html={contributionCall.content} />
+    {
+      file ? (
+        <a
+          href={`${getImagePath(file)}?download`}
+          class="download_button text-xl"
+          target="_blank"
+          download="Your File.pdf"
+        >
+          Télécharger en PDF
+        </a>
+      ) : (
+        <span>Pas de pdf disponible</span>
+      )
+    }
   </div>
 </Layout>
