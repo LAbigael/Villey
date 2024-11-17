@@ -51,45 +51,48 @@ let volume = null;
 //  );
 let section_id = article?.section_id;
 if (!section_id) {
-  section_id = article.chapter_id.section_id;
+  section_id = article.chapter_id?.section_id;
 }
 
-volume = await directus.request(
-  readItem("Volumes", section_id.volume_id, {
-    fields: [
-      "slug",
-      "title",
-      "number",
-      "published_at",
-      {
-        sections: [
-          "title",
-          {
-            chapters: [
-              "title",
-              "position",
-              {
-                articles: [
-                  "title",
-                  "slug",
-                  { authors: ["author_id.fullname"] },
-                ],
-              },
-            ],
-          },
-          {
-            articles: ["title", "slug", { authors: ["author_id.fullname"] }],
-          },
-        ],
-      },
-    ],
-  }),
-);
-
+if (section_id) {
+  volume = await directus.request(
+    readItem("Volumes", section_id.volume_id, {
+      fields: [
+        "slug",
+        "title",
+        "number",
+        "published_at",
+        {
+          sections: [
+            "title",
+            "position",
+            {
+              chapters: [
+                "title",
+                "position",
+                {
+                  articles: [
+                    "title",
+                    "slug",
+                    "position",
+                    { authors: ["author_id.fullname"] },
+                  ],
+                },
+              ],
+            },
+            {
+            articles: ["title", "position", "slug", { authors: ["author_id.fullname"] }],
+            },
+          ],
+        },
+      ],
+    }),
+  );
+}
 article = {
   ...article,
   contents: article.article_contents,
-  sections: volume.sections,
+  sections: volume?.sections,
   volume,
 };
 ---
