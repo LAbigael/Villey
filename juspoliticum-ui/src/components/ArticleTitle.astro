@@ -8,9 +8,10 @@ const removeLinkFromHTML = (string) => {
 };
 ---
 
-<span class="mr-1 authors">
-  {article.authors.map((a) => a?.author_id?.fullname).join(", ")}{" "}
-   :
+<span className="mr-1 authors">
+  {article.authors.length > 0
+    ? `${article.authors.map((a) => a?.author_id?.fullname).join(", ")} :`
+    : ""}
 </span>
 <span class="article_title jp_link cursor-pointer">
   {article.title}
