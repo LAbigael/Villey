@@ -15,6 +15,9 @@ let page = await directus.request(
         },
   }),
 );
+// Log the fetched content for debugging
+console.log(page); // This will output to the server logs
+
 ---
 
 <Layout title="Actualités">
