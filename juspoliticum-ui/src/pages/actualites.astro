@@ -7,7 +7,7 @@ import { readItems } from "@directus/sdk";
 const directus = await getDirectusClient();
 let page = await directus.request(
   readItems("Pages", {
-    fields: ["key", "PageActu"],
+    fields: ["key", "PageActu", "content"],
     filter: {
           key: {
             _eq: "jp_actu",
@@ -16,21 +16,20 @@ let page = await directus.request(
   }),
 );
 // Log the fetched content for debugging
-console.log(page[0].PageActu);
 ---
 
 <Layout title="Actualités">
   <PageLayout title="Actualités" className="max-w-screen-2xl lg:px-24 px-10">
     <div set:html={page[0]?.PageActu} />
+    <div set:html={page[0]?.content} />
+
 
     <!-- <div class="flex flex-row">
       <a href="https://blog.juspoliticum.com" target="_blank" class="text-blue-500">Visiter le blog</a>
     </div> -->
   </PageLayout>
 </Layout>
-<script>
-  console.log(page[0].PageActu);
-</script>
+
 <style>
   p {
     margin-bottom: 1.8rem;
