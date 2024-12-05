@@ -1,14 +1,37 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import PageLayout from "../layouts/PageLayout.astro";
-import ArticleTitle from "../components/ArticleTitle.astro";
+import { getDirectusClient } from "../utils/get-directus-client.js";
+import { readItems } from "@directus/sdk";
 
+const directus = await getDirectusClient();
+let page = await directus.request(
+  readItems("Pages", {
+    fields: ["key", "PageActu"],
+    filter: {
+          key: {
+            _eq: "jp_actu",
+          },
+        },
+  }),
+);
 ---
 
 <Layout title="Actualités">
   <PageLayout title="Blog Juspoliticum" className="max-w-screen-2xl lg:px-24 px-10">
+    <div set:html={page[0].PageActu} />
+
     <div class="flex flex-row">
       <a href="https://blog.juspoliticum.com" target="_blank" class="text-blue-500">Visiter le blog</a>
     </div>
   </PageLayout>
 </Layout>
+
+<style>
+  p {
+    margin-bottom: 1.8rem;
+    text-align: justify;
+    text-indent: 1.5em;
+  }
+</style>
+
