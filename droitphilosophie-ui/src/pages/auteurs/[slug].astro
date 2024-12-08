@@ -25,16 +25,22 @@ const getAuthorWithArticlesFromSlug = async (slug) => {
       limit: 1000,
       sort: ["-id"],
       filter: {
-        site_id: {
-          _eq: "1",
-        },
-        slug: {
-          _eq: slug,
-        },
+        _and: [
+          {
+            site_id: {
+              _eq: "1",
+            },
+          },
+          {
+            slug: {
+              _eq: slug,
+            },
+          },
+        ],
       },
     }),
   );
-  return author[0];
+  return {...author[0], articles: author[0].articles.filter((a) => a.article_id)};
 };
 const { slug } = Astro.params;
 
@@ -46,10 +52,10 @@ const author = await getAuthorWithArticlesFromSlug(slug);
     <h2 class="page_title">
       {`Les articles de l'auteur : ${author.fullname}`}
     </h2>
-    <p set:html={author.bio}></p>
+    <p set:html={author.bio} />
     <ul>
       {
-        author.articles.map(({ article_id : article }) => (
+        author.articles.map(({ article_id: article }) => (
           <li>
             <a href={`/articles/${article.slug}`}>
               <span class="mr-1 authors">

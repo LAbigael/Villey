@@ -16,6 +16,8 @@ let recensions = await directus.request(
           site_id: {
             _eq: "1",
           },
+        },
+        {
           type: {
             _eq: "recension",
           },
