@@ -2,6 +2,7 @@
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import Menu from "../components/Menu.astro";
+import GoToTop from "../components/GoToTop.astro";
 
 import "../css/global.css";
 import "../css/common.css";
@@ -37,6 +38,7 @@ const { title } = Astro.props;
     <main class="m-auto mt-10 mb-20 min-h-screen">
       <slot />
     </main>
+    <GoToTop />
     <Footer />
   </body>
 </html>

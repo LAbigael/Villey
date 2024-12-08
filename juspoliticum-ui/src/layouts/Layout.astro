@@ -2,6 +2,7 @@
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import Menu from "../components/Menu.astro";
+import GoToTop from "../components/GoToTop.astro";
 
 import "../css/global.css";
 import "../css/common.css";
@@ -21,7 +22,10 @@ const { title } = Astro.props;
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="description" content="Jus Politicum est une revue électronique spécialisée dans le droit politique, surtout le droit constitutionnel." />
+    <meta
+      name="description"
+      content="Jus Politicum est une revue électronique spécialisée dans le droit politique, surtout le droit constitutionnel."
+    />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/fav3.svg" />
     <meta name="generator" content={Astro.generator} />
@@ -37,6 +41,7 @@ const { title } = Astro.props;
     <main class="mt-8 mb-20 min-h-screen">
       <slot />
     </main>
+    <GoToTop />
     <Footer />
   </body>
 </html>

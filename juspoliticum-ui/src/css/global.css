@@ -101,19 +101,18 @@ p {
   background-size: 400%;
   background-position: 0%;
 }
+
 /* custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
 }
 
 ::-webkit-scrollbar-track {
   @apply bg-background-light dark:bg-background-dark;
-  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-background-light dark:bg-background-alt-dark;
-  border-radius: 8px;
+  @apply bg-background-dark dark:bg-background-alt border-2 border-background-light dark:border-background-dark;
   background-clip: content-box;
 }
 
