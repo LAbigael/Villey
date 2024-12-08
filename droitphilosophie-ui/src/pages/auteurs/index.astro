@@ -11,7 +11,7 @@ const getAuthors = async () => {
   return directus.request(
     readItems("Authors", {
       fields: ["id", "fullname", "slug", "firstname", "lastname"],
-      sort: ["fullname"],
+      sort: ["lastname"],
       limit: 1000,
       filter: {
         site_id: {
