@@ -6,7 +6,8 @@ import { getAuthors } from "../../utils/requests";
 
 let authors = await getAuthors();
 
-authors = authors.map((author) => {
+authors = authors.sort((a, b) => a.lastname.localeCompare(b.lastname)).
+map((author) => {
   return {
   link: `/auteurs/${author.slug}`,
   content: `${author.lastname} ${author.firstname}`,
