@@ -33,6 +33,7 @@ export default {
           "linear-gradient( 45deg, rgb(var(--accent-dark)), rgb(var(--accent-light)) 60%, white 90%); ",
         "accent-gradient-light":
           "linear-gradient( 45deg, rgb(var(--accent)), rgb(var(--accent-light)) 30%, white 60%); ",
+        "footnote": "#ff7000"  ,
       },
     },
   },
