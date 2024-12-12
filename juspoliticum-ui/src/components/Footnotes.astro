@@ -62,4 +62,13 @@ const { mobile } = Astro.props;
   .footnote.show {
     display: block;
   }
+  .footnote-list {
+    @apply hidden lg:block;
+    max-height: 35vh;
+    overflow-y: auto;
+  }
+  .footnote-list::-webkit-scrollbar {
+     width: 2px;
+  }
+
 </style>
